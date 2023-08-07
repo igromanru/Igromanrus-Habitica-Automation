@@ -1,15 +1,6 @@
-const scriptProperties = PropertiesService.getScriptProperties();
-const habId = scriptProperties.getProperty('API_ID');
-const habToken = scriptProperties.getProperty('API_KEY');
-const headers = {
-  'x-api-user': habId,
-  'x-api-key': habToken,
-};
-const baseUrl = 'https://habitica.com/api';
-const partyAPI = baseUrl + '/v3/groups/party';
-const userAPI = baseUrl + '/v3/user';
-const groupsAPI = baseUrl + '/v3/groups';
-
+/**
+ * Main entry, that gets executed each hour by a tigger
+ */
 function hourlySchedule() {
   console.log('Get user');
   const userResponse = UrlFetchApp.fetch(
@@ -21,28 +12,40 @@ function hourlySchedule() {
   );
   console.log('User response code: ' + userResponse.getResponseCode());
 
-  console.log('Get party');
-  const partyResponse = UrlFetchApp.fetch(
-    partyAPI,
-    {
-      method: 'get',
-      headers
-    }
-  );
-  console.log('Party response code: ' + partyResponse.getResponseCode());
-
   if (userResponse.getResponseCode() == 200) {
     const user = JSON.parse(userResponse).data;
     // console.log('User: ' + JSON.stringify(user));
 
-    if (partyResponse.getResponseCode() == 200) {
-      const { data: { quest } } = JSON.parse(partyResponse);
-      // console.log('Quest: ' + JSON.stringify(quest));
-      console.log('Quest active: ' + quest.active);
+    const hoursDifference = getHoursDifferenceToDayStart(user);
+    console.log('Hours difference to the next Day Start: ' + hoursDifference)
 
-      acceptQuest(quest);
-      checkAndSendQuestProgress(quest, user);
+    if (user.party._id) {
+      console.log('Get party');
+      const partyResponse = UrlFetchApp.fetch(
+        partyAPI,
+        {
+          method: 'get',
+          headers
+        }
+      );
+      console.log('Party response code: ' + partyResponse.getResponseCode());
+
+      if (partyResponse.getResponseCode() == 200) {
+        const { data: { quest } } = JSON.parse(partyResponse);
+        // console.log('Quest: ' + JSON.stringify(quest));
+        console.log('Quest active: ' + quest.active);
+
+        acceptQuest(quest);
+        checkAndSendQuestProgress(quest, user);
+        autoSleep(quest, user);
+        autoCron(user);
+        
+      }
+    } else {
+      console.log('User is not in a party. Ignoring party request and party related functions.');
     }
+    
+    autoHealSelf(user);
   }
 }
 
@@ -64,21 +67,20 @@ function acceptQuest (quest) {
 }
 
 function checkAndSendQuestProgress(quest, user) {
+  if (user.preferences.sleep) {
+    console.log("checkAndSendQuestProgress: You're sleeping in the tavern");
+    return;
+  }
+
   if (quest.key && quest.active && quest.members[habId]) {
     const partyId = user.party._id;
-    const dayStartOffset = user.preferences.dayStart;
 
     const bossHp = quest.progress.hp;
     const itemsToCollect = quest.progress.collect;
 
     const pendingDamage = Math.round(user.party.quest.progress.up * 10) / 10;
     const collectedItems = user.party.quest.progress.collectedItems;
-
-    const now = new Date();
-    const dayStart = new Date();
-    dayStart.setHours(24 + dayStartOffset, 0, 0, 0);
-    const timeDifference = dayStart - now;
-    const hoursDifference = Math.round(timeDifference / (1000 * 60 * 60) * 10) / 10;
+    const hoursDifference = getHoursDifferenceToDayStart(user);
 
     var progressMessage = ''
 
@@ -116,24 +118,44 @@ function checkAndSendQuestProgress(quest, user) {
   }
 }
 
-/**
- * runCron()
- * 
- * Forces the user to cron if they haven't already cronned today.
- * Run this function just after the user's day start time.
- */
-function runCron() {
-  const api = 'https://habitica.com/api/v3/cron';
+function autoSleep(quest, user) {
+  if (user.preferences.sleep) {
+    console.log("autoSleep: You're sleeping in the tavern already");
+    return;
+  }
 
-  console.log('Run cron');
-  const response = UrlFetchApp.fetch(
-    `${api}`,
-    {
-      method: 'post',
-      headers
+  const hoursDifference = getHoursDifferenceToDayStart(user);
+  if (((hoursDifference < 1 && hoursDifference > -1) || hoursDifference > 23)
+      && (!quest.key || !quest.active) && !user.preferences.sleep
+      && user.party.quest.progress.up >= 10) {
+    console.log('No quest is running, toggling sleep...');
+    const sleepState = toggleSleep();
+    if (sleepState) {
+      console.log('Sleep state: ' + sleepState);
+      sendPM(habId, 'No quest is active, you were sent to sleep  \n*autoSleep script*');
     }
-  );
+  }
+}
 
-  console.log('Response code: ' + response.getResponseCode());
-  console.log(response.getContentText());
+function autoCron(user) {
+  if (!user) {
+    console.error('autoCron: Undefined user object');
+    return;
+  }
+  const hoursDifference = getHoursDifferenceToDayStart(user);
+  if (hoursDifference <= 23.5 && hoursDifference >= 22.5) {
+    runCron();
+  }
+}
+
+function autoHealSelf(user) {
+  if (user) {
+    const healUnderHp = 20;
+    const currentHp = user.stats.hp;
+
+    if (currentHp <= healUnderHp) {
+      console.error('autoHealSelf: Current HP is under' + healUnderHp + ' buying a health postion.');
+      buyHealthPotion();
+    }
+  }
 }
