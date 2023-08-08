@@ -137,7 +137,7 @@ function toggleSleep() {
  * Run this function just after the user's day start time.
  */
 function runCron() {
-  const api = 'https://habitica.com/api/v3/cron';
+  const api = `${baseUrl}/v3/cron`;
 
   console.log('Run cron');
   const response = UrlFetchApp.fetch(
