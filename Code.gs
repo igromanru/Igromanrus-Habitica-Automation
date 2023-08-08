@@ -5,7 +5,7 @@ const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = true;
 const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100;
 
-const AUTO_TAVERN_IF_NO_QUEST_AT_MY_DAYSTART = true;
+const AUTO_TAVERN_IF_NO_QUEST_AT_DAYSTART = true;
 
 const AUTO_CRON = true;
 const CRON_X_HOURS_AFTER_DAYSTART = 1;
@@ -135,7 +135,7 @@ function checkAndSendQuestProgress(quest, user) {
 }
 
 function autoSleep(quest, user) {
-  if (!AUTO_TAVERN_IF_NO_QUEST_AT_MY_DAYSTART) {
+  if (!AUTO_TAVERN_IF_NO_QUEST_AT_DAYSTART) {
     return;
   }
 
