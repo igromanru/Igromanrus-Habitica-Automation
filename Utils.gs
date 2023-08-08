@@ -132,6 +132,30 @@ function toggleSleep() {
 }
 
 /**
+ * Buy an Enchanted Armoire item
+ */
+function buyEnchantedArmoire() {
+  const response = UrlFetchApp.fetch(
+    `${userAPI}/buy-armoire`,
+    {
+      method: 'post',
+      headers
+    }
+  );
+
+  const responseCode = response.getResponseCode();
+  console.log('Buy Enchanted Armoire response code: ' + responseCode);
+
+  if (responseCode != 200) {
+    const errorData = JSON.parse(userResponse).data;
+    console.log('Error code: ' + errorData.error);
+    console.log('Error message: ' + errorData.message);
+  }
+
+  return responseCode == 200;
+}
+
+/**
  * Forces the user to cron if they haven't already cronned today.
  * 
  * Run this function just after the user's day start time.

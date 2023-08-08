@@ -12,6 +12,9 @@ const CRON_X_HOURS_AFTER_DAYSTART = 1;
 
 const AUTO_HEALTH_POSTION = true;
 const AUTO_HEALTH_POSTION_IF_HP_UNDER = 20;
+
+const AUTO_BUY_ENCHANTED_ARMOIRE = true;
+const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 1000;
 // ------------------------------------------------------------
 function hourlySchedule() {
   console.log('Get user');
@@ -58,6 +61,7 @@ function hourlySchedule() {
     }
     
     autoHealSelf(user);
+    autoBuyEnchantedArmoire(user);
   }
 }
 
@@ -179,9 +183,21 @@ function autoHealSelf(user) {
     const healUnderHp = AUTO_HEALTH_POSTION_IF_HP_UNDER;
     const currentHp = user.stats.hp;
 
-    if (currentHp <= healUnderHp) {
-      console.error('autoHealSelf: Current HP is under' + healUnderHp + ' buying a health postion.');
+    if (healUnderHp > 0 && currentHp <= healUnderHp) {
+      console.error('autoHealSelf: Current HP is or under' + healUnderHp + ' buying a health postion.');
       buyHealthPotion();
+    }
+  }
+}
+
+function autoBuyEnchantedArmoire(user) {
+  if (AUTO_BUY_ENCHANTED_ARMOIRE && user) {
+    const buyOver = BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD;
+    const currentGold = user.stats.gp;
+
+    if (buyOver > 0 && currentGold >= buyOver) {
+      console.error('autoBuyEnchantedArmoire: Current Gold is or over ' + buyOver + ' buying Enchanted Armoire.');
+      buyEnchantedArmoire();
     }
   }
 }
