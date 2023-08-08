@@ -117,9 +117,9 @@ function checkAndSendQuestProgress(quest, user) {
         progressMessage += ' in about ' + hoursDifference + ' hours'
       }
       progressMessage += '  \n\n*This is a script generated message*'
-      console.log(progressMessage);
       if (hoursDifference <= START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART || pendingDamage >= START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED)
       {
+        console.log(progressMessage);
         sendMessageToGroup(partyId, progressMessage);
       }
     }
