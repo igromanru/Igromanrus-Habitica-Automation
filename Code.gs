@@ -120,19 +120,7 @@ function checkAndSendQuestProgress(quest, user) {
       console.log(progressMessage);
       if (hoursDifference <= START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART || pendingDamage >= START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED)
       {
-        const messageData = {
-          message: progressMessage
-        };
-        const chatResponse = UrlFetchApp.fetch(
-          `${groupsAPI}/${partyId}/chat`,
-          {
-            method: 'post',
-            headers,
-            contentType : 'application/json',
-            payload : JSON.stringify(messageData)
-          }
-        );
-        console.log('Chat send response code: ' + chatResponse.getResponseCode());
+        sendMessageToGroup(partyId, progressMessage);
       }
     }
   }

@@ -79,6 +79,32 @@ function sendPM(targetUserId, textMessage) {
   }
 }
 
+function sendMessageToGroup(partyId, messageText) {
+  const messageData = {
+    message: messageText
+  };
+  const response = UrlFetchApp.fetch(
+    `${groupsAPI}/${partyId}/chat`,
+    {
+      method: 'post',
+      headers,
+      contentType : 'application/json',
+      payload : JSON.stringify(messageData)
+    }
+  );
+
+  const responseCode = response.getResponseCode();
+  console.log('Group Chat send response code: ' + responseCode);
+
+  if (responseCode != 200) {
+    const errorData = JSON.parse(response).data;
+    console.log('Error code: ' + errorData.error);
+    console.log('Error message: ' + errorData.message);
+  }
+
+  return responseCode == 200;
+}
+
 /**
  * Sends the request to buy a Health Postion
  * 
@@ -97,7 +123,7 @@ function buyHealthPotion() {
   console.log('Buy Health Potion response code: ' + responseCode);
 
   if (responseCode != 200) {
-    const errorData = JSON.parse(userResponse).data;
+    const errorData = JSON.parse(response).data;
     console.log('Error code: ' + errorData.error);
     console.log('Error message: ' + errorData.message);
   }
@@ -121,7 +147,7 @@ function toggleSleep() {
 
   const responseCode = response.getResponseCode();
   console.log('Toggle sleep response code: ' + responseCode);
-  const responseData = JSON.parse(userResponse).data;
+  const responseData = JSON.parse(response).data;
 
   if (responseCode != 200) {
     console.log('Error code: ' + responseData.error);
@@ -147,7 +173,7 @@ function buyEnchantedArmoire() {
   console.log('Buy Enchanted Armoire response code: ' + responseCode);
 
   if (responseCode != 200) {
-    const errorData = JSON.parse(userResponse).data;
+    const errorData = JSON.parse(response).data;
     console.log('Error code: ' + errorData.error);
     console.log('Error message: ' + errorData.message);
   }
