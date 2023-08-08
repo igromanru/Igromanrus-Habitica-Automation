@@ -1,6 +1,18 @@
-/**
- * Main entry, that gets executed each hour by a tigger
- */
+// --------- Configurations -----------------------------------
+const AUTO_ACCEPT_QUESTS = true;
+
+const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = true;
+const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
+const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100;
+
+const AUTO_TAVERN_IF_NO_QUEST_AT_MY_DAYSTART = true;
+
+const AUTO_CRON = true;
+const CRON_X_HOURS_AFTER_DAYSTART = 1;
+
+const AUTO_HEALTH_POSTION = true;
+const AUTO_HEALTH_POSTION_IF_HP_UNDER = 20;
+// ------------------------------------------------------------
 function hourlySchedule() {
   console.log('Get user');
   const userResponse = UrlFetchApp.fetch(
@@ -50,7 +62,7 @@ function hourlySchedule() {
 }
 
 function acceptQuest (quest) {
-  if (quest.key && !quest.active && !quest.members[habId]) {
+  if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[habId]) {
     console.log('Run quests accept');
 
     const response = UrlFetchApp.fetch(
@@ -67,6 +79,10 @@ function acceptQuest (quest) {
 }
 
 function checkAndSendQuestProgress(quest, user) {
+  if (!AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY) {
+    return;
+  }
+
   if (user.preferences.sleep) {
     console.log("checkAndSendQuestProgress: You're sleeping in the tavern");
     return;
@@ -98,7 +114,7 @@ function checkAndSendQuestProgress(quest, user) {
       }
       progressMessage += '  \n\n*This is a script generated message*'
       console.log(progressMessage);
-      if (hoursDifference <= 2 || pendingDamage >= 100)
+      if (hoursDifference <= START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART || pendingDamage >= START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED)
       {
         const messageData = {
           message: progressMessage
@@ -119,6 +135,10 @@ function checkAndSendQuestProgress(quest, user) {
 }
 
 function autoSleep(quest, user) {
+  if (!AUTO_TAVERN_IF_NO_QUEST_AT_MY_DAYSTART) {
+    return;
+  }
+
   if (user.preferences.sleep) {
     console.log("autoSleep: You're sleeping in the tavern already");
     return;
@@ -138,19 +158,25 @@ function autoSleep(quest, user) {
 }
 
 function autoCron(user) {
+  if (!AUTO_CRON) {
+    return;
+  }
+
   if (!user) {
     console.error('autoCron: Undefined user object');
     return;
   }
   const hoursDifference = getHoursDifferenceToDayStart(user);
-  if (hoursDifference <= 23.5 && hoursDifference >= 22.5) {
+  const before = 24.5 - CRON_X_HOURS_AFTER_DAYSTART;
+  const after = 23.5 - CRON_X_HOURS_AFTER_DAYSTART;
+  if (hoursDifference <= before && hoursDifference >= after) {
     runCron();
   }
 }
 
 function autoHealSelf(user) {
-  if (user) {
-    const healUnderHp = 20;
+  if (AUTO_HEALTH_POSTION && user) {
+    const healUnderHp = AUTO_HEALTH_POSTION_IF_HP_UNDER;
     const currentHp = user.stats.hp;
 
     if (currentHp <= healUnderHp) {
