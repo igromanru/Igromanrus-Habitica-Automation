@@ -78,7 +78,7 @@ function acceptQuest (quest) {
     );
 
     console.log('Quests accept code: ' + response.getResponseCode());
-    console.log(response.getContentText());
+    // console.log(response.getContentText());
   }
 }
 
@@ -136,8 +136,13 @@ function autoSleep(quest, user) {
     return;
   }
 
+  const lastCronDate = new Date(user.lastCron);
+  lastCronDate.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const hoursDifference = getHoursDifferenceToDayStart(user);
-  if (((hoursDifference < 1 && hoursDifference > -1) || hoursDifference > 23)
+  if ((hoursDifference < 1 || (hoursDifference >= 12 && lastCronDate < today))
       && (!quest.key || !quest.active) && !user.preferences.sleep
       && user.party.quest.progress.up >= 10) {
     console.log('No quest is running, toggling sleep...');
@@ -172,7 +177,7 @@ function autoHealSelf(user) {
     const currentHp = user.stats.hp;
 
     if (healUnderHp > 0 && currentHp <= healUnderHp) {
-      console.error('autoHealSelf: Current HP is or under' + healUnderHp + ' buying a health postion.');
+      console.log('autoHealSelf: Current HP is or under' + healUnderHp + ' buying a health postion.');
       buyHealthPotion();
     }
   }
@@ -184,7 +189,7 @@ function autoBuyEnchantedArmoire(user) {
     const currentGold = user.stats.gp;
 
     if (buyOver > 0 && currentGold >= buyOver) {
-      console.error('autoBuyEnchantedArmoire: Current Gold is or over ' + buyOver + ' buying Enchanted Armoire.');
+      console.log('autoBuyEnchantedArmoire: Current Gold is or over ' + buyOver + ' buying Enchanted Armoire.');
       buyEnchantedArmoire();
     }
   }

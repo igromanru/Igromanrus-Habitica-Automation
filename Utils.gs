@@ -11,6 +11,25 @@ const userAPI = baseUrl + '/v3/user';
 const groupsAPI = baseUrl + '/v3/groups';
 const membersAPI = baseUrl + '/v3/members';
 
+function test() {
+  const dayStartOffset = 1;
+  const now = new Date();
+  // now.setHours(dayStartOffset, 0, 0, 0);
+
+  var hours = now.getHours();
+
+  const nextDayStart = new Date();
+  if (hours >= dayStartOffset) {
+    nextDayStart.setHours(24 + dayStartOffset, 0, 0, 0);
+  } else {
+    nextDayStart.setHours(dayStartOffset, 0, 0, 0);
+  }
+  const timeDifference = nextDayStart - now;
+  const hoursDifferenceToDayStart = Math.round(timeDifference / (1000 * 60 * 60) * 10) / 10;
+
+  console.log(hoursDifferenceToDayStart);
+}
+
 /**
  * Hours left till the next day starts
  * 
