@@ -173,9 +173,14 @@ function buyEnchantedArmoire() {
   console.log('Buy Enchanted Armoire response code: ' + responseCode);
 
   if (responseCode != 200) {
-    const errorData = JSON.parse(response).data;
+    const errorData = JSON.parse(response);
     console.log('Error code: ' + errorData.error);
     console.log('Error message: ' + errorData.message);
+  }
+  if (responseCode == 200) {
+    const responseJson = JSON.parse(response);
+    console.log(`Armoire json: ` + JSON.stringify(responseJson.data.armoire));
+    console.log('Message:' + responseJson.message);
   }
 
   return responseCode == 200;
@@ -199,5 +204,5 @@ function runCron() {
   );
 
   console.log('runCron Response code: ' + response.getResponseCode());
-  console.log(response.getContentText());
+  // console.log(response.getContentText());
 }

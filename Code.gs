@@ -5,7 +5,7 @@ const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = true;
 const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100;
 
-const AUTO_TAVERN_IF_NO_QUEST_AT_DAYSTART = true;
+const AUTO_TAVERN_IF_NO_QUEST_AT_CRON = true;
 
 const AUTO_CRON = true;
 const CRON_X_HOURS_AFTER_DAYSTART = 1;
@@ -48,13 +48,20 @@ function hourlySchedule() {
       if (partyResponse.getResponseCode() == 200) {
         const { data: { quest } } = JSON.parse(partyResponse);
         // console.log('Quest: ' + JSON.stringify(quest));
-        console.log('Quest active: ' + quest.active);
+
+        if (quest.key) {
+          console.log('Quest key: ' + quest.key);
+          if (quest.active) {
+            console.log('The quest is active');
+          }
+        } else {
+          console.log('No active quest');
+        }
 
         acceptQuest(quest);
         checkAndSendQuestProgress(quest, user);
         autoSleep(quest, user);
         autoCron(user);
-        
       }
     } else {
       console.log('User is not in a party. Ignoring party request and party related functions.');
@@ -112,7 +119,10 @@ function checkAndSendQuestProgress(quest, user) {
 
     if (progressMessage) {
       if (hoursDifference <= 0) {
-        progressMessage += ' within the next hour'
+        progressMessage += ' with the next cron'
+        if (AUTO_CRON) {
+          progressMessage += `  \n\nNext automated cron will be in about ${CRON_X_HOURS_AFTER_DAYSTART} hours`
+        }
       } else {
         progressMessage += ' in about ' + hoursDifference + ' hours'
       }
@@ -127,7 +137,7 @@ function checkAndSendQuestProgress(quest, user) {
 }
 
 function autoSleep(quest, user) {
-  if (!AUTO_TAVERN_IF_NO_QUEST_AT_DAYSTART) {
+  if (!AUTO_TAVERN_IF_NO_QUEST_AT_CRON) {
     return;
   }
 
