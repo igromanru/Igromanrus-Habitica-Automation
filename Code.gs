@@ -194,7 +194,7 @@ function autoHealSelf(user) {
     const currentHp = user.stats.hp;
 
     if (healUnderHp > 0 && currentHp <= healUnderHp) {
-      console.log('autoHealSelf: Current HP is or under' + healUnderHp + ' buying a health postion.');
+      console.log('autoHealSelf: Current HP is or under' + healUnderHp + ', buying a health postion.');
       buyHealthPotion();
     }
   }
@@ -205,8 +205,8 @@ function autoBuyEnchantedArmoire(user) {
     const buyOver = BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD;
     const currentGold = user.stats.gp;
 
-    if (buyOver > 0 && currentGold >= buyOver) {
-      console.log('autoBuyEnchantedArmoire: Current Gold is or over ' + buyOver + ' buying Enchanted Armoire.');
+    if (buyOver >= 100 && currentGold >= buyOver) {
+      console.log(`autoBuyEnchantedArmoire: Current Gold (${currentGold}) is or over ${buyOver}, buying Enchanted Armoire.`);
       buyEnchantedArmoire();
     }
   }
