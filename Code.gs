@@ -1,3 +1,7 @@
+/**
+ * Author: Igromanru
+ * Source: https://github.com/igromanru/My-Habitica-Scripts
+ */
 // --------- Configurations -----------------------------------
 const AUTO_ACCEPT_QUESTS = true;
 
@@ -16,6 +20,9 @@ const AUTO_HEALTH_POSTION_IF_HP_UNDER = 20;
 const AUTO_BUY_ENCHANTED_ARMOIRE = true;
 const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 1000;
 // ------------------------------------------------------------
+/**
+ * Main entry, that should be executed each hour by a tigger
+ */
 function hourlySchedule() {
   console.log('Get user');
   const userResponse = UrlFetchApp.fetch(

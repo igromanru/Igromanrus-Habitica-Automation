@@ -1,3 +1,7 @@
+/**
+ * Author: Igromanru
+ * Source: https://github.com/igromanru/My-Habitica-Scripts
+ */
 const scriptProperties = PropertiesService.getScriptProperties();
 const habId = scriptProperties.getProperty('API_ID');
 const habToken = scriptProperties.getProperty('API_KEY');
