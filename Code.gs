@@ -19,6 +19,7 @@ const AUTO_HEALTH_POSTION_IF_HP_UNDER = 20;
 
 const AUTO_BUY_ENCHANTED_ARMOIRE = true;
 const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 1000;
+const SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO = true;
 // ------------------------------------------------------------
 /**
  * Main entry, that should be executed each hour by a tigger
@@ -207,7 +208,10 @@ function autoBuyEnchantedArmoire(user) {
 
     if (buyOver >= 100 && currentGold >= buyOver) {
       console.log(`autoBuyEnchantedArmoire: Current Gold (${currentGold}) is or over ${buyOver}, buying Enchanted Armoire.`);
-      buyEnchantedArmoire();
+      const data = buyEnchantedArmoire();
+      if (SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO && data) {
+        sendPM(habId, `Bought Enchanted Armoire:  \n${JSON.stringify(responseJson.data.armoire)}`)
+      }
     }
   }
 }
