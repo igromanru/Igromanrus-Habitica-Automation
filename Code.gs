@@ -218,6 +218,8 @@ function autoBuyEnchantedArmoire(user) {
         if (responseJson) {
           pmMessage += `${JSON.stringify(responseJson.data.armoire)}  \n`;
           boughtCount++;
+        } else {
+          break;
         }
       }
       if (SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO) {
