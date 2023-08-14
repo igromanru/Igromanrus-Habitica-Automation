@@ -203,14 +203,27 @@ function autoHealSelf(user) {
 
 function autoBuyEnchantedArmoire(user) {
   if (AUTO_BUY_ENCHANTED_ARMOIRE && user) {
-    const buyOver = BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD;
+    const enchantedArmoireCost = 100;
+    const buyOverOrEqual = BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD;
     const currentGold = user.stats.gp;
 
-    if (buyOver >= 100 && currentGold >= buyOver) {
-      console.log(`autoBuyEnchantedArmoire: Current Gold (${currentGold}) is or over ${buyOver}, buying Enchanted Armoire.`);
-      const data = buyEnchantedArmoire();
-      if (SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO && data) {
-        sendPM(habId, `Bought Enchanted Armoire:  \n${JSON.stringify(responseJson.data.armoire)}`)
+    const buyCount = currentGold - (buyOverOrEqual - enchantedArmoireCost) / enchantedArmoireCost;
+    if (buyCount > 0) {
+      console.log(`autoBuyEnchantedArmoire: Current Gold (${currentGold}) is or over ${buyOverOrEqual}, buying Enchanted Armoire ${buyCount} times.`);
+
+      var pmMessage = 'Bought Enchanted Armoire:  \n';
+      var boughtCount = 0;
+      for (var i = 0; i < buyCount; i++) {
+        const responseJson = buyEnchantedArmoire();
+        if (responseJson) {
+          pmMessage += `${JSON.stringify(responseJson.data.armoire)}  \n`;
+          boughtCount++;
+        }
+      }
+      if (SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO) {
+        pmMessage += `Successfully bought: ${boughtCount} out of ${buyCount}`;
+        console.log('Sending PM: ' + pmMessage);
+        sendPM(habId, pmMessage)
       }
     }
   }
