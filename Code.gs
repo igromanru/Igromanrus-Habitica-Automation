@@ -7,7 +7,7 @@ const AUTO_ACCEPT_QUESTS = true;
 
 const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = true;
 const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
-const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100;
+const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR x damage
 
 const AUTO_TAVERN_IF_NO_QUEST_AT_CRON = true;
 
@@ -126,13 +126,13 @@ function checkAndSendQuestProgress(quest, user) {
     }
 
     if (progressMessage) {
-      if (hoursDifference <= 0) {
+      if (hoursDifference <= 0.1) {
         progressMessage += ' with the next cron'
         if (AUTO_CRON) {
-          progressMessage += `  \n\nNext automated cron will be in about ${CRON_X_HOURS_AFTER_DAYSTART} hours`
+          progressMessage += `  \n\nNext automated cron will be in about ${CRON_X_HOURS_AFTER_DAYSTART} hour(s)`
         }
       } else {
-        progressMessage += ' in about ' + hoursDifference + ' hours'
+        progressMessage += ' in about ' + hoursDifference + ' hour(s)'
       }
       progressMessage += '  \n\n*This is a script generated message*'
       if (hoursDifference <= START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART || pendingDamage >= START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED)
@@ -207,7 +207,7 @@ function autoBuyEnchantedArmoire(user) {
     const buyOverOrEqual = BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD;
     const currentGold = user.stats.gp;
 
-    const toBuyCount = (currentGold - (buyOverOrEqual - enchantedArmoireCost)) / enchantedArmoireCost;
+    const toBuyCount = Math.floor((currentGold - (buyOverOrEqual - enchantedArmoireCost)) / enchantedArmoireCost);
     if (toBuyCount > 0) {
       console.log(`autoBuyEnchantedArmoire: Current Gold (${currentGold}) is or over ${buyOverOrEqual}, buying Enchanted Armoire ${toBuyCount} times.`);
 
