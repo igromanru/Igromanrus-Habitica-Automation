@@ -65,7 +65,7 @@ function getHoursDifferenceToDayStart(user) {
  */
 function sendPM(targetUserId, textMessage) {
   if (targetUserId && textMessage) {
-    console.log('sendPM: targetUserId: ' + targetUserId + ' textMessage: ' + textMessage);
+    console.log('sendPM: targetUserId: ' + targetUserId + '  \ntextMessage: ' + textMessage);
     const requestBody = {
       message: textMessage,
       toUserId: targetUserId

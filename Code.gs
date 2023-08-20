@@ -211,7 +211,7 @@ function autoBuyEnchantedArmoire(user) {
     if (toBuyCount > 0) {
       console.log(`autoBuyEnchantedArmoire: Current Gold (${currentGold}) is or over ${buyOverOrEqual}, buying Enchanted Armoire ${toBuyCount} times.`);
 
-      var pmMessage = 'Bought Enchanted Armoire:  \n';
+      var pmMessage = '**Bought Enchanted Armoire:**  \n';
       var boughtCount = 0;
       for (var i = 0; i < toBuyCount; i++) {
         const responseJson = buyEnchantedArmoire();
@@ -223,8 +223,8 @@ function autoBuyEnchantedArmoire(user) {
         }
       }
       if (SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO) {
-        pmMessage += `Successfully bought: ${boughtCount} out of ${toBuyCount}`;
-        console.log('Sending PM: ' + pmMessage);
+        pmMessage += `**Successfully bought: ${boughtCount} out of ${toBuyCount}**`;
+        // console.log('Sending PM: ' + pmMessage);
         sendPM(habId, pmMessage)
       }
     }
