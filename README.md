@@ -1,4 +1,4 @@
-# My Google Apps Script for Habitica automation
+# Igromanru's Habitica Automation - Scripts framework
 
 ## Setup
 To be able to use the script as it is, you have to add your User Id and API Key as Script Properties API_ID and API_KEY.  

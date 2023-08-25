@@ -1,6 +1,6 @@
 /**
  * Author: Igromanru
- * Source: https://github.com/igromanru/My-Habitica-Scripts
+ * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
 // --------- Configurations -----------------------------------
 const AUTO_ACCEPT_QUESTS = true;
