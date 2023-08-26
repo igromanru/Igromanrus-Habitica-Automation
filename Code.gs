@@ -17,9 +17,12 @@ const CRON_X_HOURS_AFTER_DAYSTART = 1;
 const AUTO_HEALTH_POSTION = true;
 const AUTO_HEALTH_POSTION_IF_HP_UNDER = 20;
 
-const AUTO_BUY_ENCHANTED_ARMOIRE = true;
-const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 1000;
+const AUTO_BUY_ENCHANTED_ARMOIRE = false;
+const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 1100;
 const SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO = true;
+
+const AUTO_ALLOCATE_STAT_POINTS = true;
+const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, int = Intelligence, per = Perception
 // ------------------------------------------------------------
 /**
  * Main entry, that should be executed each hour by a tigger
@@ -77,6 +80,7 @@ function hourlySchedule() {
     
     autoHealSelf(user);
     autoBuyEnchantedArmoire(user);
+    autoAllocateStatPoints(user);
   }
 }
 
@@ -227,6 +231,19 @@ function autoBuyEnchantedArmoire(user) {
         // console.log('Sending PM: ' + pmMessage);
         sendPM(habId, pmMessage)
       }
+    }
+  }
+}
+
+function autoAllocateStatPoints(user) {
+  if (AUTO_ALLOCATE_STAT_POINTS && user) {
+    const pointsToAllocate = user.stats.points;
+
+    if (pointsToAllocate > 0) {
+      console.log(`autoAllocateStatPoints: Allocating ${pointsToAllocate} stat points into "${ALLOCATE_STAT_POINTS_TO}"`);
+      for (var i = 0; i < pointsToAllocate; i++) {
+        allocateStatPoint(ALLOCATE_STAT_POINTS_TO);
+      } 
     }
   }
 }

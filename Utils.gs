@@ -210,3 +210,38 @@ function runCron() {
   console.log('runCron Response code: ' + response.getResponseCode());
   // console.log(response.getContentText());
 }
+
+/**
+ * Allocate a single Stat Point to a specific Stat
+ * 
+ * Possible parameter values: 
+ *  str = Strength
+ *  con = Constitution
+ *  int = Intelligence
+ *  per = Perception
+ */
+function allocateStatPoint(stat) {
+  if (stat) {
+    if (stat == "str" || stat == "con" || stat == "int" || stat == "per") {
+      const response = UrlFetchApp.fetch(
+        `${userAPI}/allocate?stat=${stat}`,
+        {
+          method: 'post',
+          headers
+        }
+      );
+      const responseCode = response.getResponseCode();
+      console.log(`Allocate Stat Point (${stat}) response code: ${responseCode}`);
+
+      if (responseCode == 200) {
+        console.log('Stat Point successfully allocated');
+      } else {
+        const errorData = JSON.parse(response);
+        console.log('Error code: ' + errorData.error);
+        console.log('Error message: ' + errorData.message);
+      }
+    } else {
+      console.log(`allocateStatPoint Error: Stat "${stat}" is not a valid parameter`)
+    }
+  }
+}
