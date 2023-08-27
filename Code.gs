@@ -23,11 +23,48 @@ const SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO = true;
 
 const AUTO_ALLOCATE_STAT_POINTS = true;
 const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, int = Intelligence, per = Perception
+
+// Install settings
+const TRIGGER_EACH_X_HOURS = 1;
 // ------------------------------------------------------------
+/**
+ * Install scheduled triggers
+ */
+function installTrigger() {
+  uninstallTrigger();
+  console.log("Creating triggers...");
+
+  const trigger = ScriptApp.newTrigger(triggerSchedule.name)
+    .timeBased()
+    .everyHours(TRIGGER_EACH_X_HOURS)
+    .create();
+  
+  if (trigger) {
+    console.log("Trigger created for: " + trigger.getHandlerFunction());
+  }
+}
+
+/**
+ * Uninstall scheduled triggers
+ */
+function uninstallTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  if (triggers.length > 0) {
+    console.log("Deleting triggers");
+
+    for (const trigger of triggers) {
+      const functionName = trigger.getHandlerFunction();
+      if (functionName == triggerSchedule.name) {
+        ScriptApp.deleteTrigger(trigger);
+        console.log("Trigger deleted: " + functionName);
+      }
+    }
+  }
+}
 /**
  * Main entry, that should be executed each hour by a tigger
  */
-function hourlySchedule() {
+function triggerSchedule() {
   console.log('Get user');
   const userResponse = UrlFetchApp.fetch(
     userAPI,
