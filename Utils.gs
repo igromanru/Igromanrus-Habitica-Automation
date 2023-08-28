@@ -15,6 +15,8 @@ const userAPI = baseUrl + '/v3/user';
 const groupsAPI = baseUrl + '/v3/groups';
 const membersAPI = baseUrl + '/v3/members';
 
+var CurrentSleepStatus = false;
+
 function test() {
   const dayStartOffset = 1;
   const now = new Date();
@@ -158,7 +160,10 @@ function toggleSleep() {
     console.log('Error message: ' + responseData.message);
   }
 
-  return responseCode == 200 && responseData.data;
+  if (responseCode == 200) {
+    CurrentSleepStatus = responseData.data;
+  }
+  return CurrentSleepStatus;
 }
 
 /**
@@ -242,6 +247,47 @@ function allocateStatPoint(stat) {
       }
     } else {
       console.log(`allocateStatPoint Error: Stat "${stat}" is not a valid parameter`)
+    }
+  }
+}
+
+/**
+ * Allocate multiple Stat Points to a specific Stat
+ * 
+ * Possible parameter values: 
+ *  str = Strength
+ *  con = Constitution
+ *  int = Intelligence
+ *  per = Perception
+ */
+function allocateStatPoints(stat, amount) {
+  if (stat && amount) {
+    if (stat == "str" || stat == "con" || stat == "int" || stat == "per") {
+      const response = UrlFetchApp.fetch(
+        `${userAPI}/allocate-bulk`,
+        {
+          method: 'post',
+          headers,
+          contentType: "application/json",
+          payload: JSON.stringify({
+            stats: {
+              [stat]: amount
+            }
+          })
+        }
+      );
+      const responseCode = response.getResponseCode();
+      console.log(`Allocate ${amount} Stat Points (${stat}) response code: ${responseCode}`);
+
+      if (responseCode == 200) {
+        console.log('Stat Point successfully allocated');
+      } else {
+        const errorData = JSON.parse(response);
+        console.log('Error code: ' + errorData.error);
+        console.log('Error message: ' + errorData.message);
+      }
+    } else {
+      console.log(`allocateStatPoints Error: Stat "${stat}" is not a valid parameter`)
     }
   }
 }

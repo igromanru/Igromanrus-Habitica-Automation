@@ -24,6 +24,10 @@ const SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO = true;
 const AUTO_ALLOCATE_STAT_POINTS = true;
 const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, int = Intelligence, per = Perception
 
+const AUTO_ACCUMULATE_DAMAGE = true;
+const ACCUMULATE_UNTIL_ONE_HIT = true;
+const DAMAGE_TO_ACCUMULATE = 1000;
+
 // Install settings
 const TRIGGER_EACH_X_HOURS = 1;
 // ------------------------------------------------------------
@@ -77,7 +81,10 @@ function triggerSchedule() {
 
   if (userResponse.getResponseCode() == 200) {
     const user = JSON.parse(userResponse).data;
-    // console.log('User: ' + JSON.stringify(user));
+
+    if (user && user.preferences && user.preferences.sleep != undefined) {
+      CurrentSleepStatus = user.preferences.sleep;
+    }
 
     const hoursDifference = getHoursDifferenceToDayStart(user);
     console.log('Hours difference to the next Day Start: ' + hoursDifference)
@@ -107,8 +114,9 @@ function triggerSchedule() {
         }
 
         acceptQuest(quest);
-        checkAndSendQuestProgress(quest, user);
-        autoSleep(quest, user);
+        checkAndSendQuestProgress(user, quest);
+        autoSleep(user, quest);
+        autoAccumulateDamage(user, quest);
         autoCron(user);
       }
     } else {
@@ -138,12 +146,12 @@ function acceptQuest (quest) {
   }
 }
 
-function checkAndSendQuestProgress(quest, user) {
+function checkAndSendQuestProgress(user, quest) {
   if (!AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY) {
     return;
   }
 
-  if (user.preferences.sleep) {
+  if (CurrentSleepStatus) {
     console.log("checkAndSendQuestProgress: You're sleeping in the tavern");
     return;
   }
@@ -185,12 +193,23 @@ function checkAndSendQuestProgress(quest, user) {
   }
 }
 
-function autoSleep(quest, user) {
+function autoAccumulateDamage(user, quest) {
+  if (AUTO_ACCUMULATE_DAMAGE && user && quest) {
+    if (CurrentSleepStatus) {
+      console.log("autoAccumulateDamage: You're sleeping in the tavern");
+      return;
+    }
+
+    // ToDo: Implement the logic
+  }
+}
+
+function autoSleep(user, quest) {
   if (!AUTO_TAVERN_IF_NO_QUEST_AT_CRON) {
     return;
   }
 
-  if (user.preferences.sleep) {
+  if (CurrentSleepStatus) {
     console.log("autoSleep: You're sleeping in the tavern already");
     return;
   }
@@ -202,7 +221,7 @@ function autoSleep(quest, user) {
 
   const hoursDifference = getHoursDifferenceToDayStart(user);
   if ((hoursDifference < 1 || (hoursDifference >= 12 && lastCronDate < today))
-      && (!quest.key || !quest.active) && !user.preferences.sleep
+      && (!quest.key || !quest.active) && !CurrentSleepStatus
       && user.party.quest.progress.up >= 10) {
     console.log('No quest is running, toggling sleep...');
     const sleepState = toggleSleep();
@@ -275,12 +294,11 @@ function autoBuyEnchantedArmoire(user) {
 function autoAllocateStatPoints(user) {
   if (AUTO_ALLOCATE_STAT_POINTS && user) {
     const pointsToAllocate = user.stats.points;
+    const userLvl = user.stats.lvl;
 
-    if (pointsToAllocate > 0) {
+    if (pointsToAllocate > 0 && userLvl >= 10 && !user.preferences.disableClasses) {
       console.log(`autoAllocateStatPoints: Allocating ${pointsToAllocate} stat points into "${ALLOCATE_STAT_POINTS_TO}"`);
-      for (var i = 0; i < pointsToAllocate; i++) {
-        allocateStatPoint(ALLOCATE_STAT_POINTS_TO);
-      } 
+      allocateStatPoints(ALLOCATE_STAT_POINTS_TO, pointsToAllocate);
     }
   }
 }
