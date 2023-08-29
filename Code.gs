@@ -32,44 +32,6 @@ const DAMAGE_TO_ACCUMULATE = 1000;
 const TRIGGER_EACH_X_HOURS = 1;
 // ------------------------------------------------------------
 /**
- * Install scheduled triggers
- * 
- * It's recommended to install the trigger at full hour, 
- * because otherwise it will be triggered around the same minutes you created the trigger, 
- * which can lead to complication with some features
- */
-function installTrigger() {
-  uninstallTrigger();
-  console.log("Creating triggers...");
-
-  const trigger = ScriptApp.newTrigger(triggerSchedule.name)
-    .timeBased()
-    .everyHours(TRIGGER_EACH_X_HOURS)
-    .create();
-  
-  if (trigger) {
-    console.log("Trigger created for: " + trigger.getHandlerFunction());
-  }
-}
-
-/**
- * Uninstall scheduled triggers
- */
-function uninstallTrigger() {
-  const triggers = ScriptApp.getProjectTriggers();
-  if (triggers.length > 0) {
-    console.log("Deleting triggers");
-
-    for (const trigger of triggers) {
-      const functionName = trigger.getHandlerFunction();
-      if (functionName == triggerSchedule.name) {
-        ScriptApp.deleteTrigger(trigger);
-        console.log("Trigger deleted: " + functionName);
-      }
-    }
-  }
-}
-/**
  * Main entry, that should be executed each hour by a tigger
  */
 function triggerSchedule() {
@@ -130,6 +92,45 @@ function triggerSchedule() {
     autoHealSelf(user);
     autoBuyEnchantedArmoire(user);
     autoAllocateStatPoints(user);
+  }
+}
+
+/**
+ * Install scheduled triggers
+ * 
+ * It's recommended to install the trigger at full hour, 
+ * because otherwise it will be triggered around the same minutes you created the trigger, 
+ * which can lead to complication with some features
+ */
+function installTrigger() {
+  uninstallTrigger();
+  console.log("Creating triggers...");
+
+  const trigger = ScriptApp.newTrigger(triggerSchedule.name)
+    .timeBased()
+    .everyHours(TRIGGER_EACH_X_HOURS)
+    .create();
+  
+  if (trigger) {
+    console.log("Trigger created for: " + trigger.getHandlerFunction());
+  }
+}
+
+/**
+ * Uninstall scheduled triggers
+ */
+function uninstallTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  if (triggers.length > 0) {
+    console.log("Deleting triggers");
+
+    for (const trigger of triggers) {
+      const functionName = trigger.getHandlerFunction();
+      if (functionName == triggerSchedule.name) {
+        ScriptApp.deleteTrigger(trigger);
+        console.log("Trigger deleted: " + functionName);
+      }
+    }
   }
 }
 
@@ -206,7 +207,7 @@ function autoAccumulateDamage(user, quest) {
 
     const hoursDifference = getHoursDifferenceToDayStart(user);
     if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
-      && (!quest.key || !quest.active || quest.progress !== undefined || user.party.quest.progress.up < quest.progress.hp)
+      && (!quest.key || !quest.active || quest.progress === undefined || user.party.quest.progress.up < quest.progress.hp)
       && !CurrentSleepStatus) {
       console.log('Toggling sleep to accumulate damage...');
       if (toggleSleep()) {
