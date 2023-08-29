@@ -33,6 +33,10 @@ const TRIGGER_EACH_X_HOURS = 1;
 // ------------------------------------------------------------
 /**
  * Install scheduled triggers
+ * 
+ * It's recommended to install the trigger at full hour, 
+ * because otherwise it will be triggered around the same minutes you created the trigger, 
+ * which can lead to complication with some features
  */
 function installTrigger() {
   uninstallTrigger();
@@ -115,7 +119,7 @@ function triggerSchedule() {
 
         acceptQuest(quest);
         checkAndSendQuestProgress(user, quest);
-        autoSleep(user, quest);
+        // autoSleep(user, quest);
         autoAccumulateDamage(user, quest);
         autoCron(user);
       }
@@ -200,7 +204,24 @@ function autoAccumulateDamage(user, quest) {
       return;
     }
 
-    // ToDo: Implement the logic
+    const hoursDifference = getHoursDifferenceToDayStart(user);
+    if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
+      && (!quest.key || !quest.active || quest.progress !== undefined || user.party.quest.progress.up < quest.progress.hp)
+      && !CurrentSleepStatus) {
+      console.log('Toggling sleep to accumulate damage...');
+      if (toggleSleep()) {
+        console.log('Sleep state: ' + CurrentSleepStatus);
+
+        let message = 'You were sent to sleep to accumulate damage ';
+        if (!quest.key || !quest.active || quest.progress !== undefined) {
+          message += 'because no quest is active.  \n';
+        } else {
+          message += ` \nCurrent damage: ${user.party.quest.progress.up}  \nBosses HP: ${quest.progress.hp}  \n`;
+        }
+        message += '*autoAccumulateDamage script*';
+        sendPM(habId, message);
+      }
+    }
   }
 }
 
@@ -214,13 +235,8 @@ function autoSleep(user, quest) {
     return;
   }
 
-  const lastCronDate = new Date(user.lastCron);
-  lastCronDate.setHours(0, 0, 0, 0);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   const hoursDifference = getHoursDifferenceToDayStart(user);
-  if ((hoursDifference < 1 || (hoursDifference >= 12 && lastCronDate < today))
+  if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
       && (!quest.key || !quest.active) && !CurrentSleepStatus
       && user.party.quest.progress.up >= 10) {
     console.log('No quest is running, toggling sleep...');

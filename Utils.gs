@@ -36,6 +36,33 @@ function test() {
   console.log(hoursDifferenceToDayStart);
 }
 
+function test2() {
+  const floatingNumber = 15.0;
+  const testObj1 = {
+    progress: {
+      hp: 13.37
+    }
+  }
+  const testObj2 = {
+    progress: {
+      items: 5
+    }
+  }
+  if (floatingNumber >= testObj1.progress.hp) {
+    console.log(`${floatingNumber} is bigger equal to ${testObj1.progress.hp}`);
+  }
+  if (floatingNumber >= testObj2.progress.hp) {
+    console.log(`${floatingNumber} is bigger equal to ${testObj2.progress.hp}`);
+  }
+  console.log(typeof testObj2.progress.hp);
+  if (testObj1.progress.items >= testObj2.progress.hp) {
+    console.log(`${testObj1.progress.items} is bigger equal to ${testObj2.progress.hp}`);
+  }
+  if (testObj1.lol != undefined && testObj1.lol.items >= testObj2.lol.hp) {
+    console.log(`${testObj1.progress.items} is bigger equal to ${testObj2.progress.hp}`);
+  }
+}
+
 /**
  * Hours left till the next day starts
  * 
@@ -290,4 +317,20 @@ function allocateStatPoints(stat, amount) {
       console.log(`allocateStatPoints Error: Stat "${stat}" is not a valid parameter`)
     }
   }
+}
+
+/**
+ * Checks if last cron were executed before today
+ */
+function isCronPending(user) {
+  if(user === undefined || typeof user.lastCron === undefined) {
+    return false;
+  }
+
+  const lastCronDate = new Date(user.lastCron);
+  lastCronDate.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return lastCronDate < today;
 }
