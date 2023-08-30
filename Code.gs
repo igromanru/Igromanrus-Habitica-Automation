@@ -5,7 +5,7 @@
 // --------- Configurations -----------------------------------
 const AUTO_ACCEPT_QUESTS = true;
 
-const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = true;
+const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = false;
 const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR x damage
 
@@ -26,10 +26,10 @@ const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, in
 
 const AUTO_ACCUMULATE_DAMAGE = true;
 const ACCUMULATE_UNTIL_ONE_HIT = true;
-const DAMAGE_TO_ACCUMULATE = 1000;
+// const DAMAGE_TO_ACCUMULATE = 1000; // Not implemented
 
 // Install settings
-const TRIGGER_EACH_X_HOURS = 1;
+const TRIGGER_EACH_X_MINUTES = 30;
 // ------------------------------------------------------------
 /**
  * Main entry, that should be executed each hour by a tigger
@@ -97,10 +97,6 @@ function triggerSchedule() {
 
 /**
  * Install scheduled triggers
- * 
- * It's recommended to install the trigger at full hour, 
- * because otherwise it will be triggered around the same minutes you created the trigger, 
- * which can lead to complication with some features
  */
 function installTrigger() {
   uninstallTrigger();
@@ -108,7 +104,7 @@ function installTrigger() {
 
   const trigger = ScriptApp.newTrigger(triggerSchedule.name)
     .timeBased()
-    .everyHours(TRIGGER_EACH_X_HOURS)
+    .everyMinutes(TRIGGER_EACH_X_MINUTES)
     .create();
   
   if (trigger) {
@@ -135,7 +131,7 @@ function uninstallTrigger() {
 }
 
 function acceptQuest (quest) {
-  if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[habId]) {
+  if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[userId]) {
     console.log('Run quests accept');
 
     const response = UrlFetchApp.fetch(
@@ -161,7 +157,7 @@ function checkAndSendQuestProgress(user, quest) {
     return;
   }
 
-  if (quest.key && quest.active && quest.members[habId]) {
+  if (quest.key && quest.active && quest.members[userId]) {
     const partyId = user.party._id;
 
     const bossHp = quest.progress.hp;
@@ -220,7 +216,7 @@ function autoAccumulateDamage(user, quest) {
           message += ` \nCurrent damage: ${user.party.quest.progress.up}  \nBosses HP: ${quest.progress.hp}  \n`;
         }
         message += '*autoAccumulateDamage script*';
-        sendPM(habId, message);
+        sendPMToSelf(message);
       }
     }
   }
@@ -244,7 +240,7 @@ function autoSleep(user, quest) {
     const sleepState = toggleSleep();
     if (sleepState) {
       console.log('Sleep state: ' + sleepState);
-      sendPM(habId, 'No quest is active, you were sent to sleep  \n*autoSleep script*');
+      sendPMToSelf('No quest is active, you were sent to sleep  \n*autoSleep script*');
     }
   }
 }
@@ -302,7 +298,7 @@ function autoBuyEnchantedArmoire(user) {
       if (SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO) {
         pmMessage += `**Successfully bought: ${boughtCount} out of ${toBuyCount}**`;
         // console.log('Sending PM: ' + pmMessage);
-        sendPM(habId, pmMessage)
+        sendPMToSelf(pmMessage)
       }
     }
   }

@@ -3,11 +3,11 @@
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
 const scriptProperties = PropertiesService.getScriptProperties();
-const habId = scriptProperties.getProperty('API_ID');
-const habToken = scriptProperties.getProperty('API_KEY');
+const userId = scriptProperties.getProperty('API_ID');
+const apiToken = scriptProperties.getProperty('API_KEY');
 const headers = {
-  'x-api-user': habId,
-  'x-api-key': habToken,
+  'x-api-user': userId,
+  'x-api-key': apiToken,
 };
 const baseUrl = 'https://habitica.com/api';
 const partyAPI = baseUrl + '/v3/groups/party';
@@ -34,33 +34,6 @@ function test() {
   const hoursDifferenceToDayStart = Math.round(timeDifference / (1000 * 60 * 60) * 10) / 10;
 
   console.log(hoursDifferenceToDayStart);
-}
-
-function test2() {
-  const floatingNumber = 15.0;
-  const testObj1 = {
-    progress: {
-      hp: 13.37
-    }
-  }
-  const testObj2 = {
-    progress: {
-      items: 5
-    }
-  }
-  if (floatingNumber >= testObj1.progress.hp) {
-    console.log(`${floatingNumber} is bigger equal to ${testObj1.progress.hp}`);
-  }
-  if (floatingNumber >= testObj2.progress.hp) {
-    console.log(`${floatingNumber} is bigger equal to ${testObj2.progress.hp}`);
-  }
-  console.log(typeof testObj2.progress.hp);
-  if (testObj1.progress.items >= testObj2.progress.hp) {
-    console.log(`${testObj1.progress.items} is bigger equal to ${testObj2.progress.hp}`);
-  }
-  if (testObj1.lol != undefined && testObj1.lol.items >= testObj2.lol.hp) {
-    console.log(`${testObj1.progress.items} is bigger equal to ${testObj2.progress.hp}`);
-  }
 }
 
 /**
@@ -110,6 +83,10 @@ function sendPM(targetUserId, textMessage) {
     );
     console.log('Send PM response code: ' + response.getResponseCode());
   }
+}
+
+function sendPMToSelf(textMessage) {
+  sendPM(userId, textMessage);
 }
 
 function sendMessageToGroup(partyId, messageText) {
@@ -188,7 +165,7 @@ function toggleSleep() {
   }
 
   if (responseCode == 200) {
-    CurrentSleepStatus = responseData.data;
+    CurrentSleepStatus = responseData;
   }
   return CurrentSleepStatus;
 }
