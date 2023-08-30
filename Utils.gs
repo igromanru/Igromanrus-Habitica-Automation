@@ -185,7 +185,7 @@ function buyEnchantedArmoire() {
   const responseCode = response.getResponseCode();
   console.log('Buy Enchanted Armoire response code: ' + responseCode);
 
-  if (responseCode == 200) {
+   if (responseCode == 200) {
     const responseJson = JSON.parse(response);
     console.log(`Armoire json: ` + JSON.stringify(responseJson.data.armoire));
     console.log('Message:' + responseJson.message);

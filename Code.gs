@@ -17,7 +17,7 @@ const CRON_X_HOURS_AFTER_DAYSTART = 1;
 const AUTO_HEALTH_POSTION = true;
 const AUTO_HEALTH_POSTION_IF_HP_UNDER = 20;
 
-const AUTO_BUY_ENCHANTED_ARMOIRE = false;
+const AUTO_BUY_ENCHANTED_ARMOIRE = true;
 const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 1100;
 const SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO = true;
 
@@ -197,7 +197,7 @@ function checkAndSendQuestProgress(user, quest) {
 function autoAccumulateDamage(user, quest) {
   if (AUTO_ACCUMULATE_DAMAGE && user && quest) {
     if (CurrentSleepStatus) {
-      console.log("autoAccumulateDamage: You're sleeping in the tavern");
+      console.log("autoAccumulateDamage: Skipping. You're already sleeping in the tavern");
       return;
     }
 
@@ -210,7 +210,7 @@ function autoAccumulateDamage(user, quest) {
         console.log('Sleep state: ' + CurrentSleepStatus);
 
         let message = 'You were sent to sleep to accumulate damage ';
-        if (!quest.key || !quest.active || quest.progress !== undefined) {
+        if (!quest.key || !quest.active || quest.progress === undefined) {
           message += 'because no quest is active.  \n';
         } else {
           message += ` \nCurrent damage: ${user.party.quest.progress.up}  \nBosses HP: ${quest.progress.hp}  \n`;
@@ -228,7 +228,7 @@ function autoSleep(user, quest) {
   }
 
   if (CurrentSleepStatus) {
-    console.log("autoSleep: You're sleeping in the tavern already");
+    console.log("autoSleep: Skipping. You're already sleeping in the tavern");
     return;
   }
 
@@ -297,7 +297,6 @@ function autoBuyEnchantedArmoire(user) {
       }
       if (SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO) {
         pmMessage += `**Successfully bought: ${boughtCount} out of ${toBuyCount}**`;
-        // console.log('Sending PM: ' + pmMessage);
         sendPMToSelf(pmMessage)
       }
     }
