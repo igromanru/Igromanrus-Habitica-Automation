@@ -10,7 +10,7 @@ const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR x damage
 
 const AUTO_SEND_PARTY_QUEST_PROGRESS = true;
-const IGNORE_MEMBERS_WITHOUT_PROGRESS = false;
+const IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
 
 const AUTO_TAVERN_IF_NO_QUEST_AT_CRON = true;
 
@@ -207,7 +207,7 @@ function checkAndSendPartyQuestProgress(party, quest) {
           if (memberJson && memberJson.success) {
             const member = memberJson.data;
             if (member && member.party._id && member.party.quest.key) {
-              if (member.party.quest.progress > 0) {
+              if (member.party.quest.progress.up > 0) {
                 membersWithProgress.push(member);
               } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
                 membersWithoutProgress.push(member);
@@ -222,11 +222,12 @@ function checkAndSendPartyQuestProgress(party, quest) {
       message += `User | ${progressType} | Status  \n`;
       message += `---------- | ---------- | ----------  \n`;
       let addMemberInfoToMessage = (memberObj) => {
-        let sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
-        message += `${memberObj.profile.name} | ${memberObj.party.quest.progress} | ${sleeping}  \n`;
+        const pendingDamage = Math.round(memberObj.party.quest.progress.up * 10) / 10;
+        const sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
+        message += `${memberObj.profile.name} | ${pendingDamage} | ${sleeping}  \n`;
       };
 
-      membersWithProgress.sort((a, b) => parseFloat(b.party.quest.progress) - parseFloat(a.party.quest.progress));
+      membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
       for (const memberEntry of membersWithProgress) {
         addMemberInfoToMessage(memberEntry);
       }
