@@ -10,6 +10,7 @@ const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR x damage
 
 const AUTO_SEND_PARTY_QUEST_PROGRESS = true;
+const IGNORE_MEMBERS_WITHOUT_PROGRESS = false;
 
 const AUTO_TAVERN_IF_NO_QUEST_AT_CRON = true;
 
@@ -71,7 +72,7 @@ function triggerSchedule() {
           autoAccumulateDamage(user, quest);
           autoCron(user);
           checkAndSendMyQuestProgress(user, quest);
-          checkAndSendPartyQuestProgress(PartyId, quest);
+          checkAndSendPartyQuestProgress(party, quest);
         }
       }
     } else {
@@ -183,11 +184,45 @@ function checkAndSendMyQuestProgress(user, quest) {
   }
 }
 
-function checkAndSendPartyQuestProgress(partyId, quest) {
-  if (AUTO_SEND_PARTY_QUEST_PROGRESS && partyId && quest && quest.key && quest.active && quest.progress) {
+function checkAndSendPartyQuestProgress(party, quest) {
+  if (AUTO_SEND_PARTY_QUEST_PROGRESS && party && quest && quest.key && quest.active && quest.progress) {
     let bossQuest = quest.progress.hp > 0
-      
+    
+    const membersWithProgress = new Array();
+    const membersWithoutProgress = new Array();
 
+    for (const [memberId, participating] of Object.entries(quest.members)) {
+      if (participating === true) {
+        const memberJson = getMemberById(memberId);
+        if (memberJson && memberJson.success) {
+          const member = memberJson.data;
+          if (member && member.party._id && member.party.quest.key) {
+            if (member.party.quest.progress > 0) {
+              membersWithProgress.push(member);
+            } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+              membersWithoutProgress.push(member);
+            }
+          }
+        }
+      }
+    }
+    let message = `**Party name: ${party.name}**  \n\n`;
+    message += `Username | Progress | Status  \n`;
+    message += `-------- | -------- | ------  \n`;
+    let addMemberInfoToMessage = (memberObj) => {
+      let sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
+      message += `${memberObj.profile.name} | ${memberObj.party.quest.progress} | ${sleeping}  \n`;
+    };
+
+    membersWithProgress.sort((a, b) => parseFloat(b.party.quest.progress) - parseFloat(a.party.quest.progress));
+    for (const memberEntry of membersWithProgress) {
+      addMemberInfoToMessage(memberEntry);
+    }
+    for (const memberEntry of membersWithoutProgress) {
+      addMemberInfoToMessage(memberEntry);
+    }
+
+    sendMessageToGroup(party.id, message);
   }
 }
 

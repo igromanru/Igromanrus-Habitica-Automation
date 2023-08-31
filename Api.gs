@@ -86,11 +86,11 @@ function getMemberById(id) {
 /**
  * Send a private message to a user
  */
-function sendPM(targetUserId, textMessage) {
-  if (targetUserId && textMessage) {
-    console.log('sendPM: targetUserId: ' + targetUserId + '  \ntextMessage: ' + textMessage);
+function sendPM(targetUserId, messageText) {
+  if (targetUserId && messageText) {
+    console.log('sendPM: targetUserId: ' + targetUserId + '  \nmessageText: ' + messageText);
     const requestBody = {
-      message: textMessage,
+      message: messageText,
       toUserId: targetUserId
     };
     const response = UrlFetchApp.fetch(
@@ -102,38 +102,54 @@ function sendPM(targetUserId, textMessage) {
         payload : JSON.stringify(requestBody)
       }
     );
-    console.log('Send PM response code: ' + response.getResponseCode());
-  }
-}
 
-function sendPMToSelf(textMessage) {
-  sendPM(userId, textMessage);
-}
+    const responseCode = response.getResponseCode();
+    console.log('Send PM response code: ' + responseCode);
 
-function sendMessageToGroup(partyId, messageText) {
-  const messageData = {
-    message: messageText
-  };
-  const response = UrlFetchApp.fetch(
-    `${groupsAPI}/${partyId}/chat`,
-    {
-      method: 'post',
-      headers,
-      contentType : 'application/json',
-      payload : JSON.stringify(messageData)
+    if (responseCode != 200) {
+      const errorData = JSON.parse(response).data;
+      console.log('Error code: ' + errorData.error);
+      console.log('Error message: ' + errorData.message);
     }
-  );
 
-  const responseCode = response.getResponseCode();
-  console.log('Group Chat send response code: ' + responseCode);
+    return responseCode == 200;
+  }
+  return false;
+}
 
-  if (responseCode != 200) {
-    const errorData = JSON.parse(response).data;
-    console.log('Error code: ' + errorData.error);
-    console.log('Error message: ' + errorData.message);
+function sendPMToSelf(messageText) {
+  return sendPM(userId, messageText);
+}
+
+function sendMessageToGroup(targetGroupId, messageText) {
+  if (targetGroupId && messageText) {
+    console.log('sendMessageToGroup: targetGroupId: ' + targetGroupId + '  \nmessageText: ' + messageText);
+    const messageData = {
+      message: messageText
+    };
+    const response = UrlFetchApp.fetch(
+      `${groupsAPI}/${targetGroupId}/chat`,
+      {
+        method: 'post',
+        headers,
+        contentType : 'application/json',
+        payload : JSON.stringify(messageData)
+      }
+    );
+
+    const responseCode = response.getResponseCode();
+    console.log('Group Chat send response code: ' + responseCode);
+
+    if (responseCode != 200) {
+      const errorData = JSON.parse(response).data;
+      console.log('Error code: ' + errorData.error);
+      console.log('Error message: ' + errorData.message);
+    }
+
+    return responseCode == 200;
   }
 
-  return responseCode == 200;
+  return false;
 }
 
 /**
