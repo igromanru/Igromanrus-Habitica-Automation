@@ -216,9 +216,11 @@ function checkAndSendPartyQuestProgress(party, quest) {
           }
         }
       }
+
+      const progressType = bossQuest ? 'Damage' : 'Items';
       let message = `**Party name: ${party.name}**  \n\n`;
-      message += `Username | Progress | Status  \n`;
-      message += `-------- | -------- | ------  \n`;
+      message += `User | ${progressType} | Status  \n`;
+      message += `---------- | ---------- | ----------  \n`;
       let addMemberInfoToMessage = (memberObj) => {
         let sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
         message += `${memberObj.profile.name} | ${memberObj.party.quest.progress} | ${sleeping}  \n`;
@@ -235,7 +237,7 @@ function checkAndSendPartyQuestProgress(party, quest) {
       sendMessageToGroup(party.id, message);
     }
 
-    resolve('');
+    resolve(checkAndSendPartyQuestProgress.name);
   });
 }
 
