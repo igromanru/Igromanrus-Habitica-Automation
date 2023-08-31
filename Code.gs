@@ -9,6 +9,8 @@ const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = false;
 const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR x damage
 
+const AUTO_SEND_PARTY_QUEST_PROGRESS = true;
+
 const AUTO_TAVERN_IF_NO_QUEST_AT_CRON = true;
 
 const AUTO_CRON = true;
@@ -35,20 +37,11 @@ const TRIGGER_EACH_X_MINUTES = 30;
  * Main entry, that should be executed each hour by a tigger
  */
 function triggerSchedule() {
-  console.log('Get user');
-  const userResponse = UrlFetchApp.fetch(
-    userAPI,
-    {
-      method: 'get',
-      headers
-    }
-  );
-  console.log('User response code: ' + userResponse.getResponseCode());
+  const userJson = getUser();
+  if (userJson && userJson.success) {
+    const user = userJson.data;
 
-  if (userResponse.getResponseCode() == 200) {
-    const user = JSON.parse(userResponse).data;
-
-    if (user && user.preferences && user.preferences.sleep != undefined) {
+    if (user && user.preferences && user.preferences.sleep !== undefined) {
       CurrentSleepStatus = user.preferences.sleep;
     }
 
@@ -56,34 +49,30 @@ function triggerSchedule() {
     console.log('Hours difference to the next Day Start: ' + hoursDifference)
 
     if (user.party._id) {
-      console.log('Get party');
-      const partyResponse = UrlFetchApp.fetch(
-        partyAPI,
-        {
-          method: 'get',
-          headers
-        }
-      );
-      console.log('Party response code: ' + partyResponse.getResponseCode());
+      const partyJson = getParty();
+      if (partyJson && partyJson.success) {
+        const party = partyJson.data;
+        if (party) {
+          PartyId = party.id;
+          let quest = party.quest;
+          console.log('Party Id: ' + PartyId);
 
-      if (partyResponse.getResponseCode() == 200) {
-        const { data: { quest } } = JSON.parse(partyResponse);
-        // console.log('Quest: ' + JSON.stringify(quest));
-
-        if (quest.key) {
-          console.log('Quest key: ' + quest.key);
-          if (quest.active) {
-            console.log('The quest is active');
+          if (quest.key) {
+            console.log('Quest key: ' + quest.key);
+            if (quest.active) {
+              console.log('The quest is active');
+            }
+          } else {
+            console.log('No active quest');
           }
-        } else {
-          console.log('No active quest');
-        }
 
-        acceptQuest(quest);
-        checkAndSendQuestProgress(user, quest);
-        // autoSleep(user, quest);
-        autoAccumulateDamage(user, quest);
-        autoCron(user);
+          acceptQuest(quest);
+          // autoSleep(user, quest);
+          autoAccumulateDamage(user, quest);
+          autoCron(user);
+          checkAndSendMyQuestProgress(user, quest);
+          checkAndSendPartyQuestProgress(PartyId, quest);
+        }
       }
     } else {
       console.log('User is not in a party. Ignoring party request and party related functions.');
@@ -147,13 +136,13 @@ function acceptQuest (quest) {
   }
 }
 
-function checkAndSendQuestProgress(user, quest) {
+function checkAndSendMyQuestProgress(user, quest) {
   if (!AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY) {
     return;
   }
 
   if (CurrentSleepStatus) {
-    console.log("checkAndSendQuestProgress: You're sleeping in the tavern");
+    console.log("checkAndSendMyQuestProgress: You're sleeping in the tavern");
     return;
   }
 
@@ -191,6 +180,14 @@ function checkAndSendQuestProgress(user, quest) {
         sendMessageToGroup(partyId, progressMessage);
       }
     }
+  }
+}
+
+function checkAndSendPartyQuestProgress(partyId, quest) {
+  if (AUTO_SEND_PARTY_QUEST_PROGRESS && partyId && quest && quest.key && quest.active && quest.progress) {
+    let bossQuest = quest.progress.hp > 0
+      
+
   }
 }
 
