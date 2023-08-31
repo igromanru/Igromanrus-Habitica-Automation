@@ -62,3 +62,25 @@ function isCronPending(user) {
 
   return lastCronDate < today;
 }
+
+function setObjectAsScriptProperty(propertyKey, pojo) {
+  if (typeof propertyKey == 'string' && propertyKey && typeof pojo == 'object' && pojo) {
+    ScriptProperties.setProperty(propertyKey, JSON.stringify(pojo));
+  }
+}
+
+function getObjectFromScriptProperty(propertyKey) {
+  if (typeof propertyKey == 'string' && propertyKey) {
+    const json = ScriptProperties.getProperty(propertyKey);
+    return JSON.parse(json);
+  }
+}
+
+function popObjectFromScriptProperty(propertyKey) {
+  const pojo = getObjectFromScriptProperty(propertyKey);
+  if (pojo !== undefined && pojo) {
+    ScriptProperties.deleteProperty(propertyKey);
+    return pojo;
+  }
+  return undefined;
+}

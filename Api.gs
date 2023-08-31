@@ -2,9 +2,9 @@
  * Author: Igromanru
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
-const scriptProperties = PropertiesService.getScriptProperties();
-const userId = scriptProperties.getProperty('API_ID');
-const apiToken = scriptProperties.getProperty('API_KEY');
+const ScriptProperties = PropertiesService.getScriptProperties();
+const userId = ScriptProperties.getProperty('API_ID');
+const apiToken = ScriptProperties.getProperty('API_KEY');
 const headers = {
   'x-api-user': userId,
   'x-api-key': apiToken,
