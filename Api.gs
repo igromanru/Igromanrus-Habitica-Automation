@@ -15,7 +15,6 @@ const userAPI = baseUrl + '/v3/user';
 const groupsAPI = baseUrl + '/v3/groups';
 const membersAPI = baseUrl + '/v3/members';
 
-var PartyId = '';
 var CurrentSleepStatus = false;
 
 function getUser() {

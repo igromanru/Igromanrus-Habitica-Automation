@@ -38,6 +38,8 @@ const TRIGGER_EACH_X_MINUTES = 30;
  * Main entry, that should be executed each hour by a tigger
  */
 function triggerSchedule() {
+  let promises = [];
+
   const userJson = getUser();
   if (userJson && userJson.success) {
     const user = userJson.data;
@@ -54,9 +56,8 @@ function triggerSchedule() {
       if (partyJson && partyJson.success) {
         const party = partyJson.data;
         if (party) {
-          PartyId = party.id;
           let quest = party.quest;
-          console.log('Party Id: ' + PartyId);
+          console.log('Party Id: ' + party.id);
 
           if (quest.key) {
             console.log('Quest key: ' + quest.key);
@@ -72,7 +73,7 @@ function triggerSchedule() {
           autoAccumulateDamage(user, quest);
           autoCron(user);
           checkAndSendMyQuestProgress(user, quest);
-          checkAndSendPartyQuestProgress(party, quest);
+          promises.push(checkAndSendPartyQuestProgress(party, quest));
         }
       }
     } else {
@@ -82,6 +83,14 @@ function triggerSchedule() {
     autoHealSelf(user);
     autoBuyEnchantedArmoire(user);
     autoAllocateStatPoints(user);
+
+    Promise.allSettled(promises).then((results) => {
+      for (result of results) {
+        if (result.status === 'rejected') {
+          console.log(result);
+        }
+      }
+    });
   }
 }
 
@@ -185,45 +194,49 @@ function checkAndSendMyQuestProgress(user, quest) {
 }
 
 function checkAndSendPartyQuestProgress(party, quest) {
-  if (AUTO_SEND_PARTY_QUEST_PROGRESS && party && quest && quest.key && quest.active && quest.progress) {
-    let bossQuest = quest.progress.hp > 0
-    
-    const membersWithProgress = new Array();
-    const membersWithoutProgress = new Array();
+  return new Promise((resolve) => {
+    if (AUTO_SEND_PARTY_QUEST_PROGRESS && party && quest && quest.key && quest.active && quest.progress) {
+      let bossQuest = quest.progress.hp > 0
+      
+      const membersWithProgress = new Array();
+      const membersWithoutProgress = new Array();
 
-    for (const [memberId, participating] of Object.entries(quest.members)) {
-      if (participating === true) {
-        const memberJson = getMemberById(memberId);
-        if (memberJson && memberJson.success) {
-          const member = memberJson.data;
-          if (member && member.party._id && member.party.quest.key) {
-            if (member.party.quest.progress > 0) {
-              membersWithProgress.push(member);
-            } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-              membersWithoutProgress.push(member);
+      for (const [memberId, participating] of Object.entries(quest.members)) {
+        if (participating === true) {
+          const memberJson = getMemberById(memberId);
+          if (memberJson && memberJson.success) {
+            const member = memberJson.data;
+            if (member && member.party._id && member.party.quest.key) {
+              if (member.party.quest.progress > 0) {
+                membersWithProgress.push(member);
+              } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+                membersWithoutProgress.push(member);
+              }
             }
           }
         }
       }
-    }
-    let message = `**Party name: ${party.name}**  \n\n`;
-    message += `Username | Progress | Status  \n`;
-    message += `-------- | -------- | ------  \n`;
-    let addMemberInfoToMessage = (memberObj) => {
-      let sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
-      message += `${memberObj.profile.name} | ${memberObj.party.quest.progress} | ${sleeping}  \n`;
-    };
+      let message = `**Party name: ${party.name}**  \n\n`;
+      message += `Username | Progress | Status  \n`;
+      message += `-------- | -------- | ------  \n`;
+      let addMemberInfoToMessage = (memberObj) => {
+        let sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
+        message += `${memberObj.profile.name} | ${memberObj.party.quest.progress} | ${sleeping}  \n`;
+      };
 
-    membersWithProgress.sort((a, b) => parseFloat(b.party.quest.progress) - parseFloat(a.party.quest.progress));
-    for (const memberEntry of membersWithProgress) {
-      addMemberInfoToMessage(memberEntry);
-    }
-    for (const memberEntry of membersWithoutProgress) {
-      addMemberInfoToMessage(memberEntry);
+      membersWithProgress.sort((a, b) => parseFloat(b.party.quest.progress) - parseFloat(a.party.quest.progress));
+      for (const memberEntry of membersWithProgress) {
+        addMemberInfoToMessage(memberEntry);
+      }
+      for (const memberEntry of membersWithoutProgress) {
+        addMemberInfoToMessage(memberEntry);
+      }
+
+      sendMessageToGroup(party.id, message);
     }
 
-    sendMessageToGroup(party.id, message);
-  }
+    resolve('');
+  });
 }
 
 function autoAccumulateDamage(user, quest) {
