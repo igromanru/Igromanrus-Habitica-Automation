@@ -116,48 +116,65 @@ function scheduleCheckAndSendPartyQuestProgress() {
 function checkAndSendPartyQuestProgress() {
   const party = getParty();
   if (party) {
-    if (party.quest && party.quest.key && party.quest.active && party.quest.progress) {
+    if (party.quest && party.quest.key) {
       const quest = party.quest;
-      const bossQuest = quest.progress.hp > 0
+      const bossQuest = quest.progress.hp > 0;
   
-      const membersWithProgress = new Array();
-      const membersWithoutProgress = new Array();
+      const progressType = bossQuest ? 'Damage' : 'Items';
+      let message = `**Party:** ${party.name}  \n`;
+      message += `**Leader:** ${party.leader.profile.name}  \n`;
+      message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n\n`;
 
-      const participatingMembers = Object.entries(quest.members);
-      for (const [memberId, isParticipating] of participatingMembers) {
-        if (isParticipating === true) {
-          const member = getMemberById(memberId);
-          if (member && member.party._id && member.party.quest.key) {
-            if (member.party.quest.progress.up > 0) {
-              membersWithProgress.push(member);
-            } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-              membersWithoutProgress.push(member);
+      const partyMembers = Object.entries(quest.members);
+      if (quest.active) {
+        const membersWithProgress = new Array();
+        const membersWithoutProgress = new Array();
+        for (const [memberId, isParticipating] of partyMembers) {
+          if (isParticipating === true) {
+            const member = getMemberById(memberId);
+            if (member && member.party._id && member.party.quest.key) {
+              if (member.party.quest.progress.up > 0 || member.party.quest.progress.collectedItems > 0) {
+                membersWithProgress.push(member);
+              } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+                membersWithoutProgress.push(member);
+              }
             }
           }
         }
-      }
-
-      const progressType = bossQuest ? 'Damage' : 'Items';
-      let message = `**Party:** ${party.name}  \n`;
-      message += `**Leader:** ${party.leader.profile.name}  \n\n`;
-
-      message += `User | ${progressType} | Status  \n`;
-      message += `---------- | ---------- | ----------  \n`;
-      let addMemberInfoToMessage = (memberObj) => {
-        const pendingDamage = Math.round(memberObj.party.quest.progress.up * 10) / 10;
-        const sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
-        message += `${memberObj.profile.name} | ${pendingDamage} | ${sleeping}  \n`;
-      };
-
-      membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
-      for (const memberEntry of membersWithProgress) {
-        addMemberInfoToMessage(memberEntry);
-      }
-      if (IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-        message += `*The list doesn't contain users who have no quest progress*  \n`;
-      } else {
-        for (const memberEntry of membersWithoutProgress) {
+        message += `User | ${progressType} | Status  \n`;
+        message += `---------- | ---------- | ----------  \n`;
+        const addMemberInfoToMessage = (memberObj) => {
+          const pendingDamage = Math.round(memberObj.party.quest.progress.up * 10) / 10;
+          const progress = bossQuest ? pendingDamage : memberObj.party.quest.progress.collectedItems;
+          const sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
+          message += `${memberObj.profile.name} | ${progress} | ${sleeping}  \n`;
+        };
+        if (bossQuest) {
+          membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
+        } else {
+          membersWithProgress.sort((a, b) => b.party.quest.progress.collectedItems - a.party.quest.progress.collectedItems);
+        }
+        for (const memberEntry of membersWithProgress) {
           addMemberInfoToMessage(memberEntry);
+        }
+        if (IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+          message += `*The list doesn't contain users who have no quest progress*  \n`;
+        } else {
+          for (const memberEntry of membersWithoutProgress) {
+            addMemberInfoToMessage(memberEntry);
+          }
+        }
+      } else {
+        message += `Waiting for members to participate:  \n`;
+        message += `User | Status  \n`;
+        message += `---------- | ----------  \n`;
+        for (const [memberId, isParticipating] of partyMembers) {
+          if (!isParticipating) {
+            const member = getMemberById(memberId);
+            if (member && member.party._id) {
+              message += `${member.profile.name} | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
+            }
+          }
         }
       }
 

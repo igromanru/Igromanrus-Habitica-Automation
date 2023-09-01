@@ -13,8 +13,7 @@ function test() {
   const now = new Date();
   // now.setHours(dayStartOffset, 0, 0, 0);
 
-  var hours = now.getHours();
-
+  const hours = now.getHours();
   const nextDayStart = new Date();
   if (hours >= dayStartOffset) {
     nextDayStart.setHours(24 + dayStartOffset, 0, 0, 0);

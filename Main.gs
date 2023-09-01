@@ -35,8 +35,8 @@ const COMMAND_SEND_PARTY_QUEST_PROGRESS = true;
 const IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
 
 // Install settings
-const TRIGGER_EACH_X_MINUTES = 30;
-const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5;
+const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
+const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5; // Must be 1, 5, 10, 15 or 30
 // ------------------------------------------------------------
 /**
  * Main entry, that should be executed each hour by a tigger
@@ -130,7 +130,7 @@ function acceptQuest (quest) {
       `${partyAPI}/quests/accept`,
       {
         method: 'post',
-        headers
+        HEADERS
       }
     );
 
@@ -194,8 +194,10 @@ function autoAccumulateDamage(user, quest) {
     }
 
     const hoursDifference = getHoursDifferenceToDayStart(user);
+    const bossQuest = quest.progress.hp > 0;
+    // ToDo add logic for items collecting
     if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
-      && (!quest.key || !quest.active || quest.progress === undefined || user.party.quest.progress.up < quest.progress.hp)
+      && (!quest.key || !quest.active || quest.progress === undefined || !bossQuest || user.party.quest.progress.up < quest.progress.hp)
       && !CurrentSleepStatus) {
       console.log('Toggling sleep to accumulate damage...');
       if (toggleSleep()) {

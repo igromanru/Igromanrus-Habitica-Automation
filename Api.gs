@@ -3,7 +3,8 @@
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
 
-const headers = {
+const HEADERS = {
+  "x-client" : "06b046d4-160a-4a20-b527-b74385052f0e-Igromanrus_Habitica_Automation",
   'x-api-user': UserId,
   'x-api-key': ApiToken,
 };
@@ -25,7 +26,7 @@ function getUser() {
     userAPI,
     {
       method: 'get',
-      headers
+      HEADERS
     }
   );
 
@@ -52,7 +53,7 @@ function getParty() {
     partyAPI,
     {
       method: 'get',
-      headers
+      HEADERS
     }
   );
 
@@ -82,7 +83,7 @@ function getMemberById(memberId) {
       `${membersAPI}/${memberId}`,
       {
         method: 'get',
-        headers
+        HEADERS
       }
     );
 
@@ -113,7 +114,7 @@ function getGroupChat(groupId) {
       `${groupsAPI}/${groupId}/chat`,
       {
         method: 'get',
-        headers
+        HEADERS
       }
     );
 
@@ -149,7 +150,7 @@ function sendPM(targetUserId, messageText) {
       `${membersAPI}/send-private-message`,
       {
         method: 'post',
-        headers,
+        HEADERS,
         contentType : 'application/json',
         payload : JSON.stringify(requestBody)
       }
@@ -191,7 +192,7 @@ function sendMessageToGroup(targetGroupId, messageText) {
       `${groupsAPI}/${targetGroupId}/chat`,
       {
         method: 'post',
-        headers,
+        HEADERS,
         contentType : 'application/json',
         payload : JSON.stringify(messageData)
       }
@@ -223,7 +224,7 @@ function buyHealthPotion() {
     `${userAPI}/buy-health-potion`,
     {
       method: 'post',
-      headers
+      HEADERS
     }
   );
 
@@ -250,7 +251,7 @@ function toggleSleep() {
     `${userAPI}/sleep`,
     {
       method: 'post',
-      headers
+      HEADERS
     }
   );
 
@@ -279,7 +280,7 @@ function buyEnchantedArmoire() {
     `${userAPI}/buy-armoire`,
     {
       method: 'post',
-      headers
+      HEADERS
     }
   );
 
@@ -316,7 +317,7 @@ function buyGemPurchasableItem(type, key, count = 1) {
       `${userAPI}/purchase/${type}/${key}`,
       {
         method: 'post',
-        headers,
+        HEADERS,
         contentType: 'application/json',
         payload: JSON.stringify(requestBody)
       }
@@ -356,7 +357,7 @@ function runCron() {
     `${api}`,
     {
       method: 'post',
-      headers
+      HEADERS
     }
   );
 
@@ -380,7 +381,7 @@ function allocateStatPoint(stat) {
         `${userAPI}/allocate?stat=${stat}`,
         {
           method: 'post',
-          headers
+          HEADERS
         }
       );
       const responseCode = response.getResponseCode();
@@ -415,7 +416,7 @@ function allocateStatPoints(stat, amount) {
         `${userAPI}/allocate-bulk`,
         {
           method: 'post',
-          headers,
+          HEADERS,
           contentType: "application/json",
           payload: JSON.stringify({
             stats: {
