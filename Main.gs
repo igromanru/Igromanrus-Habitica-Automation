@@ -2,15 +2,13 @@
  * Author: Igromanru
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
+
 // --------- Configurations -----------------------------------
 const AUTO_ACCEPT_QUESTS = true;
 
 const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = false;
 const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR x damage
-
-const AUTO_SEND_PARTY_QUEST_PROGRESS = false;
-const IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
 
 const AUTO_TAVERN_IF_NO_QUEST_AT_CRON = true;
 
@@ -31,8 +29,14 @@ const AUTO_ACCUMULATE_DAMAGE = true;
 const ACCUMULATE_UNTIL_ONE_HIT = true;
 // const DAMAGE_TO_ACCUMULATE = 1000; // Not implemented
 
+// Commands settings
+const ENABLE_COMMANDS = true;
+const COMMAND_SEND_PARTY_QUEST_PROGRESS = true;
+const IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
+
 // Install settings
 const TRIGGER_EACH_X_MINUTES = 30;
+const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5;
 // ------------------------------------------------------------
 /**
  * Main entry, that should be executed each hour by a tigger
@@ -48,6 +52,8 @@ function triggerSchedule() {
     console.log('Hours difference to the next Day Start: ' + hoursDifference)
 
     if (user.party._id) {
+      setPartyIdProperty(user.party._id);
+      
       const party = getParty();
       if (party) {
         let quest = party.quest;
@@ -76,8 +82,6 @@ function triggerSchedule() {
     autoHealSelf(user);
     autoBuyEnchantedArmoire(user);
     autoAllocateStatPoints(user);
-
-    scheduleCheckAndSendPartyQuestProgress();
 
     setLastExecutionDateTime();
   }
@@ -119,7 +123,7 @@ function uninstallTrigger() {
 }
 
 function acceptQuest (quest) {
-  if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[userId]) {
+  if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[UserId]) {
     console.log('Run quests accept');
 
     const response = UrlFetchApp.fetch(
@@ -145,7 +149,7 @@ function checkAndSendMyQuestProgress(user, quest) {
     return;
   }
 
-  if (quest.key && quest.active && quest.members[userId]) {
+  if (quest.key && quest.active && quest.members[UserId]) {
     const partyId = user.party._id;
 
     const bossHp = quest.progress.hp;
@@ -177,82 +181,6 @@ function checkAndSendMyQuestProgress(user, quest) {
       {
         console.log(progressMessage);
         sendMessageToGroup(partyId, progressMessage);
-      }
-    }
-  }
-}
-
-function scheduleCheckAndSendPartyQuestProgress() {
-  if (AUTO_SEND_PARTY_QUEST_PROGRESS) {
-    const triggers = ScriptApp.getProjectTriggers();
-    for (const trigger of triggers) {
-      const functionName = trigger.getHandlerFunction();
-      if (functionName == checkAndSendPartyQuestProgress.name) {
-        ScriptApp.deleteTrigger(trigger);
-      }
-    }
-
-    const trigger = ScriptApp.newTrigger(checkAndSendPartyQuestProgress.name)
-      .timeBased()
-      .after(2 * 60 * 1000) // 2min
-      .create();
-  
-    if (trigger) {
-      console.log("Trigger created for: " + trigger.getHandlerFunction());
-    }
-  }
-}
-
-function checkAndSendPartyQuestProgress() {
-  if (AUTO_SEND_PARTY_QUEST_PROGRESS) {
-    const party = getParty();
-    if (party) {
-      if (party.quest && party.quest.key && party.quest.active && party.quest.progress) {
-        const quest = party.quest;
-        const bossQuest = quest.progress.hp > 0
-    
-        const membersWithProgress = new Array();
-        const membersWithoutProgress = new Array();
-
-        const participatingMembers = Object.entries(quest.members);
-        for (const [memberId, isParticipating] of participatingMembers) {
-          if (isParticipating === true) {
-            const member = getMemberById(memberId);
-            if (member && member.party._id && member.party.quest.key) {
-              if (member.party.quest.progress.up > 0) {
-                membersWithProgress.push(member);
-              } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-                membersWithoutProgress.push(member);
-              }
-            }
-          }
-        }
-
-        const progressType = bossQuest ? 'Damage' : 'Items';
-        let message = `**Party:** ${party.name}  \n`;
-        message += `**Leader:** ${party.leader.profile.name}  \n\n`;
-
-        message += `User | ${progressType} | Status  \n`;
-        message += `---------- | ---------- | ----------  \n`;
-        let addMemberInfoToMessage = (memberObj) => {
-          const pendingDamage = Math.round(memberObj.party.quest.progress.up * 10) / 10;
-          const sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
-          message += `${memberObj.profile.name} | ${pendingDamage} | ${sleeping}  \n`;
-        };
-
-        membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
-        for (const memberEntry of membersWithProgress) {
-          addMemberInfoToMessage(memberEntry);
-        }
-        if (IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-          message += `*The list doesn't contain users who have no quest progress*  \n`;
-        } else {
-          for (const memberEntry of membersWithoutProgress) {
-            addMemberInfoToMessage(memberEntry);
-          }
-        }
-
-        sendMessageToGroup(party.id, message);
       }
     }
   }

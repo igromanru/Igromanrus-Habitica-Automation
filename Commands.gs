@@ -1,10 +1,161 @@
+/**
+ * Author: Igromanru
+ * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
+ */
+
 const QUEST_PROGRESS_COMMAND = 'quest';
+
+/**
+ * Install scheduled command triggers
+ */
+function installCommandTrigger() {
+  uninstallCommandTrigger();
+  console.log("Creating command triggers...");
+
+  const trigger = ScriptApp.newTrigger(scheduledCommandsCheck.name)
+    .timeBased()
+    .everyMinutes(TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES)
+    .create();
+  
+  if (trigger) {
+    console.log("Trigger created for: " + trigger.getHandlerFunction());
+  }
+}
+
+/**
+ * Uninstall scheduled command triggers
+ */
+function uninstallCommandTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  if (triggers.length > 0) {
+    console.log("Deleting command triggers...");
+
+    for (const trigger of triggers) {
+      const functionName = trigger.getHandlerFunction();
+      if (functionName == scheduledCommandsCheck.name) {
+        ScriptApp.deleteTrigger(trigger);
+        console.log("Trigger deleted: " + functionName);
+      }
+    }
+  }
+}
 
 function scheduledCommandsCheck() {
   if (!isLastExecutionOverAMinute()) {
-    console.log("scheduledCommandsCheck: Skip, last script execution was too recent");
+    console.log("scheduledCommandsCheck: Skipping, last script execution was too recent");
     return;
   }
 
+  const partyId = getPartyIdProperty();
+  if (!partyId) {
+    console.log("scheduledCommandsCheck: Skipping, the PARTY_ID property is not set");
+    return;
+  }
+
+  const lastCheckTime = getLastCommandCheckDateTime();
+  const chatArray = getGroupChat(partyId);
+  if (typeof chatArray === 'array' && chatArray) {
+    for (chat of chatArray) {
+      // Checking if it's a user message, skipping system messages which have a type
+      if (!chat.info || chat.info.type === undefined) {
+        const chatTimestamp = new Date(chat.timestamp);
+        // Evaluate only messages that were send after the last check
+        if (chatTimestamp > lastCheckTime) {
+          evaluateMessage(chatMessage);
+        }
+      }
+    }
+  } else {
+    console.log(`scheduledCommandsCheck Error: No chat messages found for the Party with id: ${partyId}`);
+  }
+
+  setLastCommandCheckDateTime();
+}
+
+function evaluateMessage(chatMessage) {
+  if (chatMessage && chatMessage.trim().startsWith("!")) {
+    var commandRegEx = /\!(.*?)\s/gm;
+    var matches = commandRegEx.exec(chatMessage);
+    if (matches && matches.length > 1) {
+      // first group match
+      const command = matches[1];
+      switch (command) {
+        case QUEST_PROGRESS_COMMAND:
+          scheduleCheckAndSendPartyQuestProgress();
+          break;
+      }
+    }
+  }
+}
+
+function scheduleCheckAndSendPartyQuestProgress() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (const trigger of triggers) {
+    const functionName = trigger.getHandlerFunction();
+    if (functionName == checkAndSendPartyQuestProgress.name) {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  }
+
+  const trigger = ScriptApp.newTrigger(checkAndSendPartyQuestProgress.name)
+    .timeBased()
+    .after(2 * 60 * 1000) // 2min
+    .create();
+
+  if (trigger) {
+    console.log("Trigger created for: " + trigger.getHandlerFunction());
+  }
+}
+
+function checkAndSendPartyQuestProgress() {
   const party = getParty();
+  if (party) {
+    if (party.quest && party.quest.key && party.quest.active && party.quest.progress) {
+      const quest = party.quest;
+      const bossQuest = quest.progress.hp > 0
+  
+      const membersWithProgress = new Array();
+      const membersWithoutProgress = new Array();
+
+      const participatingMembers = Object.entries(quest.members);
+      for (const [memberId, isParticipating] of participatingMembers) {
+        if (isParticipating === true) {
+          const member = getMemberById(memberId);
+          if (member && member.party._id && member.party.quest.key) {
+            if (member.party.quest.progress.up > 0) {
+              membersWithProgress.push(member);
+            } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+              membersWithoutProgress.push(member);
+            }
+          }
+        }
+      }
+
+      const progressType = bossQuest ? 'Damage' : 'Items';
+      let message = `**Party:** ${party.name}  \n`;
+      message += `**Leader:** ${party.leader.profile.name}  \n\n`;
+
+      message += `User | ${progressType} | Status  \n`;
+      message += `---------- | ---------- | ----------  \n`;
+      let addMemberInfoToMessage = (memberObj) => {
+        const pendingDamage = Math.round(memberObj.party.quest.progress.up * 10) / 10;
+        const sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
+        message += `${memberObj.profile.name} | ${pendingDamage} | ${sleeping}  \n`;
+      };
+
+      membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
+      for (const memberEntry of membersWithProgress) {
+        addMemberInfoToMessage(memberEntry);
+      }
+      if (IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+        message += `*The list doesn't contain users who have no quest progress*  \n`;
+      } else {
+        for (const memberEntry of membersWithoutProgress) {
+          addMemberInfoToMessage(memberEntry);
+        }
+      }
+
+      sendMessageToGroup(party.id, message);
+    }
+  }
 }

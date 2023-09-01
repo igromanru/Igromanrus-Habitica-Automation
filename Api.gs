@@ -2,12 +2,10 @@
  * Author: Igromanru
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
-const ScriptProperties = PropertiesService.getScriptProperties();
-const userId = ScriptProperties.getProperty('API_ID');
-const apiToken = ScriptProperties.getProperty('API_KEY');
+
 const headers = {
-  'x-api-user': userId,
-  'x-api-key': apiToken,
+  'x-api-user': UserId,
+  'x-api-key': ApiToken,
 };
 const baseUrl = 'https://habitica.com/api';
 const partyAPI = baseUrl + '/v3/groups/party';
@@ -17,6 +15,9 @@ const membersAPI = baseUrl + '/v3/members';
 
 var CurrentSleepStatus = false;
 
+/**
+ * Returns user object of the current API user
+ */
 function getUser() {
   const response = UrlFetchApp.fetch(
     userAPI,
@@ -41,6 +42,9 @@ function getUser() {
   return undefined;
 }
 
+/**
+ * Returns party object for the current API user
+ */
 function getParty() {
   const response = UrlFetchApp.fetch(
     partyAPI,
@@ -53,7 +57,7 @@ function getParty() {
   const responseCode = response.getResponseCode();
   if (responseCode == 200) {
     const pojo = JSON.parse(response);
-    if (pojo.success && pojo.data) {
+    if (pojo.success && pojo.data && typeof pojo.data === 'object') {
       return pojo.data;
     }
   } else {
@@ -65,10 +69,13 @@ function getParty() {
   return undefined;
 }
 
-function getMemberById(id) {
-  if (id) {
+/**
+ * Returns member object of for a specific member
+ */
+function getMemberById(memberId) {
+  if (memberId) {
     const response = UrlFetchApp.fetch(
-      `${membersAPI}/${id}`,
+      `${membersAPI}/${memberId}`,
       {
         method: 'get',
         headers
@@ -78,7 +85,7 @@ function getMemberById(id) {
     const responseCode = response.getResponseCode();
     if (responseCode == 200) {
       const pojo = JSON.parse(response);
-      if (pojo.success && pojo.data) {
+      if (pojo.success && pojo.data && typeof pojo.data === 'object') {
         return pojo.data;
       }
     } else {
@@ -89,6 +96,35 @@ function getMemberById(id) {
   }
   
   return undefined;
+}
+
+/**
+ * Returns array of chat objects
+ */
+function getGroupChat(groupId) {
+  if (groupId) {
+     const response = UrlFetchApp.fetch(
+      `${groupsAPI}/${groupId}/chat`,
+      {
+        method: 'get',
+        headers
+      }
+    );
+
+    const responseCode = response.getResponseCode();
+    if (responseCode == 200) {
+      const pojo = JSON.parse(response);
+      if (pojo.success && pojo.data && typeof pojo.data === 'array') {
+        return pojo.data;
+      }
+    } else {
+      const errorData = JSON.parse(response);
+      console.log('Error code: ' + errorData.error);
+      console.log('Error message: ' + errorData.message);
+    }
+  }
+
+  return [];
 }
 
 /**
@@ -126,7 +162,7 @@ function sendPM(targetUserId, messageText) {
 }
 
 function sendPMToSelf(messageText) {
-  return sendPM(userId, messageText);
+  return sendPM(UserId, messageText);
 }
 
 function sendMessageToGroup(targetGroupId, messageText) {

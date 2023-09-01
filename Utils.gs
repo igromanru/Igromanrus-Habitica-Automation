@@ -2,6 +2,12 @@
  * Author: Igromanru
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
+
+const ScriptProperties = PropertiesService.getScriptProperties();
+
+const UserId = ScriptProperties.getProperty('API_ID');
+const ApiToken = ScriptProperties.getProperty('API_KEY');
+
 function test() {
   const dayStartOffset = 1;
   const now = new Date();
@@ -83,6 +89,32 @@ function getLastExecutionDateTime() {
     return new Date(value);
   }
   return new Date(0);
+}
+
+function setLastCommandCheckDateTime() {
+  ScriptProperties.setProperty("LAST_COMMAND_CHECK_TIME", new Date().toISOString());
+}
+
+function getLastCommandCheckDateTime() {
+  const value = ScriptProperties.getProperty("LAST_COMMAND_CHECK_TIME");
+  if (typeof value === 'string' && value) {
+    return new Date(value);
+  }
+  return new Date(0);
+}
+
+function setPartyIdProperty(partyId) {
+  if (typeof partyId == 'string' && partyId) {
+    ScriptProperties.setProperty("PARTY_ID", partyId);
+  }
+}
+
+function getPartyIdProperty() {
+  const value = ScriptProperties.getProperty("PARTY_ID");
+  if (typeof value === 'string') {
+    return value;
+  }
+  return undefined;
 }
 
 function setObjectAsScriptProperty(propertyKey, pojo) {
