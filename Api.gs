@@ -28,7 +28,10 @@ function getUser() {
 
   const responseCode = response.getResponseCode();
   if (responseCode == 200) {
-    return JSON.parse(response);
+    const pojo = JSON.parse(response);
+    if (pojo.success && pojo.data) {
+      return pojo.data;
+    }
   } else {
     const errorData = JSON.parse(response);
     console.log('Error code: ' + errorData.error);
@@ -49,7 +52,10 @@ function getParty() {
 
   const responseCode = response.getResponseCode();
   if (responseCode == 200) {
-    return JSON.parse(response);
+    const pojo = JSON.parse(response);
+    if (pojo.success && pojo.data) {
+      return pojo.data;
+    }
   } else {
     const errorData = JSON.parse(response);
     console.log('Error code: ' + errorData.error);
@@ -71,7 +77,10 @@ function getMemberById(id) {
 
     const responseCode = response.getResponseCode();
     if (responseCode == 200) {
-      return JSON.parse(response);
+      const pojo = JSON.parse(response);
+      if (pojo.success && pojo.data) {
+        return pojo.data;
+      }
     } else {
       const errorData = JSON.parse(response);
       console.log('Error code: ' + errorData.error);

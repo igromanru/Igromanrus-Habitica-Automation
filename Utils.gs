@@ -63,6 +63,28 @@ function isCronPending(user) {
   return lastCronDate < today;
 }
 
+/**
+ * Determines if the script was executed longer than 1min ago.
+ * It should be used to work around Habitica's rate limit, which is 30 requests per minute
+ */
+function isLastExecutionOverAMinute() {
+  const lastExec = getLastExecutionDateTime();
+  const now = new Date();
+  return now - lastExec > (60 * 1000);
+}
+
+function setLastExecutionDateTime() {
+  ScriptProperties.setProperty("LAST_EXECUTION_TIME", new Date().toISOString());
+}
+
+function getLastExecutionDateTime() {
+  const value = ScriptProperties.getProperty("LAST_EXECUTION_TIME");
+  if (typeof value === 'string' && value) {
+    return new Date(value);
+  }
+  return new Date(0);
+}
+
 function setObjectAsScriptProperty(propertyKey, pojo) {
   if (typeof propertyKey == 'string' && propertyKey && typeof pojo == 'object' && pojo) {
     ScriptProperties.setProperty(propertyKey, JSON.stringify(pojo));

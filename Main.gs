@@ -9,7 +9,7 @@ const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = false;
 const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR x damage
 
-const AUTO_SEND_PARTY_QUEST_PROGRESS = true;
+const AUTO_SEND_PARTY_QUEST_PROGRESS = false;
 const IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
 
 const AUTO_TAVERN_IF_NO_QUEST_AT_CRON = true;
@@ -38,11 +38,9 @@ const TRIGGER_EACH_X_MINUTES = 30;
  * Main entry, that should be executed each hour by a tigger
  */
 function triggerSchedule() {
-  const userJson = getUser();
-  if (userJson && userJson.success) {
-    const user = userJson.data;
-
-    if (user && user.preferences && user.preferences.sleep !== undefined) {
+  const user = getUser();
+  if (user) {
+    if (user.preferences && user.preferences.sleep !== undefined) {
       CurrentSleepStatus = user.preferences.sleep;
     }
 
@@ -50,29 +48,26 @@ function triggerSchedule() {
     console.log('Hours difference to the next Day Start: ' + hoursDifference)
 
     if (user.party._id) {
-      const partyJson = getParty();
-      if (partyJson && partyJson.success) {
-        const party = partyJson.data;
-        if (party) {
-          let quest = party.quest;
-          console.log('Party Id: ' + party.id);
+      const party = getParty();
+      if (party) {
+        let quest = party.quest;
+        console.log('Party Id: ' + party.id);
 
-          if (quest.key) {
-            console.log('Quest key: ' + quest.key);
-            if (quest.active) {
-              console.log('The quest is active');
-            }
-          } else {
-            console.log('No active quest');
+        if (quest.key) {
+          console.log('Quest key: ' + quest.key);
+          if (quest.active) {
+            console.log('The quest is active');
           }
-
-          acceptQuest(quest);
-          // autoSleep(user, quest);
-          autoAccumulateDamage(user, quest);
-          autoCron(user);
-          checkAndSendMyQuestProgress(user, quest);
-          // checkAndSendPartyQuestProgress(party, quest);
+        } else {
+          console.log('No active quest');
         }
+
+        acceptQuest(quest);
+        // autoSleep(user, quest);
+        autoAccumulateDamage(user, quest);
+        autoCron(user);
+        checkAndSendMyQuestProgress(user, quest);
+        // checkAndSendPartyQuestProgress(party, quest);
       }
     } else {
       console.log('User is not in a party. Ignoring party request and party related functions.');
@@ -83,6 +78,8 @@ function triggerSchedule() {
     autoAllocateStatPoints(user);
 
     scheduleCheckAndSendPartyQuestProgress();
+
+    setLastExecutionDateTime();
   }
 }
 
@@ -144,7 +141,7 @@ function checkAndSendMyQuestProgress(user, quest) {
   }
 
   if (CurrentSleepStatus) {
-    console.log("checkAndSendMyQuestProgress: You're sleeping in the tavern");
+    console.log("checkAndSendMyQuestProgress: You're already sleeping in the tavern");
     return;
   }
 
@@ -208,28 +205,24 @@ function scheduleCheckAndSendPartyQuestProgress() {
 
 function checkAndSendPartyQuestProgress() {
   if (AUTO_SEND_PARTY_QUEST_PROGRESS) {
-    const partyJson = getParty();
-    if (partyJson && partyJson.success) {
-      const party = partyJson.data;
-
-      if (party && party.quest && party.quest.key && party.quest.active && party.quest.progress) {
+    const party = getParty();
+    if (party) {
+      if (party.quest && party.quest.key && party.quest.active && party.quest.progress) {
         const quest = party.quest;
         const bossQuest = quest.progress.hp > 0
     
         const membersWithProgress = new Array();
         const membersWithoutProgress = new Array();
 
-        for (const [memberId, participating] of Object.entries(quest.members)) {
-          if (participating === true) {
-            const memberJson = getMemberById(memberId);
-            if (memberJson && memberJson.success) {
-              const member = memberJson.data;
-              if (member && member.party._id && member.party.quest.key) {
-                if (member.party.quest.progress.up > 0) {
-                  membersWithProgress.push(member);
-                } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-                  membersWithoutProgress.push(member);
-                }
+        const participatingMembers = Object.entries(quest.members);
+        for (const [memberId, isParticipating] of participatingMembers) {
+          if (isParticipating === true) {
+            const member = getMemberById(memberId);
+            if (member && member.party._id && member.party.quest.key) {
+              if (member.party.quest.progress.up > 0) {
+                membersWithProgress.push(member);
+              } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+                membersWithoutProgress.push(member);
               }
             }
           }
