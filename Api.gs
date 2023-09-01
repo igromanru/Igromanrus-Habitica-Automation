@@ -114,7 +114,7 @@ function getGroupChat(groupId) {
     const responseCode = response.getResponseCode();
     if (responseCode == 200) {
       const pojo = JSON.parse(response);
-      if (pojo.success && pojo.data && typeof pojo.data === 'array') {
+      if (pojo.success && pojo.data && pojo.data instanceof Array) {
         return pojo.data;
       }
     } else {
