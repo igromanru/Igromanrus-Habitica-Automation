@@ -55,16 +55,20 @@ function scheduledCommandsCheck() {
   const lastCheckTime = getLastCommandCheckDateTime();
   const chatArray = getGroupChat(partyId);
   if (chatArray instanceof Array && chatArray) {
+    console.log(`scheduledCommandsCheck: Found ${chatArray.length} chat messages for the party ${partyId}`);
+    let newMessageCount = 0;
     for (const chat of chatArray) {
-      // Checking if it's a user message, skipping system messages which have a type
+      // Checking if it's an user message, skipping system messages, which have a type
       if (!chat.info || chat.info.type === undefined) {
         const chatTimestamp = new Date(chat.timestamp);
         // Evaluate only messages that were send after the last check
         if (chatTimestamp > lastCheckTime) {
+          newMessageCount++;
           evaluateMessage(chat.text);
         }
       }
     }
+    console.log(`scheduledCommandsCheck: New user messages since last command check: ${newMessageCount}`);
   } else {
     console.log(`scheduledCommandsCheck Error: No chat messages found for the Party with id: ${partyId}`);
   }

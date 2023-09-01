@@ -17,6 +17,8 @@ var CurrentSleepStatus = false;
 
 /**
  * Returns user object of the current API user
+ * 
+ * https://habitica.com/apidoc/#api-User-UserGet
  */
 function getUser() {
   const response = UrlFetchApp.fetch(
@@ -71,6 +73,8 @@ function getParty() {
 
 /**
  * Returns member object of for a specific member
+ * 
+ * https://habitica.com/apidoc/#api-Member-GetMember
  */
 function getMemberById(memberId) {
   if (memberId) {
@@ -100,6 +104,8 @@ function getMemberById(memberId) {
 
 /**
  * Returns array of chat objects
+ * 
+ * https://habitica.com/apidoc/#api-Chat-GetChat
  */
 function getGroupChat(groupId) {
   if (groupId) {
@@ -129,6 +135,8 @@ function getGroupChat(groupId) {
 
 /**
  * Send a private message to a user
+ * 
+ * https://habitica.com/apidoc/#api-Member-SendPrivateMessage
  */
 function sendPM(targetUserId, messageText) {
   if (targetUserId && messageText) {
@@ -161,10 +169,18 @@ function sendPM(targetUserId, messageText) {
   return false;
 }
 
+/**
+ * sendPM, but uses the Id of the API user as target
+ */
 function sendPMToSelf(messageText) {
   return sendPM(UserId, messageText);
 }
 
+/**
+ * Send a message to a group (party)
+ * 
+ * https://habitica.com/apidoc/#api-Chat-PostChat
+ */
 function sendMessageToGroup(targetGroupId, messageText) {
   if (targetGroupId && messageText) {
     console.log('sendMessageToGroup: targetGroupId: ' + targetGroupId + '  \nmessageText: ' + messageText);
@@ -200,6 +216,7 @@ function sendMessageToGroup(targetGroupId, messageText) {
  * Sends the request to buy a Health Postion
  * 
  * Returns false if failed, otherwise true
+ * https://habitica.com/apidoc/#api-User-UserBuyPotion
  */
 function buyHealthPotion() {
   const response = UrlFetchApp.fetch(
@@ -226,6 +243,7 @@ function buyHealthPotion() {
  * Toggle sleep state (Tavern)
  * 
  * Returns true if sleeping, else false
+ * https://habitica.com/apidoc/#api-User-UserSleep
  */
 function toggleSleep() {
   const response = UrlFetchApp.fetch(
@@ -253,6 +271,8 @@ function toggleSleep() {
 
 /**
  * Buy an Enchanted Armoire item
+ * 
+ * https://habitica.com/apidoc/#api-User-UserBuyArmoire
  */
 function buyEnchantedArmoire() {
   const response = UrlFetchApp.fetch(
@@ -275,6 +295,49 @@ function buyEnchantedArmoire() {
     const errorData = JSON.parse(response);
     console.log('Error code: ' + errorData.error);
     console.log('Error message: ' + errorData.message);
+  }
+
+  return undefined;
+}
+
+/**
+ * Purchase Gem or Gem-purchasable item
+ * 
+ * https://habitica.com/apidoc/#api-User-UserPurchase
+ */
+function buyGemPurchasableItem(type, key, count = 1) {
+  if ((type === "gems" && key === "gem") || type === "eggs" || type === "hatchingPotions"
+      || type === "premiumHatchingPotions" || type === "food" || type === "quests" || type === "gear" || type === "pets") {
+
+    const requestBody = {
+      quantity: count
+    };
+    const response = UrlFetchApp.fetch(
+      `${userAPI}/purchase/${type}/${key}`,
+      {
+        method: 'post',
+        headers,
+        contentType: 'application/json',
+        payload: JSON.stringify(requestBody)
+      }
+    );
+
+    const responseCode = response.getResponseCode();
+    console.log(`Buy Purchasable Item (type: ${type}, key: ${key}) response code: ${responseCode}`);
+
+    if (responseCode == 200) {
+      const responseJson = JSON.parse(response);
+      // ToDo: Find out the result and edit
+      // console.log(`Armoire json: ` + JSON.stringify(responseJson.data.armoire));
+      // console.log('Message:' + responseJson.message);
+      return responseJson;
+    } else {
+      const errorData = JSON.parse(response);
+      console.log('Error code: ' + errorData.error);
+      console.log('Error message: ' + errorData.message);
+    }
+  } else {
+    console.error(`buyPurchasableItem: type (${type}) or key (${key}) are invalid`);
   }
 
   return undefined;
