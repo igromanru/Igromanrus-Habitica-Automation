@@ -3,6 +3,9 @@
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
 
+const SCRIPT_NAME = "Igromanru's Habitica Automation";
+const AUTHOR_ID = "06b046d4-160a-4a20-b527-b74385052f0e";
+
 const ScriptProperties = PropertiesService.getScriptProperties();
 
 const UserId = ScriptProperties.getProperty('API_ID');
@@ -10,6 +13,11 @@ const ApiToken = ScriptProperties.getProperty('API_KEY');
 const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 
 function test() {
+  const date1 = new Date();
+  date1.setHours(date1.getHours() - 1);
+  date1.setMinutes(date1.getMinutes() - 12);
+  console.log(getTimeDifferenceToNowAsString(date1));
+
   const dayStartOffset = 1;
   const now = new Date();
   // now.setHours(dayStartOffset, 0, 0, 0);
@@ -67,6 +75,26 @@ function isCronPending(user) {
   today.setHours(0, 0, 0, 0);
 
   return lastCronDate < today;
+}
+
+function getTimeDifferenceToNowAsString(dateTime) {
+  const now = new Date();
+  const timeDifference = Math.abs(now - dateTime);
+
+  const hours = Math.floor(timeDifference / (1000 * 60 * 60));
+  const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+
+  let result = ``;
+  if (hours > 0) {
+    result += `${hours}h`;
+  }
+  if (minutes > 0) {
+    if (result) {
+      result += ' ';
+    }
+    result += `${minutes}min`;
+  }
+  return result;
 }
 
 /**

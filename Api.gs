@@ -4,9 +4,9 @@
  */
 
 const Headers = {
-  "x-client": "06b046d4-160a-4a20-b527-b74385052f0e-Igromanrus_Habitica_Automation",
   'x-api-user': UserId,
   'x-api-key': ApiToken,
+  "x-client": AUTHOR_ID + ' - ' + SCRIPT_NAME
 };
 const baseUrl = 'https://habitica.com/api';
 const partyAPI = baseUrl + '/v3/groups/party';
@@ -59,7 +59,7 @@ function getParty() {
 
   const responseCode = response.getResponseCode();
   if (responseCode == 200) {
-    const pojo = JSON.parse(response);
+    const pojo = JSON.parse(response.getContentText());
     if (pojo.success && pojo.data && typeof pojo.data === 'object') {
       return pojo.data;
     }
@@ -302,16 +302,23 @@ function buyEnchantedArmoire() {
 }
 
 /**
+ * Wrapper for the function buyGemPurchasableItem to buy Gems
+ */
+function buyGems(amount = 1) {
+  return buyGemPurchasableItem("gems", "gem", amount);
+}
+
+/**
  * Purchase Gem or Gem-purchasable item
  * 
  * https://habitica.com/apidoc/#api-User-UserPurchase
  */
-function buyGemPurchasableItem(type, key, count = 1) {
+function buyGemPurchasableItem(type, key, amount = 1) {
   if ((type === "gems" && key === "gem") || type === "eggs" || type === "hatchingPotions"
       || type === "premiumHatchingPotions" || type === "food" || type === "quests" || type === "gear" || type === "pets") {
 
     const requestBody = {
-      quantity: count
+      quantity: amount
     };
     const response = UrlFetchApp.fetch(
       `${userAPI}/purchase/${type}/${key}`,

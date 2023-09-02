@@ -22,6 +22,8 @@ const AUTO_BUY_ENCHANTED_ARMOIRE = true;
 const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 1100;
 const SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO = true;
 
+const AUTO_BUY_GEMS = true;
+
 const AUTO_ALLOCATE_STAT_POINTS = true;
 const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, int = Intelligence, per = Perception
 
@@ -37,6 +39,7 @@ const IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
 // Install settings
 const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
 const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5; // Must be 1, 5, 10, 15 or 30
+const TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS = 2;
 // ------------------------------------------------------------
 /**
  * Main entry, that should be executed each hour by a tigger
@@ -81,6 +84,7 @@ function triggerSchedule() {
     
     autoHealSelf(user);
     autoBuyEnchantedArmoire(user);
+    autoBuyGems(user);
     autoAllocateStatPoints(user);
 
     setLastExecutionDateTime();
@@ -94,13 +98,30 @@ function installTrigger() {
   uninstallTrigger();
   console.log("Creating triggers...");
 
-  const trigger = ScriptApp.newTrigger(triggerSchedule.name)
+  let triggers = []; 
+
+  triggers.push(ScriptApp.newTrigger(triggerSchedule.name)
     .timeBased()
     .everyMinutes(TRIGGER_EACH_X_MINUTES)
-    .create();
+    .create()
+  );
+
+  triggers.push(ScriptApp.newTrigger(scheduledCommandsCheck.name)
+    .timeBased()
+    .everyMinutes(TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES)
+    .create()
+  );
   
-  if (trigger) {
-    console.log("Trigger created for: " + trigger.getHandlerFunction());
+  triggers.push(ScriptApp.newTrigger(checkAndSendPartyQuestProgress.name)
+    .timeBased()
+    .everyHours(TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS)
+    .create()
+  );
+
+  for (const trigger of triggers) {
+    if (trigger) {
+      console.log("Trigger created for: " + trigger.getHandlerFunction());
+    }
   }
 }
 
@@ -114,9 +135,13 @@ function uninstallTrigger() {
 
     for (const trigger of triggers) {
       const functionName = trigger.getHandlerFunction();
-      if (functionName == triggerSchedule.name) {
-        ScriptApp.deleteTrigger(trigger);
-        console.log("Trigger deleted: " + functionName);
+      switch (functionName) {
+        case triggerSchedule.name:
+        case scheduledCommandsCheck.name:
+        case checkAndSendPartyQuestProgress.name:
+          ScriptApp.deleteTrigger(trigger);
+          console.log("Trigger deleted: " + functionName);
+          break;
       }
     }
   }
@@ -272,7 +297,7 @@ function autoHealSelf(user) {
 
 function autoBuyEnchantedArmoire(user) {
   if (AUTO_BUY_ENCHANTED_ARMOIRE && user) {
-    const enchantedArmoireCost = 100;
+    const enchantedArmoireCost = 100; // 1 Enchanted Armoire costs 100 Gold
     const buyOverOrEqual = BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD;
     const currentGold = user.stats.gp;
 
@@ -299,6 +324,15 @@ function autoBuyEnchantedArmoire(user) {
   }
 }
 
+function autoBuyGems(user) {
+  if (AUTO_BUY_GEMS && user) {
+    const gemCost = 20; // 1 gem costs 20 Gold
+    const currentGold = user.stats.gp;
+
+
+  }
+}
+
 function autoAllocateStatPoints(user) {
   if (AUTO_ALLOCATE_STAT_POINTS && user) {
     const pointsToAllocate = user.stats.points;
@@ -307,6 +341,101 @@ function autoAllocateStatPoints(user) {
     if (pointsToAllocate > 0 && userLvl >= 10 && !user.preferences.disableClasses) {
       console.log(`autoAllocateStatPoints: Allocating ${pointsToAllocate} stat points into "${ALLOCATE_STAT_POINTS_TO}"`);
       allocateStatPoints(ALLOCATE_STAT_POINTS_TO, pointsToAllocate);
+    }
+  }
+}
+
+function scheduleCheckAndSendPartyQuestProgress() {
+  /*const triggers = ScriptApp.getProjectTriggers();
+  for (const trigger of triggers) {
+    const functionName = trigger.getHandlerFunction();
+    if (functionName == checkAndSendPartyQuestProgress.name) {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  }*/
+
+  const trigger = ScriptApp.newTrigger(checkAndSendPartyQuestProgress.name)
+    .timeBased()
+    .after(1.5 * 60 * 1000) // 1.5 min
+    .create();
+
+  if (trigger) {
+    console.log("Chained trigger created for: " + trigger.getHandlerFunction());
+  }
+}
+
+function checkAndSendPartyQuestProgress() {
+  const party = getParty();
+  if (party) {
+    if (party.quest && party.quest.key) {
+      const quest = party.quest;
+      const bossQuest = quest.progress.hp > 0;
+  
+      let message = `### Party Quest Status  \n`;
+      message += `**Party:** ${party.name}  \n`;
+      message += `**Leader:** ${party.leader.profile.name}  \n`;
+      message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n\n`;
+
+      const partyMembers = Object.entries(quest.members);
+      if (quest.active) {
+        const membersWithProgress = new Array();
+        const membersWithoutProgress = new Array();
+        for (const [memberId, isParticipating] of partyMembers) {
+          if (isParticipating === true) {
+            const member = getMemberById(memberId);
+            if (member && member.party._id && member.party.quest.key) {
+              if (member.party.quest.progress.up > 0 || member.party.quest.progress.collectedItems > 0) {
+                membersWithProgress.push(member);
+              } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+                membersWithoutProgress.push(member);
+              }
+            }
+          }
+        }
+
+        const progressType = bossQuest ? 'Damage' : 'Items';
+        message += `User | ${progressType} | Last Login | Status  \n`;
+        message += `--- | --- | --- | ---  \n`;
+        const addMemberInfoToMessage = (memberObj) => {
+          const pendingDamage = Math.round(memberObj.party.quest.progress.up * 10) / 10;
+          const progress = bossQuest ? pendingDamage : memberObj.party.quest.progress.collectedItems;
+          const differenceText = getTimeDifferenceToNowAsString(new Date(memberObj.auth.timestamps.loggedin));
+          const lastLogin = differenceText ? `${differenceText} ago` : '';
+          const sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
+          message += `${memberObj.profile.name} &ensp; | ${progress} &ensp; | ${lastLogin} &ensp; | ${sleeping}  \n`;
+        };
+        if (bossQuest) {
+          membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
+        } else {
+          membersWithProgress.sort((a, b) => b.party.quest.progress.collectedItems - a.party.quest.progress.collectedItems);
+        }
+        for (const memberEntry of membersWithProgress) {
+          addMemberInfoToMessage(memberEntry);
+        }
+        if (IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+          message += `*The list doesn't contain users who have no quest progress*  \n`;
+        } else {
+          for (const memberEntry of membersWithoutProgress) {
+            addMemberInfoToMessage(memberEntry);
+          }
+        }
+      } else {
+        message += `Members who haven't accepted the quest yet:  \n`;
+        message += `User | Last Login | Status  \n`;
+        message += `--- | --- | ---  \n`;
+        for (const [memberId, isParticipating] of partyMembers) {
+          if (!isParticipating) {
+            const member = getMemberById(memberId);
+            if (member && member.party._id) {
+              const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
+              const lastLogin = differenceText ? `${differenceText} ago` : '';
+              message += `${member.profile.name} &ensp; | ${lastLogin} &ensp; | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
+            }
+          }
+        }
+      }
+
+      sendMessageToGroup(party.id, message);
     }
   }
 }

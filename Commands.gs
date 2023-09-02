@@ -5,41 +5,6 @@
 
 const QUEST_PROGRESS_COMMAND = 'quest';
 
-/**
- * Install scheduled command triggers
- */
-function installCommandTrigger() {
-  uninstallCommandTrigger();
-  console.log("Creating command triggers...");
-
-  const trigger = ScriptApp.newTrigger(scheduledCommandsCheck.name)
-    .timeBased()
-    .everyMinutes(TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES)
-    .create();
-  
-  if (trigger) {
-    console.log("Trigger created for: " + trigger.getHandlerFunction());
-  }
-}
-
-/**
- * Uninstall scheduled command triggers
- */
-function uninstallCommandTrigger() {
-  const triggers = ScriptApp.getProjectTriggers();
-  if (triggers.length > 0) {
-    console.log("Deleting command triggers...");
-
-    for (const trigger of triggers) {
-      const functionName = trigger.getHandlerFunction();
-      if (functionName == scheduledCommandsCheck.name) {
-        ScriptApp.deleteTrigger(trigger);
-        console.log("Trigger deleted: " + functionName);
-      }
-    }
-  }
-}
-
 function scheduledCommandsCheck() {
   if (!isLastExecutionOverAMinute()) {
     console.log("scheduledCommandsCheck: Skipping, last script execution was too recent");
@@ -90,95 +55,6 @@ function evaluateMessage(chatMessage) {
           scheduleCheckAndSendPartyQuestProgress();
           break;
       }
-    }
-  }
-}
-
-function scheduleCheckAndSendPartyQuestProgress() {
-  const triggers = ScriptApp.getProjectTriggers();
-  for (const trigger of triggers) {
-    const functionName = trigger.getHandlerFunction();
-    if (functionName == checkAndSendPartyQuestProgress.name) {
-      ScriptApp.deleteTrigger(trigger);
-    }
-  }
-
-  const trigger = ScriptApp.newTrigger(checkAndSendPartyQuestProgress.name)
-    .timeBased()
-    .after(2 * 60 * 1000) // 2min
-    .create();
-
-  if (trigger) {
-    console.log("Trigger created for: " + trigger.getHandlerFunction());
-  }
-}
-
-function checkAndSendPartyQuestProgress() {
-  const party = getParty();
-  if (party) {
-    if (party.quest && party.quest.key) {
-      const quest = party.quest;
-      const bossQuest = quest.progress.hp > 0;
-  
-      const progressType = bossQuest ? 'Damage' : 'Items';
-      let message = `**Party:** ${party.name}  \n`;
-      message += `**Leader:** ${party.leader.profile.name}  \n`;
-      message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n\n`;
-
-      const partyMembers = Object.entries(quest.members);
-      if (quest.active) {
-        const membersWithProgress = new Array();
-        const membersWithoutProgress = new Array();
-        for (const [memberId, isParticipating] of partyMembers) {
-          if (isParticipating === true) {
-            const member = getMemberById(memberId);
-            if (member && member.party._id && member.party.quest.key) {
-              if (member.party.quest.progress.up > 0 || member.party.quest.progress.collectedItems > 0) {
-                membersWithProgress.push(member);
-              } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-                membersWithoutProgress.push(member);
-              }
-            }
-          }
-        }
-        message += `User | ${progressType} | Status  \n`;
-        message += `---------- | ---------- | ----------  \n`;
-        const addMemberInfoToMessage = (memberObj) => {
-          const pendingDamage = Math.round(memberObj.party.quest.progress.up * 10) / 10;
-          const progress = bossQuest ? pendingDamage : memberObj.party.quest.progress.collectedItems;
-          const sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
-          message += `${memberObj.profile.name} | ${progress} | ${sleeping}  \n`;
-        };
-        if (bossQuest) {
-          membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
-        } else {
-          membersWithProgress.sort((a, b) => b.party.quest.progress.collectedItems - a.party.quest.progress.collectedItems);
-        }
-        for (const memberEntry of membersWithProgress) {
-          addMemberInfoToMessage(memberEntry);
-        }
-        if (IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-          message += `*The list doesn't contain users who have no quest progress*  \n`;
-        } else {
-          for (const memberEntry of membersWithoutProgress) {
-            addMemberInfoToMessage(memberEntry);
-          }
-        }
-      } else {
-        message += `Waiting for members to participate:  \n`;
-        message += `User | Status  \n`;
-        message += `---------- | ----------  \n`;
-        for (const [memberId, isParticipating] of partyMembers) {
-          if (!isParticipating) {
-            const member = getMemberById(memberId);
-            if (member && member.party._id) {
-              message += `${member.profile.name} | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
-            }
-          }
-        }
-      }
-
-      sendMessageToGroup(party.id, message);
     }
   }
 }
