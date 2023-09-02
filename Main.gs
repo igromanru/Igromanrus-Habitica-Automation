@@ -94,8 +94,8 @@ function triggerSchedule() {
 /**
  * Install scheduled triggers
  */
-function installTrigger() {
-  uninstallTrigger();
+function installTriggers() {
+  uninstallTriggers();
   console.log("Creating triggers...");
 
   let triggers = []; 
@@ -128,7 +128,7 @@ function installTrigger() {
 /**
  * Uninstall scheduled triggers
  */
-function uninstallTrigger() {
+function uninstallTriggers() {
   const triggers = ScriptApp.getProjectTriggers();
   if (triggers.length > 0) {
     console.log("Deleting triggers");
@@ -358,7 +358,7 @@ function checkAndSendPartyQuestProgress() {
       const quest = party.quest;
       const bossQuest = quest.progress.hp > 0;
   
-      let message = `### ${SCRIPT_NAME} Party Quest Status  \n`;
+      let message = `### ${SCRIPT_NAME} - Party Quest Status  \n`;
       message += `**Party:** ${party.name}  \n`;
       message += `**Leader:** ${party.leader.profile.name}  \n`;
       message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n\n`;

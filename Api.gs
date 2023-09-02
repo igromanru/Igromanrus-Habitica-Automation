@@ -288,24 +288,14 @@ function sendMessageToGroup(targetGroupId, messageText) {
  * https://habitica.com/apidoc/#api-User-UserBuyPotion
  */
 function buyHealthPotion() {
-  const response = UrlFetchApp.fetch(
-    `${userAPI}/buy-health-potion`,
-    {
-      method: 'post',
-      headers: Headers
-    }
-  );
+  console.log('Buying a Health Potion');
 
-  const responseCode = response.getResponseCode();
-  console.log('Buy Health Potion response code: ' + responseCode);
-
-  if (responseCode != 200) {
-    const errorData = JSON.parse(response).data;
-    console.error('Error code: ' + errorData.error);
-    console.error('Error message: ' + errorData.message);
+  const result = fetchPost(`${userAPI}/buy-health-potion`);
+  if (result !== undefined && result) {
+    return result.success === true;
   }
 
-  return responseCode == 200;
+  return false;
 }
 
 /**
@@ -315,26 +305,13 @@ function buyHealthPotion() {
  * https://habitica.com/apidoc/#api-User-UserSleep
  */
 function toggleSleep() {
-  const response = UrlFetchApp.fetch(
-    `${userAPI}/sleep`,
-    {
-      method: 'post',
-      headers: Headers
-    }
-  );
+  console.log('Toggling sleep');
 
-  const responseCode = response.getResponseCode();
-  console.log('Toggle sleep response code: ' + responseCode);
-  const responseData = JSON.parse(response).data;
-
-  if (responseCode != 200) {
-    console.error('Error code: ' + responseData.error);
-    console.error('Error message: ' + responseData.message);
+  const result = fetchPost(`${userAPI}/sleep`);
+  if (result !== undefined && result && typeof result.data === 'boolean') {
+    CurrentSleepStatus = result.data;
   }
 
-  if (responseCode == 200) {
-    CurrentSleepStatus = responseData;
-  }
   return CurrentSleepStatus;
 }
 
@@ -344,28 +321,14 @@ function toggleSleep() {
  * https://habitica.com/apidoc/#api-User-UserBuyArmoire
  */
 function buyEnchantedArmoire() {
-  const response = UrlFetchApp.fetch(
-    `${userAPI}/buy-armoire`,
-    {
-      method: 'post',
-      headers: Headers
-    }
-  );
+  console.log('Buying Enchanted Armoire');
 
-  const responseCode = response.getResponseCode();
-  console.log('Buy Enchanted Armoire response code: ' + responseCode);
-
-  if (responseCode == 200) {
-    const responseJson = JSON.parse(response);
-    console.log(`Armoire json: ` + JSON.stringify(responseJson.data.armoire));
-    console.log('Message:' + responseJson.message);
-    return responseJson;
-  } else {
-    const errorData = JSON.parse(response);
-    console.error('Error code: ' + errorData.error);
-    console.error('Error message: ' + errorData.message);
+  const result = fetchPost(`${userAPI}/buy-armoire`);
+  if (result !== undefined && result) {
+    console.log(`Armoire json: ` + JSON.stringify(result.data.armoire));
+    console.log('Message:' + result.message);
+    return result;
   }
-
   return undefined;
 }
 
@@ -388,30 +351,13 @@ function buyGems(amount = 1) {
 function buyGemPurchasableItem(type, key, amount = 1) {
   if ((type === "gems" && key === "gem") || type === "eggs" || type === "hatchingPotions"
       || type === "premiumHatchingPotions" || type === "food" || type === "quests" || type === "gear" || type === "pets") {
-
+    console.log(`Buying Gem Purchasable Item (type: ${type}, key: ${key}, amount: ${amount})`);
     const requestBody = {
       quantity: amount
     };
-    const response = UrlFetchApp.fetch(
-      `${userAPI}/purchase/${type}/${key}`,
-      {
-        method: 'post',
-        headers: Headers,
-        contentType: 'application/json',
-        payload: JSON.stringify(requestBody)
-      }
-    );
-
-    const responseCode = response.getResponseCode();
-    console.log(`Buy Gem Purchasable Item (type: ${type}, key: ${key}, amount: ${amount}) response code: ${responseCode}`);
-
-    if (responseCode == 200) {
-      const responseJson = JSON.parse(response.getContentText());
-      return responseJson.success;
-    } else {
-      const errorData = JSON.parse(response);
-      console.error('Error code: ' + errorData.error);
-      console.error('Error message: ' + errorData.message);
+    const result = fetchPost(`${userAPI}/purchase/${type}/${key}`, requestBody);
+    if (result !== undefined && result) {
+      return result.success === true;
     }
   } else {
     console.error(`buyPurchasableItem: type (${type}) or key (${key}) are invalid`);
@@ -421,18 +367,11 @@ function buyGemPurchasableItem(type, key, amount = 1) {
 }
 
 function acceptQuest (quest) {
-  const response = UrlFetchApp.fetch(
-    `${partyAPI}/quests/accept`,
-    {
-      method: 'post',
-      headers: Headers
-    }
-  );
-
-  const responseCode = response.getResponseCode();
-  console.log('Quests accept code: ' + responseCode);
-
-  return responseCode == 200;
+  if (quest) {
+    const result = fetchPost(`${partyAPI}/quests/accept`);
+    return result !== undefined && result && result.success === true;
+  }
+  return false;
 }
 
 /**
@@ -441,18 +380,11 @@ function acceptQuest (quest) {
  * Run this function just after the user's day start time.
  */
 function runCron() {
-  const api = `${baseUrl}/v3/cron`;
-
-  console.log('Run cron');
-  const response = UrlFetchApp.fetch(
-    `${api}`,
-    {
-      method: 'post',
-      headers: Headers
-    }
-  );
-
-  console.log('runCron Response code: ' + response.getResponseCode());
+  console.log('Running cron');
+  const result = fetchPost(`${baseUrl}/v3/cron`);
+  if (result !== undefined && result && result.success === true) {
+    console.log('Cron was successful');
+  }
 }
 
 /**
@@ -467,22 +399,11 @@ function runCron() {
 function allocateStatPoint(stat) {
   if (stat) {
     if (stat == "str" || stat == "con" || stat == "int" || stat == "per") {
-      const response = UrlFetchApp.fetch(
-        `${userAPI}/allocate?stat=${stat}`,
-        {
-          method: 'post',
-          headers: Headers
-        }
-      );
-      const responseCode = response.getResponseCode();
-      console.log(`Allocate Stat Point (${stat}) response code: ${responseCode}`);
+      console.log(`Allocating single Stat Point (${stat})`);
 
-      if (responseCode == 200) {
+      const result = fetchPost(`${userAPI}/allocate?stat=${stat}`);
+      if (result !== undefined && result && result.success === true) {
         console.log('Stat Point successfully allocated');
-      } else {
-        const errorData = JSON.parse(response);
-        console.error('Error code: ' + errorData.error);
-        console.error('Error message: ' + errorData.message);
       }
     } else {
       console.log(`allocateStatPoint Error: Stat "${stat}" is not a valid parameter`)
@@ -502,31 +423,74 @@ function allocateStatPoint(stat) {
 function allocateStatPoints(stat, amount) {
   if (stat && amount) {
     if (stat == "str" || stat == "con" || stat == "int" || stat == "per") {
-      const response = UrlFetchApp.fetch(
-        `${userAPI}/allocate-bulk`,
-        {
-          method: 'post',
-          headers: Headers,
-          contentType: "application/json",
-          payload: JSON.stringify({
-            stats: {
-              [stat]: amount
-            }
-          })
-        }
-      );
-      const responseCode = response.getResponseCode();
-      console.log(`Allocate ${amount} Stat Points (${stat}) response code: ${responseCode}`);
+      console.log(`Allocating ${amount} Stat Points to the Stat "${stat}"`);
 
-      if (responseCode == 200) {
+      const payload = {
+        stats: {
+          [stat]: amount
+        }
+      };
+      const result = fetchPost(`${userAPI}/allocate-bulk`, payload);
+      if (result !== undefined && result && result.success === true) {
         console.log('Stat Point successfully allocated');
-      } else {
-        const errorData = JSON.parse(response);
-        console.error('Error code: ' + errorData.error);
-        console.error('Error message: ' + errorData.message);
       }
     } else {
       console.log(`allocateStatPoints Error: Stat "${stat}" is not a valid parameter`)
     }
+  }
+}
+
+function fetchGet(url) {
+  return smartFetch(url, 'GET');
+}
+
+function fetchPost(url, requestBody = undefined, contentType = 'application/json') {
+  let params = {};
+  if (requestBody !== undefined && requestBody) {
+    params = {
+      'contentType': contentType,
+      'payload': JSON.stringify(requestBody)
+    };
+  }
+  return smartFetch(url, 'POST', params);
+}
+
+function smartFetch(url, method = 'GET', params = {}) {
+  params = Object.assign({
+    'method': method,
+    'headers': Headers,
+    'muteHttpExceptions': true
+  }, params);
+
+  for (let i = 0; i < 3; i++) {
+    const response = UrlFetchApp.fetch(url, params);
+    const responseCode = response.getResponseCode();
+    const headers = response.getHeaders();
+    const contentText = response.getContentText();
+
+    if (responseCode < 500) {
+      const pojo = JSON.parse(contentText);
+      if (pojo !== undefined && typeof pojo === 'object') {
+        if (pojo.success === true) {
+          return pojo;
+        } else if(pojo.error === 'TooManyRequests') {
+          const remainingRateLimit = headers['x-ratelimit-remaining'];
+          const rateLimitResetTime = headers['x-ratelimit-reset'];
+          if (remainingRateLimit <= 0 && rateLimitResetTime) {
+            const resetDateTime = new Date(rateLimitResetTime);
+            if (resetDateTime) {
+              const resetInMs =  resetDateTime - (new Date());
+              if (resetInMs > 0) {
+                Utilities.sleep(resetInMs + 100);
+                continue;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.error(`Request: ${url}\nResponse code: ${responseCode}\nContent: ${contentText}`);
+    return undefined;
   }
 }

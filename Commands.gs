@@ -10,10 +10,10 @@ const HELP_COMMAND = 'help';
 const QUEST_PROGRESS_COMMAND = 'quest';
 
 function scheduledCommandsCheck() {
-  if (!isLastExecutionOverAMinute()) {
+  /* if (!isLastExecutionOverAMinute()) {
     console.log("scheduledCommandsCheck: Skipping, last script execution was too recent");
     return;
-  }
+  }*/
 
   const partyId = getPartyIdProperty();
   if (!partyId) {
@@ -67,7 +67,7 @@ function evaluateMessage(chatMessage) {
 }
 
 function helpCommand() {
-  let message = `### ${SCRIPT_NAME} Commands  \n`;
+  let message = `### ${SCRIPT_NAME} - Commands  \n`;
   message += 'The command system allows users to trigger some script functions by sending chat messages with specific commands.  \n';
   message += `Currently, the check takes place every ${TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES} minutes, for new commands in chat.  \n\n`;
 

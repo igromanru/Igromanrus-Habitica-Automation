@@ -14,11 +14,7 @@ Also you have to add a time based trigger.
 ![hourlySchedule trigger](/Resources/images/Script_Properties.png)
 
 ### Setup triggers
-The current version is based around hourly execution of one function.  
-1. Navigate into the "Triggers" page
-2. Press "Add Trigger"
-3. Under "Choose which function to run" select "hourlySchedule"  
-   Under "Select type of time based trigger" choose "Hour timer"  
-   Under "Select hour interval" select "Every hour"
-![hourlySchedule trigger](/Resources/images/hourlySchedule_trigger.png)
-1. Save 
+The current version is based around scheduled executions.  
+1. Navigate into the Main.gs
+2. In the drop down near the "Debug" button, select the  "installTriggers" function
+3. Press "Run" and let the function install all the triggers
