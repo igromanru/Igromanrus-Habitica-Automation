@@ -303,14 +303,18 @@ function buyEnchantedArmoire() {
 
 /**
  * Wrapper for the function buyGemPurchasableItem to buy Gems
+ * 
+ * Returns true, if successful, otherwise false
  */
 function buyGems(amount = 1) {
+  console.log(`Buying ${amount} gems`);
   return buyGemPurchasableItem("gems", "gem", amount);
 }
 
 /**
  * Purchase Gem or Gem-purchasable item
  * 
+ * Returns true, if successful, otherwise false
  * https://habitica.com/apidoc/#api-User-UserPurchase
  */
 function buyGemPurchasableItem(type, key, amount = 1) {
@@ -331,14 +335,11 @@ function buyGemPurchasableItem(type, key, amount = 1) {
     );
 
     const responseCode = response.getResponseCode();
-    console.log(`Buy Purchasable Item (type: ${type}, key: ${key}) response code: ${responseCode}`);
+    console.log(`Buy Gem Purchasable Item (type: ${type}, key: ${key}, amount: ${amount}) response code: ${responseCode}`);
 
     if (responseCode == 200) {
-      const responseJson = JSON.parse(response);
-      // ToDo: Find out the result and edit
-      // console.log(`Armoire json: ` + JSON.stringify(responseJson.data.armoire));
-      // console.log('Message:' + responseJson.message);
-      return responseJson;
+      const responseJson = JSON.parse(response.getContentText());
+      return responseJson.success;
     } else {
       const errorData = JSON.parse(response);
       console.log('Error code: ' + errorData.error);
@@ -348,7 +349,7 @@ function buyGemPurchasableItem(type, key, amount = 1) {
     console.error(`buyPurchasableItem: type (${type}) or key (${key}) are invalid`);
   }
 
-  return undefined;
+  return false;
 }
 
 function acceptQuest (quest) {

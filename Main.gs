@@ -325,11 +325,16 @@ function autoBuyEnchantedArmoire(user) {
 }
 
 function autoBuyGems(user) {
-  if (AUTO_BUY_GEMS && user) {
+  if (AUTO_BUY_GEMS && user && user.purchased && user.purchased.plan) {
     const gemCost = 20; // 1 gem costs 20 Gold
+    const defaultGemCap = 25;
     const currentGold = user.stats.gp;
+    const plan = user.purchased.plan;
 
-
+    const gemsToBuy = Math.min(defaultGemCap + plan.consecutive.gemCapExtra - plan.gemsBought, Math.floor(currentGold / gemCost));
+    if (gemsToBuy > 0) {
+      buyGems(gemsToBuy);
+    }
   }
 }
 
