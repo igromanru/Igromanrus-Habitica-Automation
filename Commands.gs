@@ -52,7 +52,7 @@ function evaluateMessage(chatMessage) {
       switch (command) {
         case QUEST_PROGRESS_COMMAND:
           console.log(`evaluateMessage: Executing command "${command}"`);
-          scheduleCheckAndSendPartyQuestProgress();
+          checkAndSendPartyQuestProgress();
           break;
       }
     }

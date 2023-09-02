@@ -34,7 +34,8 @@ const ACCUMULATE_UNTIL_ONE_HIT = true;
 // Commands settings
 const ENABLE_COMMANDS = true;
 const COMMAND_SEND_PARTY_QUEST_PROGRESS = true;
-const IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
+const PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
+const PARTY_QUEST_PROGRESS_IGNORE_NOT_PARTICIPATING_MEMBERS = true;
 
 // Install settings
 const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
@@ -350,29 +351,11 @@ function autoAllocateStatPoints(user) {
   }
 }
 
-function scheduleCheckAndSendPartyQuestProgress() {
-  /*const triggers = ScriptApp.getProjectTriggers();
-  for (const trigger of triggers) {
-    const functionName = trigger.getHandlerFunction();
-    if (functionName == checkAndSendPartyQuestProgress.name) {
-      ScriptApp.deleteTrigger(trigger);
-    }
-  }*/
-
-  const trigger = ScriptApp.newTrigger(checkAndSendPartyQuestProgress.name)
-    .timeBased()
-    .after(1.5 * 60 * 1000) // 1.5 min
-    .create();
-
-  if (trigger) {
-    console.log("Chained trigger created for: " + trigger.getHandlerFunction());
-  }
-}
-
 function checkAndSendPartyQuestProgress() {
   const party = getParty();
-  if (party) {
-    if (party.quest && party.quest.key) {
+  if (party && party.quest && party.quest.key) {
+    const partyMembers = getPartyMembers(true);
+    if (partyMembers && partyMembers.length) {
       const quest = party.quest;
       const bossQuest = quest.progress.hp > 0;
   
@@ -381,19 +364,15 @@ function checkAndSendPartyQuestProgress() {
       message += `**Leader:** ${party.leader.profile.name}  \n`;
       message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n\n`;
 
-      const partyMembers = Object.entries(quest.members);
       if (quest.active) {
         const membersWithProgress = new Array();
         const membersWithoutProgress = new Array();
-        for (const [memberId, isParticipating] of partyMembers) {
-          if (isParticipating === true) {
-            const member = getMemberById(memberId);
-            if (member && member.party._id && member.party.quest.key) {
-              if (member.party.quest.progress.up > 0 || member.party.quest.progress.collectedItems > 0) {
-                membersWithProgress.push(member);
-              } else if(!IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-                membersWithoutProgress.push(member);
-              }
+        for (const member of partyMembers) {
+          if (member && member.party._id && member.party.quest.key) {
+            if (member.party.quest.progress.up > 0 || member.party.quest.progress.collectedItems > 0) {
+              membersWithProgress.push(member);
+            } else if(!PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+              membersWithoutProgress.push(member);
             }
           }
         }
@@ -401,45 +380,42 @@ function checkAndSendPartyQuestProgress() {
         const progressType = bossQuest ? 'Damage' : 'Items';
         message += `User | ${progressType} | Last Login | Status  \n`;
         message += `--- | --- | --- | ---  \n`;
-        const addMemberInfoToMessage = (memberObj) => {
-          const pendingDamage = Math.round(memberObj.party.quest.progress.up * 10) / 10;
-          const progress = bossQuest ? pendingDamage : memberObj.party.quest.progress.collectedItems;
-          const differenceText = getTimeDifferenceToNowAsString(new Date(memberObj.auth.timestamps.loggedin));
+
+        const addMemberInfoToMessage = (member) => {
+          const pendingDamage = Math.round(member.party.quest.progress.up * 10) / 10;
+          const progress = bossQuest ? pendingDamage : member.party.quest.progress.collectedItems;
+          const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
           const lastLogin = differenceText ? `${differenceText} ago` : '';
-          const sleeping = memberObj.preferences.sleep ? 'Sleeping' : '';
-          message += `${memberObj.profile.name} &ensp; | ${progress} &ensp; | ${lastLogin} &ensp; | ${sleeping}  \n`;
+          const sleeping = member.preferences.sleep ? 'Sleeping' : '';
+          message += `${member.profile.name} &ensp; | ${progress} &ensp; | ${lastLogin} &ensp; | ${sleeping}  \n`;
         };
         if (bossQuest) {
           membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
         } else {
           membersWithProgress.sort((a, b) => b.party.quest.progress.collectedItems - a.party.quest.progress.collectedItems);
         }
-        for (const memberEntry of membersWithProgress) {
-          addMemberInfoToMessage(memberEntry);
+        for (const member of membersWithProgress) {
+          addMemberInfoToMessage(member);
         }
-        if (IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+        if (PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
           message += `*The list doesn't contain users who have no quest progress*  \n`;
         } else {
-          for (const memberEntry of membersWithoutProgress) {
-            addMemberInfoToMessage(memberEntry);
+          for (const member of membersWithoutProgress) {
+            addMemberInfoToMessage(member);
           }
         }
       } else {
         message += `Members who haven't accepted the quest yet:  \n`;
         message += `User | Last Login | Status  \n`;
         message += `--- | --- | ---  \n`;
-        for (const [memberId, isParticipating] of partyMembers) {
-          if (!isParticipating) {
-            const member = getMemberById(memberId);
-            if (member && member.party._id) {
-              const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
-              const lastLogin = differenceText ? `${differenceText} ago` : '';
-              message += `${member.profile.name} &ensp; | ${lastLogin} &ensp; | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
-            }
+        for (const member of partyMembers) {
+          if (member && member.party._id && !member.party.quest.key) {
+            const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
+            const lastLogin = differenceText ? `${differenceText} ago` : '';
+            message += `${member.profile.name} &ensp; | ${lastLogin} &ensp; | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
           }
         }
       }
-
       sendMessageToGroup(party.id, message);
     }
   }

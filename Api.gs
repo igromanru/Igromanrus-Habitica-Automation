@@ -38,8 +38,8 @@ function getUser() {
     }
   } else {
     const errorData = JSON.parse(response);
-    console.log('Error code: ' + errorData.error);
-    console.log('Error message: ' + errorData.message);
+    console.error('Error code: ' + errorData.error);
+    console.error('Error message: ' + errorData.message);
   }
   
   return undefined;
@@ -65,11 +65,77 @@ function getParty() {
     }
   } else {
     const errorData = JSON.parse(response);
-    console.log('Error code: ' + errorData.error);
-    console.log('Error message: ' + errorData.message);
+    console.error('Error code: ' + errorData.error);
+    console.error('Error message: ' + errorData.message);
   }
   
   return undefined;
+}
+
+/**
+ * Get all members for the party
+ * It allows to get more detailed infomation about members
+ * 
+ * Returns an array of members or an empty array.
+ * 
+ * @See: https://habitica-api.igromanru.com/#/party/get_v3_groups_party_members
+ */
+function getPartyMembers(includeAllPublicFields = false, includeTasks = false, limit = 30, lastId = '') {
+  const response = UrlFetchApp.fetch(
+    `${partyAPI}/members?lastId=${lastId}&includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}`,
+    {
+      method: 'get',
+      headers: Headers
+    }
+  );
+
+  const responseCode = response.getResponseCode();
+  if (responseCode == 200) {
+    const pojo = JSON.parse(response.getContentText());
+    if (pojo.success && pojo.data && pojo.data instanceof Array) {
+      return pojo.data;
+    }
+  } else {
+    const errorData = JSON.parse(response);
+    console.error('Error code: ' + errorData.error);
+    console.error('Error message: ' + errorData.message);
+  }
+
+  return [];
+}
+
+/**
+ * Get all members for a group
+ * It allows to get more detailed infomation about members
+ * 
+ * Returns an array of members or an empty array.
+ * 
+ * @See: https://habitica.com/apidoc/#api-Member-GetMembersForGroup
+ */
+function getGroupMembers(groupId, includeAllPublicFields = false, includeTasks = false, limit = 30, lastId = '') {
+  if (groupId) {
+    const response = UrlFetchApp.fetch(
+      `${groupsAPI}/${groupId}/members?lastId=${lastId}&includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}`,
+      {
+        method: 'get',
+        headers: Headers
+      }
+    );
+
+    const responseCode = response.getResponseCode();
+    if (responseCode == 200) {
+      const pojo = JSON.parse(response.getContentText());
+      if (pojo.success && pojo.data && pojo.data instanceof Array) {
+        return pojo.data;
+      }
+    } else {
+      const errorData = JSON.parse(response);
+      console.error('Error code: ' + errorData.error);
+      console.error('Error message: ' + errorData.message);
+    }
+  }
+
+  return [];
 }
 
 /**
@@ -89,14 +155,14 @@ function getMemberById(memberId) {
 
     const responseCode = response.getResponseCode();
     if (responseCode == 200) {
-      const pojo = JSON.parse(response);
+      const pojo = JSON.parse(response.getContentText());
       if (pojo.success && pojo.data && typeof pojo.data === 'object') {
         return pojo.data;
       }
     } else {
       const errorData = JSON.parse(response);
-      console.log('Error code: ' + errorData.error);
-      console.log('Error message: ' + errorData.message);
+      console.error('Error code: ' + errorData.error);
+      console.error('Error message: ' + errorData.message);
     }
   }
   
@@ -126,8 +192,8 @@ function getGroupChat(groupId) {
       }
     } else {
       const errorData = JSON.parse(response);
-      console.log('Error code: ' + errorData.error);
-      console.log('Error message: ' + errorData.message);
+      console.error('Error code: ' + errorData.error);
+      console.error('Error message: ' + errorData.message);
     }
   }
 
@@ -161,8 +227,8 @@ function sendPM(targetUserId, messageText) {
 
     if (responseCode != 200) {
       const errorData = JSON.parse(response).data;
-      console.log('Error code: ' + errorData.error);
-      console.log('Error message: ' + errorData.message);
+      console.error('Error code: ' + errorData.error);
+      console.error('Error message: ' + errorData.message);
     }
 
     return responseCode == 200;
@@ -203,8 +269,8 @@ function sendMessageToGroup(targetGroupId, messageText) {
 
     if (responseCode != 200) {
       const errorData = JSON.parse(response).data;
-      console.log('Error code: ' + errorData.error);
-      console.log('Error message: ' + errorData.message);
+      console.error('Error code: ' + errorData.error);
+      console.error('Error message: ' + errorData.message);
     }
 
     return responseCode == 200;
@@ -233,8 +299,8 @@ function buyHealthPotion() {
 
   if (responseCode != 200) {
     const errorData = JSON.parse(response).data;
-    console.log('Error code: ' + errorData.error);
-    console.log('Error message: ' + errorData.message);
+    console.error('Error code: ' + errorData.error);
+    console.error('Error message: ' + errorData.message);
   }
 
   return responseCode == 200;
@@ -260,8 +326,8 @@ function toggleSleep() {
   const responseData = JSON.parse(response).data;
 
   if (responseCode != 200) {
-    console.log('Error code: ' + responseData.error);
-    console.log('Error message: ' + responseData.message);
+    console.error('Error code: ' + responseData.error);
+    console.error('Error message: ' + responseData.message);
   }
 
   if (responseCode == 200) {
@@ -294,8 +360,8 @@ function buyEnchantedArmoire() {
     return responseJson;
   } else {
     const errorData = JSON.parse(response);
-    console.log('Error code: ' + errorData.error);
-    console.log('Error message: ' + errorData.message);
+    console.error('Error code: ' + errorData.error);
+    console.error('Error message: ' + errorData.message);
   }
 
   return undefined;
@@ -342,8 +408,8 @@ function buyGemPurchasableItem(type, key, amount = 1) {
       return responseJson.success;
     } else {
       const errorData = JSON.parse(response);
-      console.log('Error code: ' + errorData.error);
-      console.log('Error message: ' + errorData.message);
+      console.error('Error code: ' + errorData.error);
+      console.error('Error message: ' + errorData.message);
     }
   } else {
     console.error(`buyPurchasableItem: type (${type}) or key (${key}) are invalid`);
@@ -385,7 +451,6 @@ function runCron() {
   );
 
   console.log('runCron Response code: ' + response.getResponseCode());
-  // console.log(response.getContentText());
 }
 
 /**
@@ -414,8 +479,8 @@ function allocateStatPoint(stat) {
         console.log('Stat Point successfully allocated');
       } else {
         const errorData = JSON.parse(response);
-        console.log('Error code: ' + errorData.error);
-        console.log('Error message: ' + errorData.message);
+        console.error('Error code: ' + errorData.error);
+        console.error('Error message: ' + errorData.message);
       }
     } else {
       console.log(`allocateStatPoint Error: Stat "${stat}" is not a valid parameter`)
@@ -455,8 +520,8 @@ function allocateStatPoints(stat, amount) {
         console.log('Stat Point successfully allocated');
       } else {
         const errorData = JSON.parse(response);
-        console.log('Error code: ' + errorData.error);
-        console.log('Error message: ' + errorData.message);
+        console.error('Error code: ' + errorData.error);
+        console.error('Error message: ' + errorData.message);
       }
     } else {
       console.log(`allocateStatPoints Error: Stat "${stat}" is not a valid parameter`)
