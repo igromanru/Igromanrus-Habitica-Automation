@@ -68,7 +68,7 @@ function triggerSchedule() {
           console.log('No active quest');
         }
 
-        acceptQuest(quest);
+        autoAcceptQuest(quest);
         // autoSleep(user, quest);
         autoAccumulateDamage(user, quest);
         autoCron(user);
@@ -122,20 +122,22 @@ function uninstallTrigger() {
   }
 }
 
-function acceptQuest (quest) {
+function doGet(e) {
+  var data = JSON.stringify(e.postData);
+  console.log(data);
+  return ContentService.createTextOutput(data).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var data = JSON.stringify(e.postData);
+  console.log(data);
+  return ContentService.createTextOutput(data).setMimeType(ContentService.MimeType.JSON);
+}
+
+function autoAcceptQuest(quest) {
   if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[UserId]) {
-    console.log('Run quests accept');
-
-    const response = UrlFetchApp.fetch(
-      `${partyAPI}/quests/accept`,
-      {
-        method: 'post',
-        HEADERS
-      }
-    );
-
-    console.log('Quests accept code: ' + response.getResponseCode());
-    // console.log(response.getContentText());
+    console.log('autoAcceptQuest: Accepting inactive quests');
+    acceptQuest();
   }
 }
 

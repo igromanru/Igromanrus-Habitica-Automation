@@ -3,8 +3,8 @@
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
 
-const HEADERS = {
-  "x-client" : "06b046d4-160a-4a20-b527-b74385052f0e-Igromanrus_Habitica_Automation",
+const Headers = {
+  "x-client": "06b046d4-160a-4a20-b527-b74385052f0e-Igromanrus_Habitica_Automation",
   'x-api-user': UserId,
   'x-api-key': ApiToken,
 };
@@ -26,7 +26,7 @@ function getUser() {
     userAPI,
     {
       method: 'get',
-      HEADERS
+      headers: Headers
     }
   );
 
@@ -53,7 +53,7 @@ function getParty() {
     partyAPI,
     {
       method: 'get',
-      HEADERS
+      headers: Headers
     }
   );
 
@@ -83,7 +83,7 @@ function getMemberById(memberId) {
       `${membersAPI}/${memberId}`,
       {
         method: 'get',
-        HEADERS
+        headers: Headers
       }
     );
 
@@ -114,7 +114,7 @@ function getGroupChat(groupId) {
       `${groupsAPI}/${groupId}/chat`,
       {
         method: 'get',
-        HEADERS
+        headers: Headers
       }
     );
 
@@ -150,7 +150,7 @@ function sendPM(targetUserId, messageText) {
       `${membersAPI}/send-private-message`,
       {
         method: 'post',
-        HEADERS,
+        headers: Headers,
         contentType : 'application/json',
         payload : JSON.stringify(requestBody)
       }
@@ -192,7 +192,7 @@ function sendMessageToGroup(targetGroupId, messageText) {
       `${groupsAPI}/${targetGroupId}/chat`,
       {
         method: 'post',
-        HEADERS,
+        headers: Headers,
         contentType : 'application/json',
         payload : JSON.stringify(messageData)
       }
@@ -224,7 +224,7 @@ function buyHealthPotion() {
     `${userAPI}/buy-health-potion`,
     {
       method: 'post',
-      HEADERS
+      headers: Headers
     }
   );
 
@@ -251,7 +251,7 @@ function toggleSleep() {
     `${userAPI}/sleep`,
     {
       method: 'post',
-      HEADERS
+      headers: Headers
     }
   );
 
@@ -280,7 +280,7 @@ function buyEnchantedArmoire() {
     `${userAPI}/buy-armoire`,
     {
       method: 'post',
-      HEADERS
+      headers: Headers
     }
   );
 
@@ -317,7 +317,7 @@ function buyGemPurchasableItem(type, key, count = 1) {
       `${userAPI}/purchase/${type}/${key}`,
       {
         method: 'post',
-        HEADERS,
+        headers: Headers,
         contentType: 'application/json',
         payload: JSON.stringify(requestBody)
       }
@@ -344,6 +344,21 @@ function buyGemPurchasableItem(type, key, count = 1) {
   return undefined;
 }
 
+function acceptQuest (quest) {
+  const response = UrlFetchApp.fetch(
+    `${partyAPI}/quests/accept`,
+    {
+      method: 'post',
+      headers: Headers
+    }
+  );
+
+  const responseCode = response.getResponseCode();
+  console.log('Quests accept code: ' + responseCode);
+
+  return responseCode == 200;
+}
+
 /**
  * Forces the user to cron if they haven't already cronned today.
  * 
@@ -357,7 +372,7 @@ function runCron() {
     `${api}`,
     {
       method: 'post',
-      HEADERS
+      headers: Headers
     }
   );
 
@@ -381,7 +396,7 @@ function allocateStatPoint(stat) {
         `${userAPI}/allocate?stat=${stat}`,
         {
           method: 'post',
-          HEADERS
+          headers: Headers
         }
       );
       const responseCode = response.getResponseCode();
@@ -416,7 +431,7 @@ function allocateStatPoints(stat, amount) {
         `${userAPI}/allocate-bulk`,
         {
           method: 'post',
-          HEADERS,
+          headers: Headers,
           contentType: "application/json",
           payload: JSON.stringify({
             stats: {

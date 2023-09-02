@@ -7,6 +7,7 @@ const ScriptProperties = PropertiesService.getScriptProperties();
 
 const UserId = ScriptProperties.getProperty('API_ID');
 const ApiToken = ScriptProperties.getProperty('API_KEY');
+const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 
 function test() {
   const dayStartOffset = 1;
