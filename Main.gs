@@ -77,7 +77,6 @@ function triggerSchedule() {
         autoAccumulateDamage(user, quest);
         autoCron(user);
         checkAndSendMyQuestProgress(user, quest);
-        // checkAndSendPartyQuestProgress(party, quest);
       }
     } else {
       console.log('User is not in a party. Ignoring party request and party related functions.');
@@ -378,7 +377,7 @@ function checkAndSendPartyQuestProgress() {
         }
 
         const progressType = bossQuest ? 'Damage' : 'Items';
-        message += `User | ${progressType} | Last Login | Status  \n`;
+        message += `User | ${progressType} | Last Cron | Status  \n`;
         message += `--- | --- | --- | ---  \n`;
 
         const addMemberInfoToMessage = (member) => {
@@ -406,7 +405,7 @@ function checkAndSendPartyQuestProgress() {
         }
       } else {
         message += `Members who haven't accepted the quest yet:  \n`;
-        message += `User | Last Login | Status  \n`;
+        message += `User | Last Cron | Status  \n`;
         message += `--- | --- | ---  \n`;
         for (const member of partyMembers) {
           if (member && member.party._id && !member.party.quest.key) {
