@@ -3,6 +3,10 @@
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
 
+const COMMANDS_PREFIX = '!';
+const COMMANDS_REGEX = /\!(.*?)(?:$|\s)/g;
+
+const HELP_COMMAND = 'help';
 const QUEST_PROGRESS_COMMAND = 'quest';
 
 function scheduledCommandsCheck() {
@@ -42,19 +46,37 @@ function scheduledCommandsCheck() {
 }
 
 function evaluateMessage(chatMessage) {
-  if (chatMessage && chatMessage.trim().startsWith("!")) {
-    var commandRegEx = /\!(.*?)(?:$|\s)/g;
-    var matches = commandRegEx.exec(chatMessage);
+  if (chatMessage && chatMessage.trim().startsWith(COMMANDS_PREFIX)) {
+    var matches = COMMANDS_REGEX.exec(chatMessage);
     if (matches && matches.length > 1) {
       // first group match
       const command = matches[1];
       console.log(`evaluateMessage: Found command "${command}"`);
       switch (command) {
+        case HELP_COMMAND:
+          console.log(`evaluateMessage: Executing command "${command}"`);
+          helpCommand();
+          break;
         case QUEST_PROGRESS_COMMAND:
           console.log(`evaluateMessage: Executing command "${command}"`);
           checkAndSendPartyQuestProgress();
           break;
       }
     }
+  }
+}
+
+function helpCommand() {
+  let message = `### ${SCRIPT_NAME} Commands  \n`;
+  message += 'The command system allows users to trigger some script functions by sending chat messages with specific commands.  \n';
+  message += `Currently, the check takes place every ${TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES} minutes, for new commands in chat.  \n\n`;
+
+  message += `**Following commands are available:**  \n`;
+  message += `- ${COMMANDS_PREFIX + HELP_COMMAND} : Prints this message  \n`;
+  message += `- ${COMMANDS_PREFIX + QUEST_PROGRESS_COMMAND} : Prints current Party Quest Status  \n`;
+
+  const partyId = getPartyIdProperty();
+  if (partyId && typeof partyId === 'string' && message) {
+    sendMessageToGroup(partyId, message);
   }
 }
