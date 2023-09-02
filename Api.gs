@@ -81,8 +81,9 @@ function getParty() {
  * @See: https://habitica-api.igromanru.com/#/party/get_v3_groups_party_members
  */
 function getPartyMembers(includeAllPublicFields = false, includeTasks = false, limit = 30, lastId = '') {
+  const lastIdParam = lastId ? `&lastId=${lastId}` : '';
   const response = UrlFetchApp.fetch(
-    `${partyAPI}/members?lastId=${lastId}&includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}`,
+    `${partyAPI}/members?includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}${lastIdParam}`,
     {
       method: 'get',
       headers: Headers
@@ -114,8 +115,9 @@ function getPartyMembers(includeAllPublicFields = false, includeTasks = false, l
  */
 function getGroupMembers(groupId, includeAllPublicFields = false, includeTasks = false, limit = 30, lastId = '') {
   if (groupId) {
+    const lastIdParam = lastId ? `&lastId=${lastId}` : '';
     const response = UrlFetchApp.fetch(
-      `${groupsAPI}/${groupId}/members?lastId=${lastId}&includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}`,
+      `${groupsAPI}/${groupId}/members?includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}${lastIdParam}`,
       {
         method: 'get',
         headers: Headers

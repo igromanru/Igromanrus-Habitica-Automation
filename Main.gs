@@ -358,7 +358,7 @@ function checkAndSendPartyQuestProgress() {
       const quest = party.quest;
       const bossQuest = quest.progress.hp > 0;
   
-      let message = `### Party Quest Status  \n`;
+      let message = `### ${SCRIPT_NAME} Party Quest Status  \n`;
       message += `**Party:** ${party.name}  \n`;
       message += `**Leader:** ${party.leader.profile.name}  \n`;
       message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n\n`;
@@ -377,7 +377,7 @@ function checkAndSendPartyQuestProgress() {
         }
 
         const progressType = bossQuest ? 'Damage' : 'Items';
-        message += `User | ${progressType} | Last Cron | Status  \n`;
+        message += `User | ${progressType} | Last Check In | Status  \n`;
         message += `--- | --- | --- | ---  \n`;
 
         const addMemberInfoToMessage = (member) => {
@@ -397,7 +397,7 @@ function checkAndSendPartyQuestProgress() {
           addMemberInfoToMessage(member);
         }
         if (PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-          message += `*The list doesn't contain users who have no quest progress*  \n`;
+          message += `\n*The list doesn't contain users who have no quest progress*  \n`;
         } else {
           for (const member of membersWithoutProgress) {
             addMemberInfoToMessage(member);
@@ -405,7 +405,7 @@ function checkAndSendPartyQuestProgress() {
         }
       } else {
         message += `Members who haven't accepted the quest yet:  \n`;
-        message += `User | Last Cron | Status  \n`;
+        message += `User | Last Check In | Status  \n`;
         message += `--- | --- | ---  \n`;
         for (const member of partyMembers) {
           if (member && member.party._id && !member.party.quest.key) {
