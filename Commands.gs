@@ -15,16 +15,10 @@ function scheduledCommandsCheck() {
     return;
   }*/
 
-  const partyId = getPartyIdProperty();
-  if (!partyId) {
-    console.log("scheduledCommandsCheck: Skipping, the PARTY_ID property is not set");
-    return;
-  }
-
   const lastCheckTime = getLastCommandCheckDateTime();
-  const chatArray = getGroupChat(partyId);
+  const chatArray = getPartyChat();
   if (chatArray instanceof Array && chatArray) {
-    console.log(`scheduledCommandsCheck: Found ${chatArray.length} chat messages for the party ${partyId}`);
+    console.log(`scheduledCommandsCheck: Found ${chatArray.length} chat messages for the party`);
     let newMessageCount = 0;
     for (const chat of chatArray) {
       // Checking if it's an user message, skipping system messages, which have a type
@@ -39,7 +33,7 @@ function scheduledCommandsCheck() {
     }
     console.log(`scheduledCommandsCheck: New user messages since last command check: ${newMessageCount}`);
   } else {
-    console.log(`scheduledCommandsCheck Error: No chat messages found for the Party with id: ${partyId}`);
+    console.log(`scheduledCommandsCheck Error: No chat messages found for the Party`);
   }
 
   setLastCommandCheckDateTime();
@@ -75,8 +69,5 @@ function helpCommand() {
   message += `- ${COMMANDS_PREFIX + HELP_COMMAND} : Prints this message  \n`;
   message += `- ${COMMANDS_PREFIX + QUEST_PROGRESS_COMMAND} : Prints current Party Quest Status  \n`;
 
-  const partyId = getPartyIdProperty();
-  if (partyId && typeof partyId === 'string' && message) {
-    sendMessageToGroup(partyId, message);
-  }
+  sendMessageToParty(message);
 }

@@ -131,20 +131,6 @@ function getLastCommandCheckDateTime() {
   return new Date(0);
 }
 
-function setPartyIdProperty(partyId) {
-  if (typeof partyId == 'string' && partyId) {
-    ScriptProperties.setProperty("PARTY_ID", partyId);
-  }
-}
-
-function getPartyIdProperty() {
-  const value = ScriptProperties.getProperty("PARTY_ID");
-  if (typeof value === 'string') {
-    return value;
-  }
-  return undefined;
-}
-
 function setObjectAsScriptProperty(propertyKey, pojo) {
   if (typeof propertyKey == 'string' && propertyKey && typeof pojo == 'object' && pojo) {
     ScriptProperties.setProperty(propertyKey, JSON.stringify(pojo));

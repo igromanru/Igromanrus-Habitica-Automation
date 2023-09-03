@@ -22,24 +22,9 @@ var CurrentSleepStatus = false;
  * https://habitica.com/apidoc/#api-User-UserGet
  */
 function getUser() {
-  const response = UrlFetchApp.fetch(
-    userAPI,
-    {
-      method: 'get',
-      headers: Headers
-    }
-  );
-
-  const responseCode = response.getResponseCode();
-  if (responseCode == 200) {
-    const pojo = JSON.parse(response);
-    if (pojo.success && pojo.data) {
-      return pojo.data;
-    }
-  } else {
-    const errorData = JSON.parse(response);
-    console.error('Error code: ' + errorData.error);
-    console.error('Error message: ' + errorData.message);
+  const result = fetchGet(userAPI);
+  if (result !== undefined && result && typeof result.data === 'object') {
+    return result.data;
   }
   
   return undefined;
@@ -49,24 +34,9 @@ function getUser() {
  * Returns party object for the current API user
  */
 function getParty() {
-  const response = UrlFetchApp.fetch(
-    partyAPI,
-    {
-      method: 'get',
-      headers: Headers
-    }
-  );
-
-  const responseCode = response.getResponseCode();
-  if (responseCode == 200) {
-    const pojo = JSON.parse(response.getContentText());
-    if (pojo.success && pojo.data && typeof pojo.data === 'object') {
-      return pojo.data;
-    }
-  } else {
-    const errorData = JSON.parse(response);
-    console.error('Error code: ' + errorData.error);
-    console.error('Error message: ' + errorData.message);
+  const result = fetchGet(partyAPI);
+  if (result !== undefined && result && typeof result.data === 'object') {
+    return result.data;
   }
   
   return undefined;
@@ -74,35 +44,9 @@ function getParty() {
 
 /**
  * Get all members for the party
- * It allows to get more detailed infomation about members
- * 
- * Returns an array of members or an empty array.
- * 
- * @See: https://habitica-api.igromanru.com/#/party/get_v3_groups_party_members
  */
 function getPartyMembers(includeAllPublicFields = false, includeTasks = false, limit = 30, lastId = '') {
-  const lastIdParam = lastId ? `&lastId=${lastId}` : '';
-  const response = UrlFetchApp.fetch(
-    `${partyAPI}/members?includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}${lastIdParam}`,
-    {
-      method: 'get',
-      headers: Headers
-    }
-  );
-
-  const responseCode = response.getResponseCode();
-  if (responseCode == 200) {
-    const pojo = JSON.parse(response.getContentText());
-    if (pojo.success && pojo.data && pojo.data instanceof Array) {
-      return pojo.data;
-    }
-  } else {
-    const errorData = JSON.parse(response);
-    console.error('Error code: ' + errorData.error);
-    console.error('Error message: ' + errorData.message);
-  }
-
-  return [];
+  return getGroupMembers('party', includeAllPublicFields, includeTasks, limit, lastId);
 }
 
 /**
@@ -116,24 +60,9 @@ function getPartyMembers(includeAllPublicFields = false, includeTasks = false, l
 function getGroupMembers(groupId, includeAllPublicFields = false, includeTasks = false, limit = 30, lastId = '') {
   if (groupId) {
     const lastIdParam = lastId ? `&lastId=${lastId}` : '';
-    const response = UrlFetchApp.fetch(
-      `${groupsAPI}/${groupId}/members?includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}${lastIdParam}`,
-      {
-        method: 'get',
-        headers: Headers
-      }
-    );
-
-    const responseCode = response.getResponseCode();
-    if (responseCode == 200) {
-      const pojo = JSON.parse(response.getContentText());
-      if (pojo.success && pojo.data && pojo.data instanceof Array) {
-        return pojo.data;
-      }
-    } else {
-      const errorData = JSON.parse(response);
-      console.error('Error code: ' + errorData.error);
-      console.error('Error message: ' + errorData.message);
+    const result = fetchGet(`${groupsAPI}/${groupId}/members?includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}${lastIdParam}`);
+    if (result !== undefined && result && typeof result.data instanceof Array) {
+      return result.data;
     }
   }
 
@@ -147,28 +76,17 @@ function getGroupMembers(groupId, includeAllPublicFields = false, includeTasks =
  */
 function getMemberById(memberId) {
   if (memberId) {
-    const response = UrlFetchApp.fetch(
-      `${membersAPI}/${memberId}`,
-      {
-        method: 'get',
-        headers: Headers
-      }
-    );
-
-    const responseCode = response.getResponseCode();
-    if (responseCode == 200) {
-      const pojo = JSON.parse(response.getContentText());
-      if (pojo.success && pojo.data && typeof pojo.data === 'object') {
-        return pojo.data;
-      }
-    } else {
-      const errorData = JSON.parse(response);
-      console.error('Error code: ' + errorData.error);
-      console.error('Error message: ' + errorData.message);
+    const result = fetchGet(`${membersAPI}/${memberId}`);
+    if (result !== undefined && result && typeof result.data === 'object') {
+      return result.data;
     }
   }
   
   return undefined;
+}
+
+function getPartyChat() {
+  return getGroupChat('party');
 }
 
 /**
@@ -178,24 +96,9 @@ function getMemberById(memberId) {
  */
 function getGroupChat(groupId) {
   if (groupId) {
-     const response = UrlFetchApp.fetch(
-      `${groupsAPI}/${groupId}/chat`,
-      {
-        method: 'get',
-        headers: Headers
-      }
-    );
-
-    const responseCode = response.getResponseCode();
-    if (responseCode == 200) {
-      const pojo = JSON.parse(response);
-      if (pojo.success && pojo.data && pojo.data instanceof Array) {
-        return pojo.data;
-      }
-    } else {
-      const errorData = JSON.parse(response);
-      console.error('Error code: ' + errorData.error);
-      console.error('Error message: ' + errorData.message);
+    const result = fetchGet(`${groupsAPI}/${groupId}/chat`);
+    if (result !== undefined && result && result.data instanceof Array) {
+      return result.data;
     }
   }
 
@@ -214,26 +117,10 @@ function sendPM(targetUserId, messageText) {
       message: messageText,
       toUserId: targetUserId
     };
-    const response = UrlFetchApp.fetch(
-      `${membersAPI}/send-private-message`,
-      {
-        method: 'post',
-        headers: Headers,
-        contentType : 'application/json',
-        payload : JSON.stringify(requestBody)
-      }
-    );
-
-    const responseCode = response.getResponseCode();
-    console.log('Send PM response code: ' + responseCode);
-
-    if (responseCode != 200) {
-      const errorData = JSON.parse(response).data;
-      console.error('Error code: ' + errorData.error);
-      console.error('Error message: ' + errorData.message);
+    const result = fetchPost(`${membersAPI}/send-private-message`, requestBody);
+    if (result !== undefined && result) {
+      return result.success === true;
     }
-
-    return responseCode == 200;
   }
   return false;
 }
@@ -245,6 +132,10 @@ function sendPMToSelf(messageText) {
   return sendPM(UserId, messageText);
 }
 
+function sendMessageToParty(messageText) {
+  return sendMessageToGroup('party', messageText);
+}
+
 /**
  * Send a message to a group (party)
  * 
@@ -253,29 +144,14 @@ function sendPMToSelf(messageText) {
 function sendMessageToGroup(targetGroupId, messageText) {
   if (targetGroupId && messageText) {
     console.log('sendMessageToGroup: targetGroupId: ' + targetGroupId + '  \nmessageText: ' + messageText);
-    const messageData = {
+    const requestBody = {
       message: messageText
     };
-    const response = UrlFetchApp.fetch(
-      `${groupsAPI}/${targetGroupId}/chat`,
-      {
-        method: 'post',
-        headers: Headers,
-        contentType : 'application/json',
-        payload : JSON.stringify(messageData)
-      }
-    );
 
-    const responseCode = response.getResponseCode();
-    console.log('Group Chat send response code: ' + responseCode);
-
-    if (responseCode != 200) {
-      const errorData = JSON.parse(response).data;
-      console.error('Error code: ' + errorData.error);
-      console.error('Error message: ' + errorData.message);
+    const result = fetchPost(`${groupsAPI}/${targetGroupId}/chat`, requestBody);
+    if (result !== undefined && result) {
+      return result.success === true;
     }
-
-    return responseCode == 200;
   }
 
   return false;
@@ -329,6 +205,7 @@ function buyEnchantedArmoire() {
     console.log('Message:' + result.message);
     return result;
   }
+
   return undefined;
 }
 
@@ -481,7 +358,9 @@ function smartFetch(url, method = 'GET', params = {}) {
             if (resetDateTime) {
               const resetInMs =  resetDateTime - (new Date());
               if (resetInMs > 0) {
-                Utilities.sleep(resetInMs + 100);
+                const sleepMs = resetInMs + 100;
+                console.log(`Rate limit reached, sleeping ${sleepMs}ms until the next reset`)
+                Utilities.sleep(sleepMs);
                 continue;
               }
             }
