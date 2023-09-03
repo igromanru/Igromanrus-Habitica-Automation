@@ -352,11 +352,15 @@ function checkAndSendPartyQuestProgress() {
     const partyMembers = getPartyMembers(true);
     if (partyMembers && partyMembers.length) {
       const quest = party.quest;
+      const questLeader = getMemberFromArrayById(partyMembers, party.quest.leader);
       const bossQuest = quest.progress.hp > 0;
   
       let message = `### ${SCRIPT_NAME} - Party Quest Status  \n`;
-      message += `**Party:** ${party.name}  \n`;
-      message += `**Leader:** ${party.leader.profile.name}  \n`;
+      // message += `**Party:** ${party.name}  \n`;
+      message += `**Party Leader:** ${party.leader.profile.name}  \n`;
+      if (questLeader) {
+        message += `**Quest Leader:** ${member.profile.name}  \n`;
+      }
       message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n\n`;
 
       if (quest.active) {
@@ -373,7 +377,7 @@ function checkAndSendPartyQuestProgress() {
         }
 
         const progressType = bossQuest ? 'Damage' : 'Items';
-        message += `User | ${progressType} | Last Check In | Status  \n`;
+        message += `User | ${progressType} | Last "Day Start" | Status  \n`;
         // message += `--- | --- | --- | ---  \n`;
 
         const addMemberInfoToMessage = (member) => {
@@ -402,7 +406,7 @@ function checkAndSendPartyQuestProgress() {
         }
       } else {
         message += `Members who haven't accepted the quest yet:  \n`;
-        message += `User | Last Check In | Status  \n`;
+        message += `User | Last "Day Start" | Status  \n`;
         // message += `--- | --- | ---  \n`;
         for (const member of partyMembers) {
           if (member && member.party._id && member.party.quest.key && member.party.quest.RSVPNeeded === true) {
@@ -413,7 +417,9 @@ function checkAndSendPartyQuestProgress() {
           }
         }
       }
-      sendMessageToGroup(party.id, message);
+      sendMessageToParty(message);
+    } else {
+      console.error(`checkAndSendPartyQuestProgress: Couldn't get party members`);
     }
   }
 }

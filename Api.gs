@@ -61,7 +61,7 @@ function getGroupMembers(groupId, includeAllPublicFields = false, includeTasks =
   if (groupId) {
     const lastIdParam = lastId ? `&lastId=${lastId}` : '';
     const result = fetchGet(`${groupsAPI}/${groupId}/members?includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}${lastIdParam}`);
-    if (result !== undefined && result && typeof result.data instanceof Array) {
+    if (result !== undefined && result && result.data instanceof Array) {
       return result.data;
     }
   }
@@ -372,4 +372,6 @@ function smartFetch(url, method = 'GET', params = {}) {
     console.error(`Request: ${url}\nResponse code: ${responseCode}\nContent: ${contentText}`);
     return undefined;
   }
+
+  return undefined;
 }

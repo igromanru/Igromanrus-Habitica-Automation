@@ -14,9 +14,18 @@ const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 
 function test() {
   const date1 = new Date();
-  date1.setHours(date1.getHours() - 1);
+  date1.setHours(date1.getHours() - 26);
   date1.setMinutes(date1.getMinutes() - 12);
   console.log(getTimeDifferenceToNowAsString(date1));
+
+  const date2 = new Date();
+  date2.setHours(date1.getHours() - 12);
+  date2.setMinutes(date2.getMinutes() - 12);
+  console.log(getTimeDifferenceToNowAsString(date2));
+
+  const date3 = new Date();
+  date3.setMinutes(date3.getMinutes() - 12);
+  console.log(getTimeDifferenceToNowAsString(date3));
 
   const dayStartOffset = 1;
   const now = new Date();
@@ -81,11 +90,18 @@ function getTimeDifferenceToNowAsString(dateTime) {
   const now = new Date();
   const timeDifference = Math.abs(now - dateTime);
 
-  const hours = Math.floor(timeDifference / (1000 * 60 * 60));
+  const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
 
   let result = ``;
+  if (days > 0) {
+    result += `${days}d`;
+  }
   if (hours > 0) {
+    if (result) {
+      result += ' ';
+    }
     result += `${hours}h`;
   }
   if (minutes > 0) {
@@ -95,6 +111,17 @@ function getTimeDifferenceToNowAsString(dateTime) {
     result += `${minutes}min`;
   }
   return result;
+}
+
+function getMemberFromArrayById(members, memberId) {
+  if (members && members instanceof Array && memberId && typeof memberId === 'string') {
+    for (const member of members) {
+      if (member && member._id == memberId) {
+        return member;
+      }
+    }
+  }
+  return undefined;
 }
 
 /**
