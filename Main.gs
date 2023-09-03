@@ -405,7 +405,7 @@ function checkAndSendPartyQuestProgress() {
         message += `User | Last Check In | Status  \n`;
         // message += `--- | --- | ---  \n`;
         for (const member of partyMembers) {
-          if (member && member.party._id && !member.party.quest.key) {
+          if (member && member.party._id && member.party.quest.key && member.party.quest.RSVPNeeded === true) {
             const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
             const lastLogin = differenceText ? `${differenceText} ago` : '';
             // message += `${member.profile.name} &ensp; | ${lastLogin} &ensp; | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
