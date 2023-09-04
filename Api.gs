@@ -302,12 +302,12 @@ function allocateStatPoints(stat, amount) {
     if (stat == "str" || stat == "con" || stat == "int" || stat == "per") {
       console.log(`Allocating ${amount} Stat Points to the Stat "${stat}"`);
 
-      const payload = {
+      const requestBody = {
         stats: {
           [stat]: amount
         }
       };
-      const result = fetchPost(`${userAPI}/allocate-bulk`, payload);
+      const result = fetchPost(`${userAPI}/allocate-bulk`, requestBody);
       if (result !== undefined && result && result.success === true) {
         console.log('Stat Point successfully allocated');
       }
@@ -317,8 +317,71 @@ function allocateStatPoints(stat, amount) {
   }
 }
 
+/**
+ * Returns an array of user's webhooks
+ */
+function getWebHooks() {
+  const result = fetchGet(`${userAPI}/webhook`);
+  if (result !== undefined && result && result.data instanceof Array) {
+    return result.data;
+  }
+  
+  return [];
+}
+
+/**
+ * Creates a new WebHook
+ * 
+ * Returns the new WebHook object
+ * 
+ * See: https://habitica.com/apidoc/#api-Webhook-AddWebhook
+ */
+function createWebHook(targetUrl, label, type = 'taskActivity', options = undefined, enabled = true, id = '') {
+  if (targetUrl && label && type) {
+    console.log(`Creating WebHook: label: ${label}, type: ${type}, enabled: ${enabled}\nurl: ${targetUrl}`);
+    let requestBody = {
+      "enabled": enabled,
+      "url": targetUrl,
+      "label": label,
+      "type": type
+    };
+    if (options) {
+      requestBody = Object.assign(requestBody, {
+        "options": options
+      });
+    }
+    if (id) {
+      requestBody = Object.assign(requestBody, {
+        "id": id
+      });
+    }
+    const result = fetchPost(`${userAPI}/webhook`, requestBody);
+    if (result !== undefined && result && typeof result.data === 'object') {
+      return result.data;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Deletes a WebHook
+ * 
+ * Returns an array of remaining webhooks as data
+ */
+function deleteWebHook(webhookId) {
+  if (webhookId && typeof webhookId === 'string') {
+    const result = fetchDelete(`${userAPI}/webhook/${webhookId}`);
+    if (result !== undefined && result && result.data instanceof Array) {
+      return result.data;
+    }
+  }
+
+  return [];
+}
+
 function fetchGet(url) {
-  return smartFetch(url, 'GET');
+  return habiticaFetch(url, 'GET');
 }
 
 function fetchPost(url, requestBody = undefined, contentType = 'application/json') {
@@ -329,10 +392,14 @@ function fetchPost(url, requestBody = undefined, contentType = 'application/json
       'payload': JSON.stringify(requestBody)
     };
   }
-  return smartFetch(url, 'POST', params);
+  return habiticaFetch(url, 'POST', params);
 }
 
-function smartFetch(url, method = 'GET', params = {}) {
+function fetchDelete(url) {
+  return habiticaFetch(url, 'DELETE');
+}
+
+function habiticaFetch(url, method = 'GET', params = {}) {
   params = Object.assign({
     'method': method,
     'headers': Headers,

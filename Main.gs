@@ -4,7 +4,7 @@
  */
 
 // --------- Configurations -----------------------------------
-const AUTO_ACCEPT_QUESTS = false;
+const AUTO_ACCEPT_QUESTS = true;
 
 const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = false;
 const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
@@ -27,9 +27,9 @@ const AUTO_BUY_GEMS = true;
 const AUTO_ALLOCATE_STAT_POINTS = true;
 const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, int = Intelligence, per = Perception
 
-const AUTO_ACCUMULATE_DAMAGE = true;
-const ACCUMULATE_UNTIL_ONE_HIT = true;
-// const DAMAGE_TO_ACCUMULATE = 1000; // Not implemented
+const AUTO_ACCUMULATE_DAMAGE = false;
+const ACCUMULATE_UNTIL_ONE_HIT = false;
+const DAMAGE_TO_ACCUMULATE = 100; // Not implemented
 
 // Commands settings
 const ENABLE_COMMANDS = true;
@@ -37,9 +37,15 @@ const COMMAND_SEND_PARTY_QUEST_PROGRESS = true;
 const PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
 const PARTY_QUEST_PROGRESS_IGNORE_NOT_PARTICIPATING_MEMBERS = true;
 
-// Install settings
+// --- Install settings ---
 const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
+// Commands System
+const ENABLE_COMMANDS_SYSTEM_WEBHOOK = true;
+const COMMANDS_SYSTEM_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Commands-System`;
+const ENABLE_COMMANDS_SYSTEM_TRIGGER = false;
 const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5; // Must be 1, 5, 10, 15 or 30
+// Party Quest Status
+const ENABLE_PARTY_QUEST_STATUS_TRIGGER = true;
 const TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS = 2;
 // ------------------------------------------------------------
 /**
@@ -56,6 +62,8 @@ function triggerSchedule() {
     console.log('Hours difference to the next Day Start: ' + hoursDifference)
 
     if (user.party._id) {
+      setPartyIdProperty(user.party._id);
+
       const party = getParty();
       if (party) {
         let quest = party.quest;
@@ -104,17 +112,21 @@ function installTriggers() {
     .create()
   );
 
-  triggers.push(ScriptApp.newTrigger(scheduledCommandsCheck.name)
-    .timeBased()
-    .everyMinutes(TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES)
-    .create()
-  );
+  if (ENABLE_COMMANDS_SYSTEM_TRIGGER) {
+    triggers.push(ScriptApp.newTrigger(scheduledCommandsCheck.name)
+      .timeBased()
+      .everyMinutes(TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES)
+      .create()
+    );
+  }
   
-  triggers.push(ScriptApp.newTrigger(checkAndSendPartyQuestProgress.name)
-    .timeBased()
-    .everyHours(TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS)
-    .create()
-  );
+  if (ENABLE_PARTY_QUEST_STATUS_TRIGGER) {
+    triggers.push(ScriptApp.newTrigger(checkAndSendPartyQuestProgress.name)
+      .timeBased()
+      .everyHours(TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS)
+      .create()
+    );
+  }
 
   for (const trigger of triggers) {
     if (trigger) {
@@ -145,16 +157,78 @@ function uninstallTriggers() {
   }
 }
 
+function createWebhooks() {
+  deleteWebhooks();
+  console.log("Creating WebHooks...");
+
+  if (ENABLE_COMMANDS_SYSTEM_WEBHOOK) {
+    const partyId = getPartyIdProperty();
+    if (partyId) {
+      const options = {
+        "groupId": partyId
+      };
+      createWebHook(WebAppUrl, COMMANDS_SYSTEM_WEBHOOK_NAME, 'groupChatReceived', options);
+    } else {
+      console.error(`Can't create Commands System WebHook, the PARTY_ID property isn't yet set!`);
+    }
+  }
+}
+
+function deleteWebhooks() {
+  console.log("Deleting WebHooks...");
+
+  const webHooks = getWebHooks();
+  if (webHooks && webHooks.length > 0) {
+    for (const webHook of webHooks) {
+      if (webHook && webHook.id) {
+        switch (webHook.label) {
+          case COMMANDS_SYSTEM_WEBHOOK_NAME:
+            console.log(`Deleting WebHook: ${webHook.label}`);
+            deleteWebHook(webHook.id);
+            break;
+        }
+      }
+    }
+  } else {
+    console.log(`No WebHooks found`);
+  }
+}
+
 function doGet(e) {
   var data = JSON.stringify(e.postData);
-  console.log(data);
   return ContentService.createTextOutput(data).setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
-  var data = JSON.stringify(e.postData);
-  console.log(data);
-  return ContentService.createTextOutput(data).setMimeType(ContentService.MimeType.JSON);
+  setLastWebHookContentProperty(e.postData.contents);
+  console.log(e.postData.contents);
+
+  ScriptApp.newTrigger(evaluateLastWebHookContent.name)
+    .timeBased()
+    .after(1)
+    .create();
+}
+
+function evaluateLastWebHookContent() {
+  ScriptApp.getProjectTriggers().forEach(trigger => {
+    if (trigger.getHandlerFunction() === evaluateLastWebHookContent.name) {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  const content = popLastWebHookContentProperty();
+  if (content) {
+    console.log(`evaluateLastWebHookContent: Last WebHook Content: ${content}`);
+    const pojo = JSON.parse(content);
+    if (pojo && pojo.chat !== undefined) {
+      // Checking if it's an user message, skipping system messages, which have a type
+      if (!pojo.chat.info || pojo.chat.info.type === undefined) {
+        evaluateMessage(pojo.chat.text);
+      }
+    }
+  } else {
+    console.error(`evaluateLastWebHookContent: Last WebHook Content doesn't exist`);
+  }
 }
 
 function autoAcceptQuest(quest) {
@@ -359,7 +433,7 @@ function checkAndSendPartyQuestProgress() {
       // message += `**Party:** ${party.name}  \n`;
       message += `**Party Leader:** ${party.leader.profile.name}  \n`;
       if (questLeader) {
-        message += `**Quest Leader:** ${member.profile.name}  \n`;
+        message += `**Quest Leader:** ${questLeader.profile.name}  \n`;
       }
       message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n\n`;
 

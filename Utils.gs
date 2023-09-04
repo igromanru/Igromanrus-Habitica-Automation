@@ -180,6 +180,36 @@ function popObjectFromScriptProperty(propertyKey) {
   return undefined;
 }
 
+function setPartyIdProperty(partyId) {
+  if (typeof partyId == 'string' && partyId) {
+    ScriptProperties.setProperty("PARTY_ID", partyId);
+  }
+}
+
+function getPartyIdProperty() {
+  const value = ScriptProperties.getProperty("PARTY_ID");
+  if (typeof value === 'string') {
+    return value;
+  }
+  return undefined;
+}
+
+function setLastWebHookContentProperty(content) {
+  if (typeof content == 'string' && content) {
+    ScriptProperties.setProperty("LAST_WEBHOOK_CONTENT", content);
+  }
+}
+
+function popLastWebHookContentProperty() {
+  const propertyKey = "LAST_WEBHOOK_CONTENT";
+  const value = ScriptProperties.getProperty(propertyKey);
+  if (typeof value === 'string') {
+    ScriptProperties.deleteProperty(propertyKey);
+    return value;
+  }
+  return undefined;
+}
+
 function setRemainingRateLimit(value) {
   if (typeof value === 'number') {
     ScriptProperties.setProperty("X_RATELIMIT_REMAINING", value);
