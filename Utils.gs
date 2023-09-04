@@ -13,6 +13,8 @@ const ApiToken = ScriptProperties.getProperty('API_KEY');
 const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 
 function test() {
+  console.log(arguments.callee.name);
+
   const date1 = new Date();
   date1.setHours(date1.getHours() - 26);
   date1.setMinutes(date1.getMinutes() - 12);
@@ -194,20 +196,42 @@ function getPartyIdProperty() {
   return undefined;
 }
 
-function setLastWebHookContentProperty(content) {
+/**
+ * Adds WebHook content as object to the stack array property
+ */
+function pushWebHookContentStackProperty(content) {
   if (typeof content == 'string' && content) {
-    ScriptProperties.setProperty("LAST_WEBHOOK_CONTENT", content);
+    const propertyKey = "LAST_WEBHOOK_CONTENT_STACK";
+    const pojo = JSON.parse(content);
+    if (pojo) {
+      let propertyValue = ScriptProperties.getProperty(propertyKey);
+      if (!propertyValue) {
+        propertyValue = '[]';
+      }
+      const stack = JSON.parse(propertyValue);
+      if (stack && stack instanceof Array) {
+        stack.push(pojo);
+        propertyValue = JSON.stringify(stack);
+      }
+      ScriptProperties.setProperty(propertyKey, propertyValue);
+    }
   }
 }
 
-function popLastWebHookContentProperty() {
-  const propertyKey = "LAST_WEBHOOK_CONTENT";
-  const value = ScriptProperties.getProperty(propertyKey);
-  if (typeof value === 'string') {
-    ScriptProperties.deleteProperty(propertyKey);
-    return value;
+/**
+ * Gets WebHook Content stack array and sets the property to an empty array
+ */
+function popWebHookContentStackProperty() {
+  const propertyKey = "LAST_WEBHOOK_CONTENT_STACK";
+  let propertyValue = ScriptProperties.getProperty(propertyKey);
+  if (propertyValue) {
+    const stack = JSON.parse(propertyValue);
+    if (stack && stack instanceof Array) {
+      ScriptProperties.setProperty(propertyKey, '[]');
+      return stack;
+    }
   }
-  return undefined;
+  return [];
 }
 
 function setRemainingRateLimit(value) {

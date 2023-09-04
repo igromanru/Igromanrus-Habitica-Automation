@@ -200,40 +200,40 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  setLastWebHookContentProperty(e.postData.contents);
-  console.log(e.postData.contents);
+  pushWebHookContentStackProperty(e.postData.contents);
 
-  ScriptApp.newTrigger(evaluateLastWebHookContent.name)
+  ScriptApp.newTrigger(evaluateWebHookContentStack.name)
     .timeBased()
     .after(1)
     .create();
 }
 
-function evaluateLastWebHookContent() {
+function evaluateWebHookContentStack() {
   ScriptApp.getProjectTriggers().forEach(trigger => {
-    if (trigger.getHandlerFunction() === evaluateLastWebHookContent.name) {
+    if (trigger.getHandlerFunction() === evaluateWebHookContentStack.name) {
       ScriptApp.deleteTrigger(trigger);
     }
   });
 
-  const content = popLastWebHookContentProperty();
-  if (content) {
-    console.log(`evaluateLastWebHookContent: Last WebHook Content: ${content}`);
-    const pojo = JSON.parse(content);
-    if (pojo && pojo.chat !== undefined) {
-      // Checking if it's an user message, skipping system messages, which have a type
-      if (!pojo.chat.info || pojo.chat.info.type === undefined) {
-        evaluateMessage(pojo.chat.text);
+  const contentStack = popWebHookContentStackProperty();
+  if (contentStack && contentStack instanceof Array) {
+    console.log(`${arguments.callee.name}: ${contentStack.length} objects in the stack`);
+    for (const pojo of contentStack) {
+      if (pojo && pojo.chat !== undefined) {
+        // Checking if it's an user message, skipping system messages, which have a type
+        if (!pojo.chat.info || pojo.chat.info.type === undefined) {
+          evaluateMessage(pojo.chat.text);
+        }
       }
     }
   } else {
-    console.error(`evaluateLastWebHookContent: Last WebHook Content doesn't exist`);
+    console.error(`${arguments.callee.name}: WebHook Content Stack doesn't exist`);
   }
 }
 
 function autoAcceptQuest(quest) {
   if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[UserId]) {
-    console.log('autoAcceptQuest: Accepting inactive quests');
+    console.log(`${arguments.callee.name}: Accepting inactive quests`);
     acceptQuest();
   }
 }
@@ -244,7 +244,7 @@ function checkAndSendMyQuestProgress(user, quest) {
   }
 
   if (CurrentSleepStatus) {
-    console.log("checkAndSendMyQuestProgress: You're already sleeping in the tavern");
+    console.log(`${arguments.callee.name}: You're already sleeping in the tavern`);
     return;
   }
 
@@ -286,7 +286,7 @@ function checkAndSendMyQuestProgress(user, quest) {
 function autoAccumulateDamage(user, quest) {
   if (AUTO_ACCUMULATE_DAMAGE && user && quest) {
     if (CurrentSleepStatus) {
-      console.log("autoAccumulateDamage: Skipping. You're already sleeping in the tavern");
+      console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
       return;
     }
 
@@ -306,7 +306,7 @@ function autoAccumulateDamage(user, quest) {
         } else {
           message += ` \nCurrent damage: ${user.party.quest.progress.up}  \nBosses HP: ${quest.progress.hp}  \n`;
         }
-        message += '*autoAccumulateDamage script*';
+        message += `*${arguments.callee.name} script*`;
         sendPMToSelf(message);
       }
     }
@@ -319,7 +319,7 @@ function autoSleep(user, quest) {
   }
 
   if (CurrentSleepStatus) {
-    console.log("autoSleep: Skipping. You're already sleeping in the tavern");
+    console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
     return;
   }
 
@@ -331,7 +331,7 @@ function autoSleep(user, quest) {
     const sleepState = toggleSleep();
     if (sleepState) {
       console.log('Sleep state: ' + sleepState);
-      sendPMToSelf('No quest is active, you were sent to sleep  \n*autoSleep script*');
+      sendPMToSelf(`No quest is active, you were sent to sleep  \n*${arguments.callee.name} script*`);
     }
   }
 }
@@ -342,7 +342,7 @@ function autoCron(user) {
   }
 
   if (!user) {
-    console.error('autoCron: Undefined user object');
+    console.error(`${arguments.callee.name}: Undefined user object`);
     return;
   }
   const hoursDifference = getHoursDifferenceToDayStart(user);
@@ -359,7 +359,7 @@ function autoHealSelf(user) {
     const currentHp = user.stats.hp;
 
     if (healUnderHp > 0 && currentHp <= healUnderHp) {
-      console.log('autoHealSelf: Current HP is or under' + healUnderHp + ', buying a health postion.');
+      console.log(`${arguments.callee.name}: Current HP is or under ${healUnderHp}, buying a health postion.`);
       buyHealthPotion();
     }
   }
@@ -373,7 +373,7 @@ function autoBuyEnchantedArmoire(user) {
 
     const toBuyCount = Math.floor((currentGold - (buyOverOrEqual - enchantedArmoireCost)) / enchantedArmoireCost);
     if (toBuyCount > 0) {
-      console.log(`autoBuyEnchantedArmoire: Current Gold (${currentGold}) is or over ${buyOverOrEqual}, buying Enchanted Armoire ${toBuyCount} times.`);
+      console.log(`${arguments.callee.name}: Current Gold (${currentGold}) is or over ${buyOverOrEqual}, buying Enchanted Armoire ${toBuyCount} times.`);
 
       var pmMessage = '**Bought Enchanted Armoire:**  \n';
       var boughtCount = 0;
@@ -414,7 +414,7 @@ function autoAllocateStatPoints(user) {
     const userLvl = user.stats.lvl;
 
     if (pointsToAllocate > 0 && userLvl >= 10 && !user.preferences.disableClasses) {
-      console.log(`autoAllocateStatPoints: Allocating ${pointsToAllocate} stat points into "${ALLOCATE_STAT_POINTS_TO}"`);
+      console.log(`${arguments.callee.name}: Allocating ${pointsToAllocate} stat points into "${ALLOCATE_STAT_POINTS_TO}"`);
       allocateStatPoints(ALLOCATE_STAT_POINTS_TO, pointsToAllocate);
     }
   }
@@ -493,7 +493,7 @@ function checkAndSendPartyQuestProgress() {
       }
       sendMessageToParty(message);
     } else {
-      console.error(`checkAndSendPartyQuestProgress: Couldn't get party members`);
+      console.error(`${arguments.callee.name}: Couldn't get party members`);
     }
   }
 }
