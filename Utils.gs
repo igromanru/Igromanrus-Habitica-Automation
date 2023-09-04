@@ -89,28 +89,31 @@ function isCronPending(user) {
 }
 
 function getTimeDifferenceToNowAsString(dateTime) {
-  const now = new Date();
-  const timeDifference = Math.abs(now - dateTime);
-
-  const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
-
   let result = ``;
-  if (days > 0) {
-    result += `${days}d`;
-  }
-  if (hours > 0) {
-    if (result) {
-      result += ' ';
+  if (dateTime && dateTime instanceof Date) {
+    const now = new Date();
+    const timeDifference = Math.abs(now - dateTime);
+
+    const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+
+    
+    if (days > 0) {
+      result += `${days}d`;
     }
-    result += `${hours}h`;
-  }
-  if (minutes > 0) {
-    if (result) {
-      result += ' ';
+    if (hours > 0) {
+      if (result) {
+        result += ' ';
+      }
+      result += `${hours}h`;
     }
-    result += `${minutes}min`;
+    if (minutes > 0) {
+      if (result) {
+        result += ' ';
+      }
+      result += `${minutes}min`;
+    }
   }
   return result;
 }
@@ -177,6 +180,25 @@ function getQuestInvitedTimestamp() {
 
 function deleteQuestInvitedTimestamp() {
   ScriptProperties.deleteProperty("QUEST_INVITED_TIMESTAMP");
+}
+
+function setQuestStartedTimestamp(dateTime = new Date()) {
+  const value = dateTime.toISOString();
+  console.log(`${arguments.callee.name}: ${value}`);
+  ScriptProperties.setProperty("QUEST_STARTED_TIMESTAMP", value);
+}
+
+function getQuestStartedTimestamp() {
+  const value = ScriptProperties.getProperty("QUEST_STARTED_TIMESTAMP");
+  console.log(`${arguments.callee.name}: ${value}`);
+  if (typeof value === 'string' && value) {
+    return new Date(value);
+  }
+  return undefined;
+}
+
+function deleteQuestStartedTimestamp() {
+  ScriptProperties.deleteProperty("QUEST_STARTED_TIMESTAMP");
 }
 
 function setObjectAsScriptProperty(propertyKey, pojo) {

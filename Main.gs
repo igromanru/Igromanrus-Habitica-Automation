@@ -36,6 +36,7 @@ const ENABLE_COMMANDS = true;
 const COMMAND_SEND_PARTY_QUEST_PROGRESS = true;
 const PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
 const PARTY_QUEST_PROGRESS_IGNORE_NOT_PARTICIPATING_MEMBERS = true;
+const PARTY_QUEST_PROGRESS_PING_MEMBERS_AFTER_X_HOURS = 6;
 
 // Cheats
 const AUTO_COMPLETE_TASKS = false;
@@ -245,9 +246,10 @@ function evaluateWebHookContentStack() {
         } else if (pojo.webhookType === 'questInvited') {
           setQuestInvitedTimestamp();
         } else if (pojo.webhookType === 'questStarted') {
-
-        } else if (pojo.webhookType === 'questFinished') {
           deleteQuestInvitedTimestamp();
+          setQuestStartedTimestamp();
+        } else if (pojo.webhookType === 'questFinished') {
+          deleteQuestStartedTimestamp();
         }
       }
       
@@ -514,9 +516,15 @@ function checkAndSendPartyQuestProgress() {
       if (questLeader) {
         message += `**Quest Leader:** ${questLeader.profile.name}  \n`;
       }
-      message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n\n`;
+      // message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n`;
 
       if (quest.active) {
+        const questStartedTime = getQuestStartedTimestamp();
+        if (questStartedTime) {
+          message += `**Quest started:** ${getTimeDifferenceToNowAsString(questStartedTime)} ago  \n`;
+        }
+        message += `\n`;
+
         const membersWithProgress = new Array();
         const membersWithoutProgress = new Array();
         for (const member of partyMembers) {
@@ -558,15 +566,22 @@ function checkAndSendPartyQuestProgress() {
           }
         }
       } else {
+        const questInvitedTime = getQuestInvitedTimestamp();
+        if (questInvitedTime) {
+          message += `**Quest invited:** ${getTimeDifferenceToNowAsString(questInvitedTime)} ago  \n`;
+        }
+        message += `\n`;
         message += `Members who haven't accepted the quest yet:  \n`;
         message += `User | Last "Day Start" | Status  \n`;
         // message += `--- | --- | ---  \n`;
         for (const member of partyMembers) {
           if (member && member.party._id && member.party.quest.key && member.party.quest.RSVPNeeded === true) {
+            const pingMembersAfterHoursAsMs = PARTY_QUEST_PROGRESS_PING_MEMBERS_AFTER_X_HOURS * 60 * 60 * 1000;
+            const memberName = questInvitedTime && ((new Date() - questInvitedTime) >= pingMembersAfterHoursAsMs) ? `@${member.auth.local.username}` : member.profile.name;
             const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
             const lastLogin = differenceText ? `${differenceText} ago` : '';
             // message += `${member.profile.name} &ensp; | ${lastLogin} &ensp; | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
-            message += `- ${member.profile.name} | ${lastLogin} | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
+            message += `- ${memberName} | ${lastLogin} | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
           }
         }
       }
