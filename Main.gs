@@ -13,6 +13,7 @@ const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR
 const AUTO_TAVERN_IF_NO_QUEST_AT_CRON = true;
 
 const AUTO_CRON = true;
+const AUTO_CRON_ON_TIME = false; // If true, cron at X hours after the day start, otherwise always to do damage
 const CRON_X_HOURS_AFTER_DAYSTART = 1;
 
 const AUTO_HEALTH_POSTION = true;
@@ -89,7 +90,7 @@ function triggerSchedule() {
         autoAcceptQuest(quest);
         // autoSleep(user, quest);
         autoAccumulateDamage(user, quest);
-        autoCron(user);
+        autoCron(user, quest);
         checkAndSendMyQuestProgress(user, quest);
       }
     } else {
@@ -235,14 +236,12 @@ function evaluateWebHookContentStack() {
 
   const contentStack = popWebHookContentStackProperty();
   if (contentStack && contentStack instanceof Array) {
-    console.log(`${arguments.callee.name}: ${contentStack.length} objects in the stack`);
+    console.log(`${arguments.callee.name}: ${contentStack.length} object(s) in the stack`);
     for (const pojo of contentStack) {
       if (pojo && pojo.webhookType) {
         if (pojo.webhookType === 'groupChatReceived' && pojo.chat !== undefined) {
           // Checking if it's an user message, skipping system messages, which have a type
-          if (!pojo.chat.info || pojo.chat.info.type === undefined) {
-            evaluateMessage(pojo.chat.text);
-          }
+          evaluateMessage(pojo.chat);
         } else if (pojo.webhookType === 'questInvited') {
           setQuestInvitedTimestamp();
         } else if (pojo.webhookType === 'questStarted') {
@@ -367,20 +366,20 @@ function autoSleep(user, quest) {
   }
 }
 
-function autoCron(user) {
-  if (!AUTO_CRON) {
-    return;
-  }
-
-  if (!user) {
-    console.error(`${arguments.callee.name}: Undefined user object`);
-    return;
-  }
-  const hoursDifference = getHoursDifferenceToDayStart(user);
-  const before = 24.5 - CRON_X_HOURS_AFTER_DAYSTART;
-  const after = 23.5 - CRON_X_HOURS_AFTER_DAYSTART;
-  if (hoursDifference <= before && hoursDifference >= after) {
-    runCron();
+function autoCron(user, quest) {
+  if (AUTO_CRON && user && isCronPending(user)) {
+    if (AUTO_CRON_ON_TIME) {
+      const hoursDifference = getHoursDifferenceToDayStart(user);
+      const before = 24.5 - CRON_X_HOURS_AFTER_DAYSTART;
+      const after = 23.5 - CRON_X_HOURS_AFTER_DAYSTART;
+      if (hoursDifference <= before && hoursDifference >= after) {
+        runCron();
+      }
+    } else if(quest && quest.key && quest.active) {
+      if (user.party.quest.progress.up >= 5 || user.party.quest.progress.collectedItems > 0) {
+        runCron();
+      }
+    }
   }
 }
 

@@ -76,7 +76,7 @@ function getHoursDifferenceToDayStart(user) {
  * Checks if last cron were executed before today
  */
 function isCronPending(user) {
-  if(user === undefined || typeof user.lastCron === undefined) {
+  if(!user || !user.lastCron) {
     return false;
   }
 

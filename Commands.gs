@@ -22,14 +22,11 @@ function scheduledCommandsCheck() {
     console.log(`scheduledCommandsCheck: Found ${chatArray.length} chat messages for the party`);
     let newMessageCount = 0;
     for (const chat of chatArray) {
-      // Checking if it's an user message, skipping system messages, which have a type
-      if (!chat.info || chat.info.type === undefined) {
-        const chatTimestamp = new Date(chat.timestamp);
-        // Evaluate only messages that were send after the last check
-        if (chatTimestamp > lastCheckTime) {
-          newMessageCount++;
-          evaluateMessage(chat.text);
-        }
+      const chatTimestamp = new Date(chat.timestamp);
+      // Evaluate only messages that were send after the last check
+      if (chatTimestamp > lastCheckTime) {
+        evaluateMessage(chat);
+        newMessageCount++;
       }
     }
     console.log(`scheduledCommandsCheck: New user messages since last command check: ${newMessageCount}`);
@@ -40,26 +37,29 @@ function scheduledCommandsCheck() {
   setLastCommandCheckDateTime();
 }
 
-function evaluateMessage(chatMessage) {
-  if (chatMessage && chatMessage.trim().startsWith(COMMANDS_PREFIX)) {
-    var matches = COMMANDS_REGEX.exec(chatMessage);
-    if (matches && matches.length > 1) {
-      // first group match
-      const command = matches[1];
-      console.log(`${arguments.callee.name}: Found command "${command}"`);
-      switch (command) {
-        case HELP_COMMAND:
-          console.log(`${arguments.callee.name}: Executing command "${command}"`);
-          helpCommand();
-          break;
-        case QUEST_PROGRESS_COMMAND:
-          console.log(`${arguments.callee.name}: Executing command "${command}"`);
-          checkAndSendPartyQuestProgress();
-          break;
-        case CAT_COMMAND:
-          console.log(`${arguments.callee.name}: Executing command "${command}"`);
-          catCommand();
-          break;
+function evaluateMessage(chat) {
+  // Filter for user messages
+  if (chat && (!chat.info || chat.type === undefined)) {
+    if (chat.text && chat.text.trim().startsWith(COMMANDS_PREFIX)) {
+      var matches = COMMANDS_REGEX.exec(chat.text);
+      if (matches && matches.length > 1) {
+        // first group match
+        const command = matches[1];
+        console.log(`${arguments.callee.name}: Found command "${command}"`);
+        switch (command) {
+          case HELP_COMMAND:
+            console.log(`${arguments.callee.name}: Executing command "${command}"`);
+            helpCommand();
+            break;
+          case QUEST_PROGRESS_COMMAND:
+            console.log(`${arguments.callee.name}: Executing command "${command}"`);
+            checkAndSendPartyQuestProgress();
+            break;
+          case CAT_COMMAND:
+            console.log(`${arguments.callee.name}: Executing command "${command}"`);
+            catCommand();
+            break;
+        }
       }
     }
   }
