@@ -37,6 +37,10 @@ const COMMAND_SEND_PARTY_QUEST_PROGRESS = true;
 const PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
 const PARTY_QUEST_PROGRESS_IGNORE_NOT_PARTICIPATING_MEMBERS = true;
 
+// Cheats
+const AUTO_COMPLETE_TASKS = false;
+const START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START = 10;
+
 // --- Install settings ---
 const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
 // Commands System
@@ -88,6 +92,7 @@ function triggerSchedule() {
       console.log('User is not in a party. Ignoring party request and party related functions.');
     }
     
+    autoCompleteTasks(user);
     autoHealSelf(user);
     autoBuyEnchantedArmoire(user);
     autoBuyGems(user);
@@ -419,6 +424,52 @@ function autoAllocateStatPoints(user) {
     if (pointsToAllocate > 0 && userLvl >= 10 && !user.preferences.disableClasses) {
       console.log(`${arguments.callee.name}: Allocating ${pointsToAllocate} stat points into "${ALLOCATE_STAT_POINTS_TO}"`);
       allocateStatPoints(ALLOCATE_STAT_POINTS_TO, pointsToAllocate);
+    }
+  }
+}
+
+function autoCompleteTasks(user) {
+  if (AUTO_COMPLETE_TASKS && user) {
+    const hoursDifference = getHoursDifferenceToDayStart(user);
+    const activeHoursPerDay = 24 - START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START;
+    if (hoursDifference > activeHoursPerDay) {
+      console.log(`${arguments.callee.name}: Skipping, hours till next day start: ${hoursDifference}, active hours per habitica day ${activeHoursPerDay}`);
+      return;
+    }
+
+    const tasks = getUserTasks();
+    if (tasks instanceof Array && tasks.length > 0) {
+      const habits = new Array();
+      const dueDailies = new Array();
+      for (const task of tasks) {
+        if (task) {
+          if (task.type === 'habit') {
+            habits.push(task);
+          } else if (task.type === 'daily' && task.isDue === true && !task.completed) {
+            dueDailies.push(task);
+          }
+        }
+      }
+      // Habits
+        // ToDo: implement some logic to score habits automatically
+      // Tasks
+      const dayliesPerHour = Math.floor(dueDailies.length / Math.round(hoursDifference));
+      console.log(`${arguments.callee.name}: ${dueDailies.length} dailies due for today`);
+      console.log(`${arguments.callee.name}: Completing ${dayliesPerHour} dalies`);
+      let dailiesCompleted = 0;
+      for (let i = 0; i < dayliesPerHour; i++) {
+        if (i >= dueDailies.length) {
+          break;
+        }
+        const daily = dueDailies[i];
+        if (scoreTask(daily.id)) {
+          console.log(`${arguments.callee.name}: Daily completed: ${daily.text}`);
+          dailiesCompleted++;
+        } else {
+          console.error(`${arguments.callee.name}: Failed to complete the daily: ${daily.text}`);
+        }
+      }
+      console.log(`${arguments.callee.name}: Completed ${dailiesCompleted} dalies`);
     }
   }
 }
