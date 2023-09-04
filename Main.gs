@@ -27,9 +27,9 @@ const AUTO_BUY_GEMS = true;
 const AUTO_ALLOCATE_STAT_POINTS = true;
 const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, int = Intelligence, per = Perception
 
-const AUTO_ACCUMULATE_DAMAGE = false;
+const AUTO_ACCUMULATE_DAMAGE = true;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
-const DAMAGE_TO_ACCUMULATE = 100; // Not implemented
+const DAMAGE_TO_ACCUMULATE = 100;
 
 // Commands settings
 const ENABLE_COMMANDS = true;
@@ -292,9 +292,12 @@ function autoAccumulateDamage(user, quest) {
 
     const hoursDifference = getHoursDifferenceToDayStart(user);
     const bossQuest = quest.progress.hp > 0;
+    const questProgress = user.party.quest.progress.up;
     // ToDo add logic for items collecting
     if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
-      && (!quest.key || !quest.active || quest.progress === undefined || !bossQuest || user.party.quest.progress.up < quest.progress.hp)
+      && (!quest.key || !quest.active || quest.progress === undefined
+          || (bossQuest && ((!ACCUMULATE_UNTIL_ONE_HIT && questProgress < DAMAGE_TO_ACCUMULATE) || questProgress < quest.progress.hp))
+        )
       && !CurrentSleepStatus) {
       console.log('Toggling sleep to accumulate damage...');
       if (toggleSleep()) {
@@ -304,7 +307,7 @@ function autoAccumulateDamage(user, quest) {
         if (!quest.key || !quest.active || quest.progress === undefined) {
           message += 'because no quest is active.  \n';
         } else {
-          message += ` \nCurrent damage: ${user.party.quest.progress.up}  \nBosses HP: ${quest.progress.hp}  \n`;
+          message += ` \nCurrent damage: ${questProgress}  \nBosses HP: ${quest.progress.hp}  \n`;
         }
         message += `*${arguments.callee.name} script*`;
         sendPMToSelf(message);
