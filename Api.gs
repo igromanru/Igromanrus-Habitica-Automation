@@ -13,6 +13,7 @@ const partyAPI = baseUrl + '/v3/groups/party';
 const userAPI = baseUrl + '/v3/user';
 const groupsAPI = baseUrl + '/v3/groups';
 const membersAPI = baseUrl + '/v3/members';
+const tasksAPI = baseUrl + '/v3/tasks';
 
 var CurrentSleepStatus = false;
 
@@ -315,6 +316,43 @@ function allocateStatPoints(stat, amount) {
       console.log(`allocateStatPoints Error: Stat "${stat}" is not a valid parameter`)
     }
   }
+}
+
+/**
+ * Returns an array of tasks as data
+ * 
+ * Supported types: "habits", "dailys", "todos", "rewards", "completedTodos"
+ * If the type parameter is not specified, returns all tasks
+ */
+function getUserTasks(type = '', dueDate = undefined) {
+  if (!type || type == "habits" || type == "dailys" || type == "todos" || type == "rewards" || type == "completedTodos") {
+    type = type ? `&type=${type}` : '';
+    dueDate = dueDate ? `&dueDate=${dueDate.toISOString()}` : '';
+    const result = fetchGet(`${tasksAPI}/user?${type}${dueDate}`);
+    if (result !== undefined && result && result.data instanceof Array) {
+      return result.data;
+    }
+  } else {
+    console.error(`${arguments.callee.name}: Invalid type: ${type}`);
+  }
+
+  return []
+}
+
+/**
+ * Score/Check a task
+ * 
+ * Valid direction is only "up" or "down"
+ */
+function scoreTask(taskId, direction = 'up') {
+  if (taskId && (direction === 'up' || direction === 'down')) {
+    const result = fetchPost(`${tasksAPI}/${taskId}/score/${direction}`);
+    if (result !== undefined && result && typeof result.data === 'object') {
+      return result.data;
+    }
+  }
+  
+  return undefined;
 }
 
 /**

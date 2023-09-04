@@ -46,19 +46,6 @@ function test() {
   console.log(hoursDifferenceToDayStart);
 }
 
-function test2() {
-  for (let i = 0; i < 3; i++) {
-    executeOnce();
-  }
-}
-
-function executeOnce() {
-  if (!executeOnce.executed) {
-    console.log(`${arguments.callee.name}`);
-    executeOnce.executed = true;
-  }
-}
-
 /**
  * Hours left till the next day starts
  * 
@@ -161,8 +148,8 @@ function getLastExecutionDateTime() {
   return new Date(0);
 }
 
-function setLastCommandCheckDateTime() {
-  ScriptProperties.setProperty("LAST_COMMAND_CHECK_TIME", new Date().toISOString());
+function setLastCommandCheckDateTime(dateTime = new Date()) {
+  ScriptProperties.setProperty("LAST_COMMAND_CHECK_TIME", dateTime.toISOString());
 }
 
 function getLastCommandCheckDateTime() {
@@ -171,6 +158,25 @@ function getLastCommandCheckDateTime() {
     return new Date(value);
   }
   return new Date(0);
+}
+
+function setQuestInvitedTimestamp(dateTime = new Date()) {
+  const value = dateTime.toISOString();
+  console.log(`${arguments.callee.name}: ${value}`);
+  ScriptProperties.setProperty("QUEST_INVITED_TIMESTAMP", value);
+}
+
+function getQuestInvitedTimestamp() {
+  const value = ScriptProperties.getProperty("QUEST_INVITED_TIMESTAMP");
+  console.log(`${arguments.callee.name}: ${value}`);
+  if (typeof value === 'string' && value) {
+    return new Date(value);
+  }
+  return undefined;
+}
+
+function deleteQuestInvitedTimestamp() {
+  ScriptProperties.deleteProperty("QUEST_INVITED_TIMESTAMP");
 }
 
 function setObjectAsScriptProperty(propertyKey, pojo) {

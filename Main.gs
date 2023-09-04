@@ -43,6 +43,9 @@ const START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START = 10;
 
 // --- Install settings ---
 const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
+
+const ENABLE_QUEST_ACTIVITY_WEBHOOK = true;
+const QUEST_ACTIVITY_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Quest-Activity`;
 // Commands System
 const ENABLE_COMMANDS_SYSTEM_WEBHOOK = true;
 const COMMANDS_SYSTEM_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Commands-System`;
@@ -177,6 +180,14 @@ function createWebhooks() {
       console.error(`Can't create Commands System WebHook, the PARTY_ID property isn't yet set!`);
     }
   }
+  if (ENABLE_QUEST_ACTIVITY_WEBHOOK) {
+    const options = {
+      "questStarted": true,
+      "questFinished": true,
+      "questInvited": true
+    };
+    createWebHook(WebAppUrl, QUEST_ACTIVITY_WEBHOOK_NAME, 'questActivity', options);
+  }
 }
 
 function deleteWebhooks() {
@@ -188,6 +199,7 @@ function deleteWebhooks() {
       if (webHook && webHook.id) {
         switch (webHook.label) {
           case COMMANDS_SYSTEM_WEBHOOK_NAME:
+          case QUEST_ACTIVITY_WEBHOOK_NAME:
             console.log(`Deleting WebHook: ${webHook.label}`);
             deleteWebHook(webHook.id);
             break;
@@ -224,12 +236,21 @@ function evaluateWebHookContentStack() {
   if (contentStack && contentStack instanceof Array) {
     console.log(`${arguments.callee.name}: ${contentStack.length} objects in the stack`);
     for (const pojo of contentStack) {
-      if (pojo && pojo.chat !== undefined) {
-        // Checking if it's an user message, skipping system messages, which have a type
-        if (!pojo.chat.info || pojo.chat.info.type === undefined) {
-          evaluateMessage(pojo.chat.text);
+      if (pojo && pojo.webhookType) {
+        if (pojo.webhookType === 'groupChatReceived' && pojo.chat !== undefined) {
+          // Checking if it's an user message, skipping system messages, which have a type
+          if (!pojo.chat.info || pojo.chat.info.type === undefined) {
+            evaluateMessage(pojo.chat.text);
+          }
+        } else if (pojo.webhookType === 'questInvited') {
+          setQuestInvitedTimestamp();
+        } else if (pojo.webhookType === 'questStarted') {
+
+        } else if (pojo.webhookType === 'questFinished') {
+          deleteQuestInvitedTimestamp();
         }
       }
+      
     }
   } else {
     console.error(`${arguments.callee.name}: WebHook Content Stack doesn't exist`);
