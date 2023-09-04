@@ -46,6 +46,19 @@ function test() {
   console.log(hoursDifferenceToDayStart);
 }
 
+function test2() {
+  for (let i = 0; i < 3; i++) {
+    executeOnce();
+  }
+}
+
+function executeOnce() {
+  if (!executeOnce.executed) {
+    console.log(`${arguments.callee.name}`);
+    executeOnce.executed = true;
+  }
+}
+
 /**
  * Hours left till the next day starts
  * 
@@ -232,42 +245,4 @@ function popWebHookContentStackProperty() {
     }
   }
   return [];
-}
-
-function setRemainingRateLimit(value) {
-  if (typeof value === 'number') {
-    ScriptProperties.setProperty("X_RATELIMIT_REMAINING", value);
-  } else {
-    console.error(`setRemainingRateLimit: ${value} has a wrong type`);
-  }
-}
-
-function getRemainingRateLimit() {
-  return parseInt(ScriptProperties.getProperty("X_RATELIMIT_REMAINING"));
-}
-
-function setRateLimitLimit(value) {
-  if (typeof value === 'number') {
-    ScriptProperties.setProperty("X_RATELIMIT_LIMIT", value);
-  } else {
-    console.error(`setRateLimitLimit: ${value} has a wrong type`);
-  }
-}
-
-function getRateLimitLimit() {
-  return parseInt(ScriptProperties.getProperty("X_RATELIMIT_LIMIT"));
-}
-
-function setRateLimitResetTime(dateTime) {
-  if (dateTime && dateTime instanceof Date) {
-    ScriptProperties.setProperty("X_RATELIMIT_RESET", dateTime.toISOString());
-  }
-}
-
-function getRateLimitResetTime() {
-  const value = ScriptProperties.getProperty("X_RATELIMIT_RESET");
-  if (typeof value === 'string' && value) {
-    return new Date(value);
-  }
-  return undefined;
 }

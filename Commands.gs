@@ -61,13 +61,17 @@ function evaluateMessage(chatMessage) {
 }
 
 function helpCommand() {
-  let message = `### ${SCRIPT_NAME} - Commands  \n`;
-  message += 'The command system allows users to trigger some script functions by sending chat messages with specific commands.  \n';
-  // message += `Currently, the check takes place every ${TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES} minutes, for new commands in chat.  \n\n`;
+  if (!helpCommand.runOnce) {
+    let message = `### ${SCRIPT_NAME} - Commands  \n`;
+    message += 'The command system allows users to trigger some script functions by sending chat messages with specific commands.  \n';
+    // message += `Currently, the check takes place every ${TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES} minutes, for new commands in chat.  \n\n`;
 
-  message += `**Following commands are available:**  \n`;
-  message += `- ${COMMANDS_PREFIX + HELP_COMMAND} : Prints this message  \n`;
-  message += `- ${COMMANDS_PREFIX + QUEST_PROGRESS_COMMAND} : Prints current Party Quest Status  \n`;
+    message += `**Following commands are available:**  \n`;
+    message += `- ${COMMANDS_PREFIX + HELP_COMMAND} : Prints this message  \n`;
+    message += `- ${COMMANDS_PREFIX + QUEST_PROGRESS_COMMAND} : Prints current Party Quest Status  \n`;
 
-  sendMessageToParty(message);
+    sendMessageToParty(message);
+
+    helpCommand.runOnce = true;
+  }
 }

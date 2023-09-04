@@ -421,6 +421,10 @@ function autoAllocateStatPoints(user) {
 }
 
 function checkAndSendPartyQuestProgress() {
+  if (checkAndSendPartyQuestProgress.once === true) {
+    return;
+  }
+
   const party = getParty();
   if (party && party.quest && party.quest.key) {
     const partyMembers = getPartyMembers(true);
@@ -491,7 +495,9 @@ function checkAndSendPartyQuestProgress() {
           }
         }
       }
-      sendMessageToParty(message);
+      if (sendMessageToParty(message)) {
+        checkAndSendPartyQuestProgress.once = true;
+      }
     } else {
       console.error(`${arguments.callee.name}: Couldn't get party members`);
     }
