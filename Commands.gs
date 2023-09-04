@@ -8,6 +8,7 @@ const COMMANDS_REGEX = /\!(.*?)(?:$|\s)/g;
 
 const HELP_COMMAND = 'help';
 const QUEST_PROGRESS_COMMAND = 'quest';
+const CAT_COMMAND = 'cat';
 
 function scheduledCommandsCheck() {
   /* if (!isLastExecutionOverAMinute()) {
@@ -45,15 +46,19 @@ function evaluateMessage(chatMessage) {
     if (matches && matches.length > 1) {
       // first group match
       const command = matches[1];
-      console.log(`evaluateMessage: Found command "${command}"`);
+      console.log(`${arguments.callee.name}: Found command "${command}"`);
       switch (command) {
         case HELP_COMMAND:
-          console.log(`evaluateMessage: Executing command "${command}"`);
+          console.log(`${arguments.callee.name}: Executing command "${command}"`);
           helpCommand();
           break;
         case QUEST_PROGRESS_COMMAND:
-          console.log(`evaluateMessage: Executing command "${command}"`);
+          console.log(`${arguments.callee.name}: Executing command "${command}"`);
           checkAndSendPartyQuestProgress();
+          break;
+        case CAT_COMMAND:
+          console.log(`${arguments.callee.name}: Executing command "${command}"`);
+          catCommand();
           break;
       }
     }
@@ -69,9 +74,33 @@ function helpCommand() {
     message += `**Following commands are available:**  \n`;
     message += `- ${COMMANDS_PREFIX + HELP_COMMAND} : Prints this message  \n`;
     message += `- ${COMMANDS_PREFIX + QUEST_PROGRESS_COMMAND} : Prints current Party Quest Status  \n`;
+    message += `- ${COMMANDS_PREFIX + CAT_COMMAND} : Prints an image of a random cat  \n`;
 
     sendMessageToParty(message);
-
     helpCommand.runOnce = true;
+  }
+}
+
+function catCommand() {
+  if (!catCommand.runOnce) {
+    const response = UrlFetchApp.fetch(`https://api.thecatapi.com/v1/images/search?size=small&mime_types=jpg,png`, {
+      'method': 'GET',
+      'headers': {
+        'x-api-user': ScriptProperties.getProperty('CAT_API_KEY')
+      },
+      'muteHttpExceptions': true
+    });
+    if (response.getResponseCode() == 200) {
+      const cats = JSON.parse(response.getContentText());
+      if (cats instanceof Array && cats.length > 0) {
+        const cat = cats[0];
+        if (cat) {
+          let message = `![cat](${cat.url})`;
+
+          sendMessageToParty(message);
+          catCommand.runOnce = true;
+        }
+      }
+    }
   }
 }
