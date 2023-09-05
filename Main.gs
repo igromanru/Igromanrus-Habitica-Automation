@@ -48,6 +48,7 @@ const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
 
 const ENABLE_QUEST_ACTIVITY_WEBHOOK = true;
 const QUEST_ACTIVITY_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Quest-Activity`;
+const ENABLE_WEEKLY_WEBHOOK_REFRESH_TRIGGER = true;
 // Commands System
 const ENABLE_COMMANDS_SYSTEM_WEBHOOK = true;
 const COMMANDS_SYSTEM_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Commands-System`;
@@ -58,7 +59,7 @@ const ENABLE_PARTY_QUEST_STATUS_TRIGGER = true;
 const TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS = 2;
 // ------------------------------------------------------------
 /**
- * Main entry, that should be executed each hour by a tigger
+ * Main entry, that should be executed by a tigger
  */
 function triggerSchedule() {
   const user = getUser();
@@ -138,6 +139,14 @@ function installTriggers() {
     );
   }
 
+  if (ENABLE_WEEKLY_WEBHOOK_REFRESH_TRIGGER) {
+    triggers.push(ScriptApp.newTrigger(createWebhooks.name)
+      .timeBased()
+      .everyWeeks(1)
+      .create()
+    );
+  }
+
   for (const trigger of triggers) {
     if (trigger) {
       console.log("Trigger created for: " + trigger.getHandlerFunction());
@@ -159,6 +168,7 @@ function uninstallTriggers() {
         case triggerSchedule.name:
         case scheduledCommandsCheck.name:
         case checkAndSendPartyQuestProgress.name:
+        case createWebhooks.name:
           ScriptApp.deleteTrigger(trigger);
           console.log("Trigger deleted: " + functionName);
           break;
@@ -237,21 +247,27 @@ function evaluateWebHookContentStack() {
   const contentStack = popWebHookContentStackProperty();
   if (contentStack && contentStack instanceof Array) {
     console.log(`${arguments.callee.name}: ${contentStack.length} object(s) in the stack`);
-    for (const pojo of contentStack) {
+    for (let i = 0; i < contentStack.length; i++) {
+      const pojo = contentStack[i];
       if (pojo && pojo.webhookType) {
-        if (pojo.webhookType === 'groupChatReceived' && pojo.chat !== undefined) {
-          // Checking if it's an user message, skipping system messages, which have a type
+        console.log(`${arguments.callee.name}: #${i} webhookType: ${pojo.webhookType}`);
+        if (pojo.webhookType === 'groupChatReceived') {
           evaluateMessage(pojo.chat);
-        } else if (pojo.webhookType === 'questInvited') {
+        } else {
+          const json = JSON.stringify(pojo);
+          console.log(json);
+          MailApp.sendEmail(Session.getEffectiveUser().getEmail(), `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()} - WebHook Type: ${pojo.webhookType}`,
+           `<pre>${json}</pre>`);
+        }
+        /*else if (pojo.webhookType === 'questInvited') {
           setQuestInvitedTimestamp();
         } else if (pojo.webhookType === 'questStarted') {
           deleteQuestInvitedTimestamp();
           setQuestStartedTimestamp();
         } else if (pojo.webhookType === 'questFinished') {
           deleteQuestStartedTimestamp();
-        }
+        }*/
       }
-      
     }
   } else {
     console.error(`${arguments.callee.name}: WebHook Content Stack doesn't exist`);
@@ -475,7 +491,11 @@ function autoCompleteTasks(user) {
       // Habits
         // ToDo: implement some logic to score habits automatically
       // Tasks
-      const dayliesPerHour = Math.floor(dueDailies.length / Math.round(hoursDifference));
+      let dayliesPerHour = dueDailies.length / Math.round(hoursDifference);
+      if (dayliesPerHour < 1) {
+        dayliesPerHour = +getRandomBooleanWithProbability(dayliesPerHour);
+      }
+      dayliesPerHour = Math.floor(dayliesPerHour);
       console.log(`${arguments.callee.name}: ${dueDailies.length} dailies due for today`);
       console.log(`${arguments.callee.name}: Completing ${dayliesPerHour} dalies`);
       let dailiesCompleted = 0;
@@ -537,7 +557,7 @@ function checkAndSendPartyQuestProgress() {
         }
 
         const progressType = bossQuest ? 'Damage' : 'Items';
-        message += `User | ${progressType} | Last "Day Start" | Status  \n`;
+        message += `Fromat: User | ${progressType} | Last "Day Start" | Status  \n`;
         // message += `--- | --- | --- | ---  \n`;
 
         const addMemberInfoToMessage = (member) => {
@@ -571,7 +591,7 @@ function checkAndSendPartyQuestProgress() {
         }
         message += `\n`;
         message += `Members who haven't accepted the quest yet:  \n`;
-        message += `User | Last "Day Start" | Status  \n`;
+        message += `Fromat: User | Last "Day Start" | Status  \n`;
         // message += `--- | --- | ---  \n`;
         for (const member of partyMembers) {
           if (member && member.party._id && member.party.quest.key && member.party.quest.RSVPNeeded === true) {
