@@ -358,8 +358,9 @@ function getUserTasks(type = '', dueDate = undefined) {
 
 /**
  * Score/Check a task
- * 
  * Valid direction is only "up" or "down"
+ * 
+ * See: https://habitica.com/apidoc/#api-Task-ScoreTask
  */
 function scoreTask(taskId, direction = 'up') {
   if (taskId && (direction === 'up' || direction === 'down')) {
@@ -369,6 +370,30 @@ function scoreTask(taskId, direction = 'up') {
     }
   }
   
+  return undefined;
+}
+
+/**
+ * Cast a skill/spell on a target
+ * 
+ * See: https://habitica.com/apidoc/#api-User-UserCast
+ */
+function castSkill(spellId, targetId = '') {
+  if (spellId && 
+      (spellId === "fireball" || spellId === "mpheal" || spellId === "earth" || spellId === "frost" // Mage skills
+      || spellId === "smash" || spellId === "defensiveStance" || spellId === "valorousPresence" || spellId === "intimidate" // Warrior skills
+      || spellId === "pickPocket" || spellId === "backStab" || spellId === "toolsOfTrade" || spellId === "stealth" // Rogue skills
+      || spellId === "heal" || spellId === "protectAura" || spellId === "brightness" || spellId === "healAll" // Healer skills
+      || spellId === "snowball" || spellId === "spookySparkles" || spellId === "seafoam" || spellId === "shinySeed" // Transformation Items
+      )) {
+    targetId = targetId ? `?targetId=${targetId}` : '';
+    const result = fetchPost(`${userAPI}/class/cast/${spellId}${targetId}`);
+    if (result !== undefined && result && typeof result.data === 'object') {
+      return result.data;
+    }
+  } else {
+    console.error(`castSkill: spellId is invalid: ${spellId}`);
+  }
   return undefined;
 }
 

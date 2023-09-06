@@ -29,8 +29,8 @@ const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, in
 const AUTO_SLEEP = true;
 
 const AUTO_ACCUMULATE_DAMAGE = true;
-const ACCUMULATE_UNTIL_ONE_HIT = false;
 const DAMAGE_TO_ACCUMULATE = 100;
+const ACCUMULATE_UNTIL_ONE_HIT = false;
 
 // Commands settings
 const ENABLE_COMMANDS = true;
@@ -591,8 +591,10 @@ function checkAndSendPartyQuestProgress() {
           }
         }
       } else {
+        let questInvitedTime = undefined;
         if (questStatus && questStatus.questInvited === true) {
-          message += `**Quest invited:** ${getTimeDifferenceToNowAsString(questStatus.timestamp)} ago  \n`;
+          questInvitedTime = uestStatus.timestamp;
+          message += `**Quest invited:** ${getTimeDifferenceToNowAsString(questInvitedTime)} ago  \n`;
         }
         message += `\n`;
         message += `Members who haven't accepted the quest yet:  \n`;

@@ -4,7 +4,7 @@
  */
 
 const COMMANDS_PREFIX = '!';
-const COMMANDS_REGEX = /\!(.*?)(?:$|\s)/g;
+const COMMANDS_REGEX = /^\!(.*?)(?:$|\s)/g;
 
 const HELP_COMMAND = 'help';
 const QUEST_PROGRESS_COMMAND = 'quest';
@@ -83,7 +83,7 @@ function helpCommand() {
 
 function catCommand() {
   if (!catCommand.runOnce) {
-    const response = UrlFetchApp.fetch(`https://api.thecatapi.com/v1/images/search?size=small&mime_types=jpg,png`, {
+    const response = UrlFetchApp.fetch(`https://api.thecatapi.com/v1/images/search?size=med&mime_types=jpg,png`, {
       'method': 'GET',
       'headers': {
         'x-api-user': ScriptProperties.getProperty('CAT_API_KEY')

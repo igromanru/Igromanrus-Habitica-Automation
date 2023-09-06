@@ -7,13 +7,20 @@ const SCRIPT_NAME = "Igromanru's Habitica Automation";
 const AUTHOR_ID = "06b046d4-160a-4a20-b527-b74385052f0e";
 
 const ScriptProperties = PropertiesService.getScriptProperties();
+const ScriptLock = LockService.getScriptLock();
 
 const UserId = ScriptProperties.getProperty('API_ID');
 const ApiToken = ScriptProperties.getProperty('API_KEY');
-const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
+const WebAppUrl = "https://script.google.com/macros/s/AKfycbycV4sr005z_yjZL2wAGf8rXRk0Nv6LePYS7L1LyU6an6vxZH7ZeIv4a5O9nALIyWFB/exec";
 
 function test() {
   console.log(arguments.callee.name);
+
+  const lastKnowQuestStatus = getLastKnownQuestStatus();
+  if (lastKnowQuestStatus) {
+    console.log(lastKnowQuestStatus);
+    console.log(`lastKnowQuestStatus.timestamp type: ${typeof lastKnowQuestStatus.timestamp}`);
+  }
 
   const date1 = new Date();
   date1.setHours(date1.getHours() - 26);
@@ -198,7 +205,7 @@ function setLastKnownQuestStatus(status, timestamp = new Date()) {
       questStarted: status === 'questStarted',
       questFinished: status === 'questFinished',
       questInvited: status === 'questInvited',
-      timestamp: timestamp
+      timestamp: timestamp.toISOString()
     };
     if (!questStatus.questStarted && !questStatus.questFinished && !questStatus.questInvited) {
       console.error(`setLastKnownQuestStatus: Error no valid status were set.\nstaus: "${status}", timestamp: "${timestamp}"`);
@@ -216,7 +223,11 @@ function getLastKnownQuestStatus() {
   const json = ScriptProperties.getProperty("LAST_KNOWN_QUEST_STATUS");
   console.log(`getLastKnownQuestStatus value: ${json}`);
   if (json) {
-    return JSON.parse(json);
+    const pojo = JSON.parse(json);
+    if (pojo && pojo.timestamp) {
+      pojo.timestamp = new Date(pojo.timestamp);
+      return pojo;
+    }
   }
   return undefined;
 }
@@ -248,7 +259,7 @@ function pushWebHookContentStackProperty(content) {
   if (typeof content == 'string' && content) {
     const propertyKey = "LAST_WEBHOOK_CONTENT_STACK";
     const pojo = JSON.parse(content);
-    if (pojo) {
+    if (pojo && ScriptLock.tryLock(30 * 1000)) {
       let propertyValue = ScriptProperties.getProperty(propertyKey);
       if (!propertyValue) {
         propertyValue = '[]';
@@ -259,6 +270,7 @@ function pushWebHookContentStackProperty(content) {
         propertyValue = JSON.stringify(stack);
       }
       ScriptProperties.setProperty(propertyKey, propertyValue);
+      ScriptLock.releaseLock();
     }
   }
 }
@@ -268,13 +280,17 @@ function pushWebHookContentStackProperty(content) {
  */
 function popWebHookContentStackProperty() {
   const propertyKey = "LAST_WEBHOOK_CONTENT_STACK";
-  let propertyValue = ScriptProperties.getProperty(propertyKey);
-  if (propertyValue) {
-    const stack = JSON.parse(propertyValue);
-    if (stack && stack instanceof Array) {
-      ScriptProperties.setProperty(propertyKey, '[]');
-      return stack;
+  if (ScriptLock.tryLock(30 * 1000)) {
+    let propertyValue = ScriptProperties.getProperty(propertyKey);
+    if (propertyValue) {
+      const stack = JSON.parse(propertyValue);
+      if (stack && stack instanceof Array) {
+        ScriptProperties.setProperty(propertyKey, '[]');
+        ScriptLock.releaseLock();
+        return stack;
+      }
     }
+    ScriptLock.releaseLock();
   }
   return [];
 }
