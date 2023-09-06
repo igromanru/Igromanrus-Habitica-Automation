@@ -10,8 +10,6 @@ const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = false;
 const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR x damage
 
-const AUTO_TAVERN_IF_NO_QUEST_AT_CRON = true;
-
 const AUTO_CRON = true;
 const AUTO_CRON_ON_TIME = false; // If true, cron at X hours after the day start, otherwise always to do damage
 const CRON_X_HOURS_AFTER_DAYSTART = 1;
@@ -27,6 +25,8 @@ const AUTO_BUY_GEMS = true;
 
 const AUTO_ALLOCATE_STAT_POINTS = true;
 const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, int = Intelligence, per = Perception
+
+const AUTO_SLEEP = false;
 
 const AUTO_ACCUMULATE_DAMAGE = true;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
@@ -89,7 +89,7 @@ function triggerSchedule() {
         }
 
         autoAcceptQuest(quest);
-        // autoSleep(user, quest);
+        autoSleep(user, quest);
         autoAccumulateDamage(user, quest);
         autoCron(user, quest);
         checkAndSendMyQuestProgress(user, quest);
@@ -253,20 +253,18 @@ function evaluateWebHookContentStack() {
         console.log(`${arguments.callee.name}: #${i} webhookType: ${pojo.webhookType}`);
         if (pojo.webhookType === 'groupChatReceived') {
           evaluateMessage(pojo.chat);
+        } else if (pojo.webhookType === 'questActivity') {
+          setLastKnownQuestStatus(pojo.type);
+          /*if (pojo.type === 'questInvited') {
+          } else if (pojo.type === 'questStarted') {
+          } else if (pojo.type === 'questFinished') {
+          }*/
         } else {
           const json = JSON.stringify(pojo);
           console.log(json);
           MailApp.sendEmail(Session.getEffectiveUser().getEmail(), `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()} - WebHook Type: ${pojo.webhookType}`,
-           `<pre>${json}</pre>`);
+           `${json}`);
         }
-        /*else if (pojo.webhookType === 'questInvited') {
-          setQuestInvitedTimestamp();
-        } else if (pojo.webhookType === 'questStarted') {
-          deleteQuestInvitedTimestamp();
-          setQuestStartedTimestamp();
-        } else if (pojo.webhookType === 'questFinished') {
-          deleteQuestStartedTimestamp();
-        }*/
       }
     }
   } else {
@@ -360,24 +358,22 @@ function autoAccumulateDamage(user, quest) {
 }
 
 function autoSleep(user, quest) {
-  if (!AUTO_TAVERN_IF_NO_QUEST_AT_CRON) {
-    return;
-  }
+  if (AUTO_SLEEP && user && quest) {
+    if (user.preferences.sleep) {
+      console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
+      return;
+    }
 
-  if (CurrentSleepStatus) {
-    console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
-    return;
-  }
-
-  const hoursDifference = getHoursDifferenceToDayStart(user);
-  if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
-      && (!quest.key || !quest.active) && !CurrentSleepStatus
-      && user.party.quest.progress.up >= 10) {
-    console.log('No quest is running, toggling sleep...');
-    const sleepState = toggleSleep();
-    if (sleepState) {
-      console.log('Sleep state: ' + sleepState);
-      sendPMToSelf(`No quest is active, you were sent to sleep  \n*${arguments.callee.name} script*`);
+    const hoursDifference = getHoursDifferenceToDayStart(user);
+    if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
+        && (!quest.key || !quest.active) && !CurrentSleepStatus
+        && user.party.quest.progress.up >= 10) {
+      console.log('No quest is running, toggling sleep...');
+      const sleepState = toggleSleep();
+      if (sleepState) {
+        console.log('Sleep state: ' + sleepState);
+        sendPMToSelf(`No quest is active, you were sent to sleep  \n*${arguments.callee.name} script*`);
+      }
     }
   }
 }
@@ -491,27 +487,30 @@ function autoCompleteTasks(user) {
       // Habits
         // ToDo: implement some logic to score habits automatically
       // Tasks
-      let dayliesPerHour = dueDailies.length / Math.round(hoursDifference);
-      if (dayliesPerHour < 1) {
-        dayliesPerHour = +getRandomBooleanWithProbability(dayliesPerHour);
-      }
-      dayliesPerHour = Math.floor(dayliesPerHour);
-      console.log(`${arguments.callee.name}: ${dueDailies.length} dailies due for today`);
-      console.log(`${arguments.callee.name}: Completing ${dayliesPerHour} dalies`);
-      let dailiesCompleted = 0;
-      for (let i = 0; i < dayliesPerHour; i++) {
-        if (i >= dueDailies.length) {
-          break;
+      if (dueDailies.length > 0) {
+        let dayliesPerHour = dueDailies.length / Math.round(hoursDifference);
+        console.log(`${arguments.callee.name}: Daylies per hour ${dayliesPerHour}`);
+        if (dayliesPerHour < 1) {
+          dayliesPerHour = +getRandomBooleanWithProbability(dayliesPerHour);
         }
-        const daily = dueDailies[i];
-        if (scoreTask(daily.id)) {
-          console.log(`${arguments.callee.name}: Daily completed: ${daily.text}`);
-          dailiesCompleted++;
-        } else {
-          console.error(`${arguments.callee.name}: Failed to complete the daily: ${daily.text}`);
+        dayliesPerHour = Math.floor(dayliesPerHour);
+        console.log(`${arguments.callee.name}: ${dueDailies.length} dailies due for today`);
+        console.log(`${arguments.callee.name}: Completing ${dayliesPerHour} dalies`);
+        let dailiesCompleted = 0;
+        for (let i = 0; i < dayliesPerHour; i++) {
+          if (i >= dueDailies.length) {
+            break;
+          }
+          const daily = dueDailies[i];
+          if (scoreTask(daily.id)) {
+            console.log(`${arguments.callee.name}: Daily completed: ${daily.text}`);
+            dailiesCompleted++;
+          } else {
+            console.error(`${arguments.callee.name}: Failed to complete the daily: ${daily.text}`);
+          }
         }
+        console.log(`${arguments.callee.name}: Completed ${dailiesCompleted} dalies`);
       }
-      console.log(`${arguments.callee.name}: Completed ${dailiesCompleted} dalies`);
     }
   }
 }
@@ -528,6 +527,7 @@ function checkAndSendPartyQuestProgress() {
       const quest = party.quest;
       const questLeader = getMemberFromArrayById(partyMembers, party.quest.leader);
       const bossQuest = quest.progress.hp > 0;
+      const questStatus = getLastKnownQuestStatus();
   
       let message = `### ${SCRIPT_NAME} - Party Quest Status  \n`;
       // message += `**Party:** ${party.name}  \n`;
@@ -538,9 +538,8 @@ function checkAndSendPartyQuestProgress() {
       // message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n`;
 
       if (quest.active) {
-        const questStartedTime = getQuestStartedTimestamp();
-        if (questStartedTime) {
-          message += `**Quest started:** ${getTimeDifferenceToNowAsString(questStartedTime)} ago  \n`;
+        if (questStatus && questStatus.questStarted === true) {
+          message += `**Quest started:** ${getTimeDifferenceToNowAsString(questStatus.timestamp)} ago  \n`;
         }
         message += `\n`;
 
@@ -585,9 +584,8 @@ function checkAndSendPartyQuestProgress() {
           }
         }
       } else {
-        const questInvitedTime = getQuestInvitedTimestamp();
-        if (questInvitedTime) {
-          message += `**Quest invited:** ${getTimeDifferenceToNowAsString(questInvitedTime)} ago  \n`;
+        if (questStatus && questStatus.questInvited === true) {
+          message += `**Quest invited:** ${getTimeDifferenceToNowAsString(questStatus.timestamp)} ago  \n`;
         }
         message += `\n`;
         message += `Members who haven't accepted the quest yet:  \n`;

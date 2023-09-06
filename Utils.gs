@@ -175,42 +175,39 @@ function getLastCommandCheckDateTime() {
   return new Date(0);
 }
 
-function setQuestInvitedTimestamp(dateTime = new Date()) {
-  const value = dateTime.toISOString();
-  console.log(`${arguments.callee.name}: ${value}`);
-  ScriptProperties.setProperty("QUEST_INVITED_TIMESTAMP", value);
+function setLastKnownQuestStatus(status, timestamp = new Date()) {
+  if (status && timestamp) {
+    const questStatus = {
+      questStarted: status === 'questStarted',
+      questFinished: status === 'questFinished',
+      questInvited: status === 'questInvited',
+      timestamp: timestamp
+    };
+    if (!questStatus.questStarted && !questStatus.questFinished && !questStatus.questInvited) {
+      console.error(`setLastKnownQuestStatus: Error no valid status were set.\nstaus: "${status}", timestamp: "${timestamp}"`);
+    } else {
+      const json = JSON.stringify(questStatus);
+      ScriptProperties.setProperty("LAST_KNOWN_QUEST_STATUS", json);
+      console.log(`setLastKnownQuestStatus set: ${json}`);
+    }
+  } else {
+    console.error(`setLastKnownQuestStatus: Error staus: "${status}", timestamp: "${timestamp}"`);
+  }
 }
 
-function getQuestInvitedTimestamp() {
-  const value = ScriptProperties.getProperty("QUEST_INVITED_TIMESTAMP");
-  console.log(`${arguments.callee.name}: ${value}`);
-  if (typeof value === 'string' && value) {
-    return new Date(value);
+function getLastKnownQuestStatus() {
+  const json = ScriptProperties.getProperty("LAST_KNOWN_QUEST_STATUS");
+  console.log(`getLastKnownQuestStatus value: ${json}`);
+  if (json) {
+    return JSON.parse(json);
   }
   return undefined;
 }
 
-function deleteQuestInvitedTimestamp() {
-  ScriptProperties.deleteProperty("QUEST_INVITED_TIMESTAMP");
-}
-
-function setQuestStartedTimestamp(dateTime = new Date()) {
-  const value = dateTime.toISOString();
-  console.log(`${arguments.callee.name}: ${value}`);
-  ScriptProperties.setProperty("QUEST_STARTED_TIMESTAMP", value);
-}
-
-function getQuestStartedTimestamp() {
-  const value = ScriptProperties.getProperty("QUEST_STARTED_TIMESTAMP");
-  console.log(`${arguments.callee.name}: ${value}`);
-  if (typeof value === 'string' && value) {
-    return new Date(value);
-  }
-  return undefined;
-}
-
-function deleteQuestStartedTimestamp() {
-  ScriptProperties.deleteProperty("QUEST_STARTED_TIMESTAMP");
+function deleteLastKnownQuestStatus() {
+  const key = "LAST_KNOWN_QUEST_STATUS";
+  ScriptProperties.deleteProperty(key);
+  console.log(`deleteLastKnownQuestStatus: ${key} deleted`);
 }
 
 function setObjectAsScriptProperty(propertyKey, pojo) {
