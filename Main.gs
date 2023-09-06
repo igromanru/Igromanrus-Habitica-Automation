@@ -26,7 +26,7 @@ const AUTO_BUY_GEMS = true;
 const AUTO_ALLOCATE_STAT_POINTS = true;
 const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, int = Intelligence, per = Perception
 
-const AUTO_SLEEP = false;
+const AUTO_SLEEP = true;
 
 const AUTO_ACCUMULATE_DAMAGE = true;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
@@ -274,8 +274,10 @@ function evaluateWebHookContentStack() {
 
 function autoAcceptQuest(quest) {
   if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[UserId]) {
-    console.log(`${arguments.callee.name}: Accepting inactive quests`);
-    acceptQuest();
+    console.log(`autoAcceptQuest: Accepting inactive quest: "${quest.key}"`);
+    if (acceptQuest()) {
+      onsole.log(`autoAcceptQuest: Quest accepted`);
+    }
   }
 }
 
@@ -324,6 +326,32 @@ function checkAndSendMyQuestProgress(user, quest) {
   }
 }
 
+function autoSleep(user, quest) {
+  if (AUTO_SLEEP && user && quest) {
+    // Check if user were sent to sleep by the script and "wake" him up after cron is done
+    if (user.preferences.sleep && isSentToSleepByScript() && !isCronPending(user)) {
+      setSleep(user, false);
+      deleteSentToSleepByScript();
+    }
+    /* Old logic, obsolete with autoAccumulateDamage
+    if (user.preferences.sleep) {
+      console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
+      return;
+    }
+    const hoursDifference = getHoursDifferenceToDayStart(user);
+    if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
+        && (!quest.key || !quest.active) && !CurrentSleepStatus
+        && user.party.quest.progress.up >= 10) {
+      console.log('No quest is running, toggling sleep...');
+      const sleepState = toggleSleep();
+      if (sleepState) {
+        console.log('Sleep state: ' + sleepState);
+        sendPMToSelf(`No quest is active, you were sent to sleep  \n*${arguments.callee.name} script*`);
+      }
+    }*/
+  }
+}
+
 function autoAccumulateDamage(user, quest) {
   if (AUTO_ACCUMULATE_DAMAGE && user && quest) {
     if (CurrentSleepStatus) {
@@ -352,27 +380,6 @@ function autoAccumulateDamage(user, quest) {
         }
         message += `*${arguments.callee.name} script*`;
         sendPMToSelf(message);
-      }
-    }
-  }
-}
-
-function autoSleep(user, quest) {
-  if (AUTO_SLEEP && user && quest) {
-    if (user.preferences.sleep) {
-      console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
-      return;
-    }
-
-    const hoursDifference = getHoursDifferenceToDayStart(user);
-    if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
-        && (!quest.key || !quest.active) && !CurrentSleepStatus
-        && user.party.quest.progress.up >= 10) {
-      console.log('No quest is running, toggling sleep...');
-      const sleepState = toggleSleep();
-      if (sleepState) {
-        console.log('Sleep state: ' + sleepState);
-        sendPMToSelf(`No quest is active, you were sent to sleep  \n*${arguments.callee.name} script*`);
       }
     }
   }

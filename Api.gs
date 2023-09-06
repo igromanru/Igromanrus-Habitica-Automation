@@ -176,6 +176,25 @@ function buyHealthPotion() {
 }
 
 /**
+ * Calls toggleSleep in controlled fation
+ */
+function setSleep(user, sleepValue) {
+  if (user) {
+    if (typeof sleepValue === 'boolean') {
+      CurrentSleepStatus = sleepValue;
+      if (user.preferences.sleep !== sleepValue) {
+        return toggleSleep();
+      }
+    } else {
+      console.error(`setSleep: value is not a boolean: ${sleepValue}`);
+    }
+  } else {
+    console.error(`setSleep: user object not set`);
+  }
+  return CurrentSleepStatus;
+}
+
+/**
  * Toggle sleep state (Tavern)
  * 
  * Returns true if sleeping, else false
@@ -187,6 +206,7 @@ function toggleSleep() {
   const result = fetchPost(`${userAPI}/sleep`);
   if (result !== undefined && result && typeof result.data === 'boolean') {
     CurrentSleepStatus = result.data;
+    setSentToSleepByScript(CurrentSleepStatus);
   }
 
   return CurrentSleepStatus;
@@ -202,8 +222,8 @@ function buyEnchantedArmoire() {
 
   const result = fetchPost(`${userAPI}/buy-armoire`);
   if (result !== undefined && result) {
-    console.log(`Armoire json: ` + JSON.stringify(result.data.armoire));
-    console.log('Message:' + result.message);
+    console.log(`Armoire json: ${JSON.stringify(result.data.armoire)}`);
+    console.log(`Message: ${result.message}`);
     return result;
   }
 
@@ -244,12 +264,9 @@ function buyGemPurchasableItem(type, key, amount = 1) {
   return false;
 }
 
-function acceptQuest (quest) {
-  if (quest) {
-    const result = fetchPost(`${partyAPI}/quests/accept`);
-    return result !== undefined && result && result.success === true;
-  }
-  return false;
+function acceptQuest() {
+  const result = fetchPost(`${partyAPI}/quests/accept`);
+  return result !== undefined && result && result.success === true;
 }
 
 /**

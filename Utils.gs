@@ -175,6 +175,23 @@ function getLastCommandCheckDateTime() {
   return new Date(0);
 }
 
+function setSentToSleepByScript(value) {
+  if (typeof value === 'boolean') {
+    ScriptProperties.setProperty("SENT_TO_SLEEP_BY_SCRIPT", value);
+  } else {
+    console.error(`setSentToSleepByScript: Error value has wrong type: ${value}`);
+  }
+}
+
+function isSentToSleepByScript() {
+  const value = ScriptProperties.getProperty("SENT_TO_SLEEP_BY_SCRIPT");
+  return value !== undefined && value.toLowerCase() === "true";
+}
+
+function deleteSentToSleepByScript() {
+  ScriptProperties.deleteProperty("SENT_TO_SLEEP_BY_SCRIPT");
+}
+
 function setLastKnownQuestStatus(status, timestamp = new Date()) {
   if (status && timestamp) {
     const questStatus = {
@@ -208,28 +225,6 @@ function deleteLastKnownQuestStatus() {
   const key = "LAST_KNOWN_QUEST_STATUS";
   ScriptProperties.deleteProperty(key);
   console.log(`deleteLastKnownQuestStatus: ${key} deleted`);
-}
-
-function setObjectAsScriptProperty(propertyKey, pojo) {
-  if (typeof propertyKey == 'string' && propertyKey && typeof pojo == 'object' && pojo) {
-    ScriptProperties.setProperty(propertyKey, JSON.stringify(pojo));
-  }
-}
-
-function getObjectFromScriptProperty(propertyKey) {
-  if (typeof propertyKey == 'string' && propertyKey) {
-    const json = ScriptProperties.getProperty(propertyKey);
-    return JSON.parse(json);
-  }
-}
-
-function popObjectFromScriptProperty(propertyKey) {
-  const pojo = getObjectFromScriptProperty(propertyKey);
-  if (pojo !== undefined && pojo) {
-    ScriptProperties.deleteProperty(propertyKey);
-    return pojo;
-  }
-  return undefined;
 }
 
 function setPartyIdProperty(partyId) {
@@ -282,4 +277,54 @@ function popWebHookContentStackProperty() {
     }
   }
   return [];
+}
+
+function setObjectAsScriptProperty(propertyKey, pojo) {
+  if (typeof propertyKey == 'string' && propertyKey && typeof pojo == 'object' && pojo) {
+    ScriptProperties.setProperty(propertyKey, JSON.stringify(pojo));
+  }
+}
+
+function getObjectFromScriptProperty(propertyKey) {
+  if (typeof propertyKey == 'string' && propertyKey) {
+    const json = ScriptProperties.getProperty(propertyKey);
+    if (json) {
+      return JSON.parse(json);
+    }
+  }
+  return undefined;
+}
+
+function popObjectFromScriptProperty(propertyKey) {
+  const pojo = getObjectFromScriptProperty(propertyKey);
+  if (pojo !== undefined && pojo) {
+    ScriptProperties.deleteProperty(propertyKey);
+    return pojo;
+  }
+  return undefined;
+}
+
+function setDateAsScriptProperty(propertyKey, dateTime) {
+  if (typeof propertyKey == 'string' && propertyKey && dateTime && dateTime instanceof Date) {
+    ScriptProperties.setProperty(propertyKey, dateTime.toISOString());
+  }
+}
+
+function getDateFromScriptProperty(propertyKey) {
+  if (typeof propertyKey == 'string' && propertyKey) {
+    const isoDate = ScriptProperties.getProperty(propertyKey);
+    if (isoDate) {
+      return new Date(isoDate);
+    }
+  }
+  return undefined;
+}
+
+function popDateFromScriptProperty(propertyKey) {
+  const dateTime = getDateFromScriptProperty(propertyKey);
+  if (dateTime !== undefined && dateTime) {
+    ScriptProperties.deleteProperty(propertyKey);
+    return dateTime;
+  }
+  return undefined;
 }
