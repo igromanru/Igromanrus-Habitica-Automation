@@ -229,12 +229,22 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  pushWebHookContentStackProperty(e.postData.contents);
+  addRandomWebHookContentProperty(e.postData.contents);
 
-  ScriptApp.newTrigger(evaluateWebHookContentStack.name)
-    .timeBased()
-    .after(1)
-    .create();
+  const triggers = ScriptApp.getProjectTriggers();
+  let triggerExists = false;
+  for (const trigger of triggers) {
+    if (trigger.getHandlerFunction() === evaluateWebHookContentStack.name) {
+      triggerExists = true;
+      break;
+    }
+  }
+  if (!triggerExists) {
+    ScriptApp.newTrigger(evaluateWebHookContentStack.name)
+      .timeBased()
+      .after(1)
+      .create();
+  }
 }
 
 function evaluateWebHookContentStack() {
@@ -244,11 +254,11 @@ function evaluateWebHookContentStack() {
     }
   });
 
-  const contentStack = popWebHookContentStackProperty();
-  if (contentStack && contentStack instanceof Array) {
-    console.log(`${arguments.callee.name}: ${contentStack.length} object(s) in the stack`);
-    for (let i = 0; i < contentStack.length; i++) {
-      const pojo = contentStack[i];
+  const webHookContents = popAllRandomWebHookContentProperties();
+  if (webHookContents && webHookContents instanceof Array) {
+    console.log(`${arguments.callee.name}: ${webHookContents.length} object(s) in the stack`);
+    for (let i = 0; i < webHookContents.length; i++) {
+      const pojo = webHookContents[i];
       if (pojo && pojo.webhookType) {
         console.log(`${arguments.callee.name}: #${i} webhookType: ${pojo.webhookType}`);
         if (pojo.webhookType === 'groupChatReceived') {

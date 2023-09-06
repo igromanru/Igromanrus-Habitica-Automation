@@ -8,6 +8,7 @@ const AUTHOR_ID = "06b046d4-160a-4a20-b527-b74385052f0e";
 
 const ScriptProperties = PropertiesService.getScriptProperties();
 const ScriptLock = LockService.getScriptLock();
+const DefaultLockTime = 30 * 1000; // 30 seconds
 
 const UserId = ScriptProperties.getProperty('API_ID');
 const ApiToken = ScriptProperties.getProperty('API_KEY');
@@ -15,12 +16,6 @@ const WebAppUrl = "https://script.google.com/macros/s/AKfycbycV4sr005z_yjZL2wAGf
 
 function test() {
   console.log(arguments.callee.name);
-
-  const lastKnowQuestStatus = getLastKnownQuestStatus();
-  if (lastKnowQuestStatus) {
-    console.log(lastKnowQuestStatus);
-    console.log(`lastKnowQuestStatus.timestamp type: ${typeof lastKnowQuestStatus.timestamp}`);
-  }
 
   const date1 = new Date();
   date1.setHours(date1.getHours() - 26);
@@ -51,6 +46,20 @@ function test() {
   const hoursDifferenceToDayStart = Math.round(timeDifference / (1000 * 60 * 60) * 10) / 10;
 
   console.log(hoursDifferenceToDayStart);
+}
+
+function test2() {
+  let obj = {
+    test: 'hallo'
+  };
+  addRandomWebHookContentProperty(JSON.stringify(obj));
+  obj.test = "there";
+  addRandomWebHookContentProperty(JSON.stringify(obj));
+
+  const objts = popAllRandomWebHookContentProperties();
+  for (let qw of objts) {
+    console.log(JSON.stringify(qw));
+  }
 }
 
 /**
@@ -252,6 +261,29 @@ function getPartyIdProperty() {
   return undefined;
 }
 
+function addRandomWebHookContentProperty(content) {
+  if (typeof content == 'string' && content) {
+    ScriptProperties.setProperty("RANDOM_WEBHOOK_CONTENT_" + Utilities.getUuid(), content);
+  }
+}
+
+function popAllRandomWebHookContentProperties() {
+  let webHookContents = [];
+  if (ScriptLock.tryLock(DefaultLockTime)) {
+    const properties = ScriptProperties.getProperties();
+    for (const [key, value] of Object.entries(properties)) {
+      if (key.startsWith("RANDOM_WEBHOOK_CONTENT_")) {
+        webHookContents.push(JSON.parse(value));
+        ScriptProperties.deleteProperty(key);
+      }
+    }
+    ScriptLock.releaseLock();
+  } else {
+    console.error(`popAllRandomWebHookContentProperties: Failed to acquire the lock for ${DefaultLockTime}ms`);
+  }
+  return webHookContents;
+}
+
 /**
  * Adds WebHook content as object to the stack array property
  */
@@ -259,18 +291,22 @@ function pushWebHookContentStackProperty(content) {
   if (typeof content == 'string' && content) {
     const propertyKey = "LAST_WEBHOOK_CONTENT_STACK";
     const pojo = JSON.parse(content);
-    if (pojo && ScriptLock.tryLock(30 * 1000)) {
-      let propertyValue = ScriptProperties.getProperty(propertyKey);
-      if (!propertyValue) {
-        propertyValue = '[]';
+    if (pojo) {
+      if (ScriptLock.tryLock(DefaultLockTime)) {
+        let propertyValue = ScriptProperties.getProperty(propertyKey);
+        if (!propertyValue) {
+          propertyValue = '[]';
+        }
+        const stack = JSON.parse(propertyValue);
+        if (stack && stack instanceof Array) {
+          stack.push(pojo);
+          propertyValue = JSON.stringify(stack);
+        }
+        ScriptProperties.setProperty(propertyKey, propertyValue);
+        ScriptLock.releaseLock();
+      } else {
+        console.error(`pushWebHookContentStackProperty: Failed to acquire the lock for ${DefaultLockTime}ms`);
       }
-      const stack = JSON.parse(propertyValue);
-      if (stack && stack instanceof Array) {
-        stack.push(pojo);
-        propertyValue = JSON.stringify(stack);
-      }
-      ScriptProperties.setProperty(propertyKey, propertyValue);
-      ScriptLock.releaseLock();
     }
   }
 }
@@ -280,7 +316,7 @@ function pushWebHookContentStackProperty(content) {
  */
 function popWebHookContentStackProperty() {
   const propertyKey = "LAST_WEBHOOK_CONTENT_STACK";
-  if (ScriptLock.tryLock(30 * 1000)) {
+  if (ScriptLock.tryLock(DefaultLockTime)) {
     let propertyValue = ScriptProperties.getProperty(propertyKey);
     if (propertyValue) {
       const stack = JSON.parse(propertyValue);
@@ -291,7 +327,10 @@ function popWebHookContentStackProperty() {
       }
     }
     ScriptLock.releaseLock();
+  }  else {
+    console.error(`popWebHookContentStackProperty: Failed to acquire the lock for ${DefaultLockTime}ms`);
   }
+
   return [];
 }
 
