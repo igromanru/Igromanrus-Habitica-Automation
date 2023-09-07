@@ -144,7 +144,7 @@ function sendMessageToParty(messageText) {
  */
 function sendMessageToGroup(targetGroupId, messageText) {
   if (targetGroupId && messageText) {
-    console.log('sendMessageToGroup: targetGroupId: ' + targetGroupId + '  \nmessageText: ' + messageText);
+    console.log(`sendMessageToGroup: targetGroupId: ${targetGroupId} \nmessageText: ${messageText}`);
     const requestBody = {
       message: messageText
     };
@@ -503,11 +503,11 @@ function habiticaFetch(url, method = 'GET', params = {}) {
           if (remainingRateLimit <= 0 && rateLimitResetTime) {
             const resetDateTime = new Date(rateLimitResetTime);
             if (resetDateTime) {
-              const resetInMs =  resetDateTime - (new Date());
+              let resetInMs =  resetDateTime - (new Date());
               if (resetInMs > 0) {
-                const sleepMs = resetInMs + 100;
-                console.log(`Rate limit reached, sleeping ${sleepMs}ms until the next reset`)
-                Utilities.sleep(sleepMs);
+                resetInMs += 1000;
+                console.log(`Rate limit reached, sleeping ${resetInMs}ms until the next reset`)
+                Utilities.sleep(resetInMs);
                 continue;
               }
             }

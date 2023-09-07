@@ -177,111 +177,6 @@ function uninstallTriggers() {
   }
 }
 
-function createWebhooks() {
-  deleteWebhooks();
-  console.log("Creating WebHooks...");
-
-  if (ENABLE_COMMANDS_SYSTEM_WEBHOOK) {
-    const partyId = getPartyIdProperty();
-    if (partyId) {
-      const options = {
-        "groupId": partyId
-      };
-      createWebHook(WebAppUrl, COMMANDS_SYSTEM_WEBHOOK_NAME, 'groupChatReceived', options);
-    } else {
-      console.error(`Can't create Commands System WebHook, the PARTY_ID property isn't yet set!`);
-    }
-  }
-  if (ENABLE_QUEST_ACTIVITY_WEBHOOK) {
-    const options = {
-      "questStarted": true,
-      "questFinished": true,
-      "questInvited": true
-    };
-    createWebHook(WebAppUrl, QUEST_ACTIVITY_WEBHOOK_NAME, 'questActivity', options);
-  }
-}
-
-function deleteWebhooks() {
-  console.log("Deleting WebHooks...");
-
-  const webHooks = getWebHooks();
-  if (webHooks && webHooks.length > 0) {
-    for (const webHook of webHooks) {
-      if (webHook && webHook.id) {
-        switch (webHook.label) {
-          case COMMANDS_SYSTEM_WEBHOOK_NAME:
-          case QUEST_ACTIVITY_WEBHOOK_NAME:
-            console.log(`Deleting WebHook: ${webHook.label}`);
-            deleteWebHook(webHook.id);
-            break;
-        }
-      }
-    }
-  } else {
-    console.log(`No WebHooks found`);
-  }
-}
-
-function doGet(e) {
-  var data = JSON.stringify(e.postData);
-  return ContentService.createTextOutput(data).setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  addRandomWebHookContentProperty(e.postData.contents);
-
-  const triggers = ScriptApp.getProjectTriggers();
-  let triggerExists = false;
-  for (const trigger of triggers) {
-    if (trigger.getHandlerFunction() === evaluateWebHookContentStack.name) {
-      triggerExists = true;
-      break;
-    }
-  }
-  if (!triggerExists) {
-    ScriptApp.newTrigger(evaluateWebHookContentStack.name)
-      .timeBased()
-      .after(1)
-      .create();
-  }
-}
-
-function evaluateWebHookContentStack() {
-  ScriptApp.getProjectTriggers().forEach(trigger => {
-    if (trigger.getHandlerFunction() === evaluateWebHookContentStack.name) {
-      ScriptApp.deleteTrigger(trigger);
-    }
-  });
-
-  const webHookContents = popAllRandomWebHookContentProperties();
-  if (webHookContents && webHookContents instanceof Array) {
-    console.log(`${arguments.callee.name}: ${webHookContents.length} object(s) in the stack`);
-    for (let i = 0; i < webHookContents.length; i++) {
-      const pojo = webHookContents[i];
-      if (pojo && pojo.webhookType) {
-        console.log(`${arguments.callee.name}: #${i} webhookType: ${pojo.webhookType}`);
-        if (pojo.webhookType === 'groupChatReceived') {
-          evaluateMessage(pojo.chat);
-        } else if (pojo.webhookType === 'questActivity') {
-          setLastKnownQuestStatus(pojo.type);
-          /*if (pojo.type === 'questInvited') {
-          } else if (pojo.type === 'questStarted') {
-          } else if (pojo.type === 'questFinished') {
-          }*/
-        } else {
-          const json = JSON.stringify(pojo);
-          console.log(json);
-          MailApp.sendEmail(Session.getEffectiveUser().getEmail(), `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()} - WebHook Type: ${pojo.webhookType}`,
-           `${json}`);
-        }
-      }
-    }
-  } else {
-    console.error(`${arguments.callee.name}: WebHook Content Stack doesn't exist`);
-  }
-}
-
 function autoAcceptQuest(quest) {
   if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[UserId]) {
     console.log(`autoAcceptQuest: Accepting inactive quest: "${quest.key}"`);
@@ -603,7 +498,7 @@ function checkAndSendPartyQuestProgress() {
       } else {
         let questInvitedTime = undefined;
         if (questStatus && questStatus.questInvited === true) {
-          questInvitedTime = uestStatus.timestamp;
+          questInvitedTime = questStatus.timestamp;
           message += `**Quest invited:** ${getTimeDifferenceToNowAsString(questInvitedTime)} ago  \n`;
         }
         message += `\n`;

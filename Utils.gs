@@ -12,55 +12,7 @@ const DefaultLockTime = 30 * 1000; // 30 seconds
 
 const UserId = ScriptProperties.getProperty('API_ID');
 const ApiToken = ScriptProperties.getProperty('API_KEY');
-const WebAppUrl = "https://script.google.com/macros/s/AKfycbycV4sr005z_yjZL2wAGf8rXRk0Nv6LePYS7L1LyU6an6vxZH7ZeIv4a5O9nALIyWFB/exec";
-
-function test() {
-  console.log(arguments.callee.name);
-
-  const date1 = new Date();
-  date1.setHours(date1.getHours() - 26);
-  date1.setMinutes(date1.getMinutes() - 12);
-  console.log(getTimeDifferenceToNowAsString(date1));
-
-  const date2 = new Date();
-  date2.setHours(date1.getHours() - 12);
-  date2.setMinutes(date2.getMinutes() - 12);
-  console.log(getTimeDifferenceToNowAsString(date2));
-
-  const date3 = new Date();
-  date3.setMinutes(date3.getMinutes() - 12);
-  console.log(getTimeDifferenceToNowAsString(date3));
-
-  const dayStartOffset = 1;
-  const now = new Date();
-  // now.setHours(dayStartOffset, 0, 0, 0);
-
-  const hours = now.getHours();
-  const nextDayStart = new Date();
-  if (hours >= dayStartOffset) {
-    nextDayStart.setHours(24 + dayStartOffset, 0, 0, 0);
-  } else {
-    nextDayStart.setHours(dayStartOffset, 0, 0, 0);
-  }
-  const timeDifference = nextDayStart - now;
-  const hoursDifferenceToDayStart = Math.round(timeDifference / (1000 * 60 * 60) * 10) / 10;
-
-  console.log(hoursDifferenceToDayStart);
-}
-
-function test2() {
-  let obj = {
-    test: 'hallo'
-  };
-  addRandomWebHookContentProperty(JSON.stringify(obj));
-  obj.test = "there";
-  addRandomWebHookContentProperty(JSON.stringify(obj));
-
-  const objts = popAllRandomWebHookContentProperties();
-  for (let qw of objts) {
-    console.log(JSON.stringify(qw));
-  }
-}
+const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 
 /**
  * Probability is percentage as a float number from 0 to 1.0
@@ -259,79 +211,6 @@ function getPartyIdProperty() {
     return value;
   }
   return undefined;
-}
-
-function addRandomWebHookContentProperty(content) {
-  if (typeof content == 'string' && content) {
-    ScriptProperties.setProperty("RANDOM_WEBHOOK_CONTENT_" + Utilities.getUuid(), content);
-  }
-}
-
-function popAllRandomWebHookContentProperties() {
-  let webHookContents = [];
-  if (ScriptLock.tryLock(DefaultLockTime)) {
-    const properties = ScriptProperties.getProperties();
-    for (const [key, value] of Object.entries(properties)) {
-      if (key.startsWith("RANDOM_WEBHOOK_CONTENT_")) {
-        webHookContents.push(JSON.parse(value));
-        ScriptProperties.deleteProperty(key);
-      }
-    }
-    ScriptLock.releaseLock();
-  } else {
-    console.error(`popAllRandomWebHookContentProperties: Failed to acquire the lock for ${DefaultLockTime}ms`);
-  }
-  return webHookContents;
-}
-
-/**
- * Adds WebHook content as object to the stack array property
- */
-function pushWebHookContentStackProperty(content) {
-  if (typeof content == 'string' && content) {
-    const propertyKey = "LAST_WEBHOOK_CONTENT_STACK";
-    const pojo = JSON.parse(content);
-    if (pojo) {
-      if (ScriptLock.tryLock(DefaultLockTime)) {
-        let propertyValue = ScriptProperties.getProperty(propertyKey);
-        if (!propertyValue) {
-          propertyValue = '[]';
-        }
-        const stack = JSON.parse(propertyValue);
-        if (stack && stack instanceof Array) {
-          stack.push(pojo);
-          propertyValue = JSON.stringify(stack);
-        }
-        ScriptProperties.setProperty(propertyKey, propertyValue);
-        ScriptLock.releaseLock();
-      } else {
-        console.error(`pushWebHookContentStackProperty: Failed to acquire the lock for ${DefaultLockTime}ms`);
-      }
-    }
-  }
-}
-
-/**
- * Gets WebHook Content stack array and sets the property to an empty array
- */
-function popWebHookContentStackProperty() {
-  const propertyKey = "LAST_WEBHOOK_CONTENT_STACK";
-  if (ScriptLock.tryLock(DefaultLockTime)) {
-    let propertyValue = ScriptProperties.getProperty(propertyKey);
-    if (propertyValue) {
-      const stack = JSON.parse(propertyValue);
-      if (stack && stack instanceof Array) {
-        ScriptProperties.setProperty(propertyKey, '[]');
-        ScriptLock.releaseLock();
-        return stack;
-      }
-    }
-    ScriptLock.releaseLock();
-  }  else {
-    console.error(`popWebHookContentStackProperty: Failed to acquire the lock for ${DefaultLockTime}ms`);
-  }
-
-  return [];
 }
 
 function setObjectAsScriptProperty(propertyKey, pojo) {
