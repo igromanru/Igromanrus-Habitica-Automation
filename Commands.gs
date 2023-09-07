@@ -43,6 +43,7 @@ function evaluateMessage(chat) {
     if (chat.text && chat.text.trim().startsWith(COMMANDS_PREFIX)) {
       var matches = COMMANDS_REGEX.exec(chat.text);
       if (matches && matches.length > 1) {
+        const userName = chat.user;
         // first group match
         const command = matches[1];
         console.log(`${arguments.callee.name}: Found command "${command}"`);
@@ -53,11 +54,11 @@ function evaluateMessage(chat) {
             break;
           case QUEST_PROGRESS_COMMAND:
             console.log(`${arguments.callee.name}: Executing command "${command}"`);
-            checkAndSendPartyQuestProgress();
+            checkAndSendPartyQuestProgress(userName);
             break;
           case CAT_COMMAND:
             console.log(`${arguments.callee.name}: Executing command "${command}"`);
-            catCommand();
+            catCommand(userName);
             break;
         }
       }
@@ -81,7 +82,7 @@ function helpCommand() {
   }
 }
 
-function catCommand() {
+function catCommand(triggeredBy = '') {
   if (!catCommand.runOnce) {
     const response = UrlFetchApp.fetch(`https://api.thecatapi.com/v1/images/search?size=med&mime_types=jpg,png`, {
       'method': 'GET',
@@ -95,7 +96,10 @@ function catCommand() {
       if (cats instanceof Array && cats.length > 0) {
         const cat = cats[0];
         if (cat) {
-          let message = `![cat](${cat.url})`;
+          if (triggeredBy) {
+            triggeredBy = ` "Triggered by ${triggeredBy}"`;
+          }
+          let message = `![cat](${cat.url}${triggeredBy})  \n`;
 
           sendMessageToParty(message);
           catCommand.runOnce = true;

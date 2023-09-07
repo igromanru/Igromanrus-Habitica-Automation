@@ -29,7 +29,7 @@ const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, in
 const AUTO_SLEEP = true;
 
 const AUTO_ACCUMULATE_DAMAGE = true;
-const DAMAGE_TO_ACCUMULATE = 100;
+const DAMAGE_TO_ACCUMULATE = 80;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
 
 // Commands settings
@@ -274,7 +274,7 @@ function autoAccumulateDamage(user, quest) {
         )
       && !CurrentSleepStatus) {
       console.log('Toggling sleep to accumulate damage...');
-      if (toggleSleep()) {
+      if (setSleep(user, true)) {
         console.log('Sleep state: ' + CurrentSleepStatus);
 
         let message = 'You were sent to sleep to accumulate damage ';
@@ -427,7 +427,7 @@ function autoCompleteTasks(user) {
   }
 }
 
-function checkAndSendPartyQuestProgress() {
+function checkAndSendPartyQuestProgress(triggeredBy = '') {
   if (checkAndSendPartyQuestProgress.once === true) {
     return;
   }
@@ -499,22 +499,29 @@ function checkAndSendPartyQuestProgress() {
         let questInvitedTime = undefined;
         if (questStatus && questStatus.questInvited === true) {
           questInvitedTime = questStatus.timestamp;
-          message += `**Quest invited:** ${getTimeDifferenceToNowAsString(questInvitedTime)} ago  \n`;
+          message += `**Invited to the Quest:** ${getTimeDifferenceToNowAsString(questInvitedTime)} ago  \n`;
         }
         message += `\n`;
         message += `Members who haven't accepted the quest yet:  \n`;
         message += `Fromat: User | Last "Day Start" | Status  \n`;
         // message += `--- | --- | ---  \n`;
+        partyMembers.sort((a, b) => new Date(b.auth.timestamps.loggedin) - new Date(a.auth.timestamps.loggedin));
         for (const member of partyMembers) {
           if (member && member.party._id && member.party.quest.key && member.party.quest.RSVPNeeded === true) {
+            let memberName = member.profile.name;
             const pingMembersAfterHoursAsMs = PARTY_QUEST_PROGRESS_PING_MEMBERS_AFTER_X_HOURS * 60 * 60 * 1000;
-            const memberName = questInvitedTime && ((new Date() - questInvitedTime) >= pingMembersAfterHoursAsMs) ? `@${member.auth.local.username}` : member.profile.name;
+            if (questInvitedTime && questInvitedTime instanceof Date && ((new Date() - questInvitedTime) >= pingMembersAfterHoursAsMs)) {
+              memberName += `(@${member.auth.local.username})`;
+            }
             const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
             const lastLogin = differenceText ? `${differenceText} ago` : '';
             // message += `${member.profile.name} &ensp; | ${lastLogin} &ensp; | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
             message += `- ${memberName} | ${lastLogin} | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
           }
         }
+      }
+      if (triggeredBy) {
+        message += '`The command was triggered by ' + triggeredBy +'`  \n';
       }
       if (sendMessageToParty(message)) {
         checkAndSendPartyQuestProgress.once = true;

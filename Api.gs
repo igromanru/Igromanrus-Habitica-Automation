@@ -178,7 +178,7 @@ function buyHealthPotion() {
 /**
  * Calls toggleSleep in controlled fation
  */
-function setSleep(user, sleepValue) {
+function setSleep(user, sleepValue = true) {
   if (user) {
     if (typeof sleepValue === 'boolean') {
       CurrentSleepStatus = sleepValue;
