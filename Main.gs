@@ -234,9 +234,8 @@ function checkAndSendMyQuestProgress(user, quest) {
 function autoSleep(user, quest) {
   if (AUTO_SLEEP && user && quest) {
     // Check if user were sent to sleep by the script and "wake" him up after cron is done
-    if (user.preferences.sleep && isSentToSleepByScript() && !isCronPending(user)) {
+    if (isSentToSleepByScript(user) && !isCronPending(user)) {
       setSleep(user, false);
-      deleteSentToSleepByScript();
     }
     /* Old logic, obsolete with autoAccumulateDamage
     if (user.preferences.sleep) {
@@ -266,13 +265,22 @@ function autoAccumulateDamage(user, quest) {
 
     const hoursDifference = getHoursDifferenceToDayStart(user);
     const bossQuest = quest.progress.hp > 0;
-    const questProgress = user.party.quest.progress.up;
+    const myQuestProgress = user.party.quest.progress.up;
     // ToDo add logic for items collecting
-    if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
+    if ((hoursDifference <= 0.5 || (hoursDifference >= 12 && isCronPending(user)))
       && (!quest.key || !quest.active || quest.progress === undefined
-          || (bossQuest && ((!ACCUMULATE_UNTIL_ONE_HIT && questProgress < DAMAGE_TO_ACCUMULATE) || questProgress < quest.progress.hp))
-        )
-      && !CurrentSleepStatus) {
+          || (bossQuest && ((!ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < DAMAGE_TO_ACCUMULATE) || myQuestProgress < quest.progress.hp))
+        )) {
+      console.log(`hoursDifference: ${hoursDifference}`);
+      console.log(`isCronPending: ${isCronPending(user)}`);
+      console.log(`quest.key: ${quest.key}`);
+      console.log(`quest.active: ${quest.active}`);
+      console.log(`quest.progress: ${quest.progress}`);
+      console.log(`My quest progress: ${myQuestProgress}`);
+      console.log(`DAMAGE_TO_ACCUMULATE: ${DAMAGE_TO_ACCUMULATE}`);
+      console.log(`Boss HP: ${quest.progress.hp}`);
+      console.log(`Progress check evaluation: ${(bossQuest && ((!ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < DAMAGE_TO_ACCUMULATE) || myQuestProgress < quest.progress.hp))}`);
+
       console.log('Toggling sleep to accumulate damage...');
       if (setSleep(user, true)) {
         console.log('Sleep state: ' + CurrentSleepStatus);
@@ -281,7 +289,7 @@ function autoAccumulateDamage(user, quest) {
         if (!quest.key || !quest.active || quest.progress === undefined) {
           message += 'because no quest is active.  \n';
         } else {
-          message += ` \nCurrent damage: ${questProgress}  \nBosses HP: ${quest.progress.hp}  \n`;
+          message += ` \nCurrent damage: ${myQuestProgress}  \nBosses HP: ${quest.progress.hp}  \n`;
         }
         message += `*${arguments.callee.name} script*`;
         sendPMToSelf(message);
@@ -511,7 +519,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
             let memberName = member.profile.name;
             const pingMembersAfterHoursAsMs = PARTY_QUEST_PROGRESS_PING_MEMBERS_AFTER_X_HOURS * 60 * 60 * 1000;
             if (questInvitedTime && questInvitedTime instanceof Date && ((new Date() - questInvitedTime) >= pingMembersAfterHoursAsMs)) {
-              memberName += `(@${member.auth.local.username})`;
+              memberName += ` (@${member.auth.local.username})`;
             }
             const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
             const lastLogin = differenceText ? `${differenceText} ago` : '';
@@ -520,7 +528,10 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
           }
         }
       }
-      if (triggeredBy) {
+      message += `\n`; // end the list
+
+      console.log(`Triggered by: ${JSON.stringify(triggeredBy)}`);
+      if (typeof triggeredBy === 'string' && triggeredBy) {
         message += '`The command was triggered by ' + triggeredBy +'`  \n';
       }
       if (sendMessageToParty(message)) {

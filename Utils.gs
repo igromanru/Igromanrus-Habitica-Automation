@@ -151,9 +151,18 @@ function setSentToSleepByScript(value) {
   }
 }
 
-function isSentToSleepByScript() {
-  const value = ScriptProperties.getProperty("SENT_TO_SLEEP_BY_SCRIPT");
-  return value !== undefined && value.toLowerCase() === "true";
+function isSentToSleepByScript(user) {
+  if (user && user.preferences) {
+    if (user.preferences.sleep === true) {
+      const value = ScriptProperties.getProperty("SENT_TO_SLEEP_BY_SCRIPT");
+      return value !== undefined && value.toLowerCase() === "true";
+    } else {
+      deleteSentToSleepByScript();
+    }
+  } else {
+    console.error(`isSentToSleepByScript: No valid user object passed as parameter`);
+  }
+  return false;
 }
 
 function deleteSentToSleepByScript() {
