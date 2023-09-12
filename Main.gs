@@ -269,7 +269,7 @@ function autoAccumulateDamage(user, quest) {
     // ToDo add logic for items collecting
     if ((hoursDifference <= 0.5 || (hoursDifference >= 12 && isCronPending(user)))
       && (!quest.key || !quest.active || quest.progress === undefined
-          || (bossQuest && ((!ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < DAMAGE_TO_ACCUMULATE) || myQuestProgress < quest.progress.hp))
+          || (bossQuest && (myQuestProgress < DAMAGE_TO_ACCUMULATE || (ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < quest.progress.hp)))
         )) {
       console.log(`hoursDifference: ${hoursDifference}`);
       console.log(`isCronPending: ${isCronPending(user)}`);
@@ -279,7 +279,7 @@ function autoAccumulateDamage(user, quest) {
       console.log(`My quest progress: ${myQuestProgress}`);
       console.log(`DAMAGE_TO_ACCUMULATE: ${DAMAGE_TO_ACCUMULATE}`);
       console.log(`Boss HP: ${quest.progress.hp}`);
-      console.log(`Progress check evaluation: ${(bossQuest && ((!ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < DAMAGE_TO_ACCUMULATE) || myQuestProgress < quest.progress.hp))}`);
+      console.log(`Progress check evaluation: ${(bossQuest && (myQuestProgress < DAMAGE_TO_ACCUMULATE || (ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < quest.progress.hp)))}`);
 
       console.log('Toggling sleep to accumulate damage...');
       if (setSleep(user, true)) {

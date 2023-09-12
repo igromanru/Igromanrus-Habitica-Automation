@@ -4,16 +4,16 @@
  */
 
 const Headers = {
-  'x-api-user': UserId,
-  'x-api-key': ApiToken,
+  "x-api-user": UserId,
+  "x-api-key": ApiToken,
   "x-client": AUTHOR_ID + ' - ' + SCRIPT_NAME
 };
-const baseUrl = 'https://habitica.com/api';
-const partyAPI = baseUrl + '/v3/groups/party';
-const userAPI = baseUrl + '/v3/user';
-const groupsAPI = baseUrl + '/v3/groups';
-const membersAPI = baseUrl + '/v3/members';
-const tasksAPI = baseUrl + '/v3/tasks';
+const BaseUrl = 'https://habitica.com/api';
+const PartyAPI = BaseUrl + '/v3/groups/party';
+const UserAPI = BaseUrl + '/v3/user';
+const GroupsAPI = BaseUrl + '/v3/groups';
+const MembersAPI = BaseUrl + '/v3/members';
+const TasksAPI = BaseUrl + '/v3/tasks';
 
 var CurrentSleepStatus = false;
 
@@ -23,7 +23,7 @@ var CurrentSleepStatus = false;
  * https://habitica.com/apidoc/#api-User-UserGet
  */
 function getUser() {
-  const result = fetchGet(userAPI);
+  const result = fetchGet(UserAPI);
   if (result !== undefined && result && typeof result.data === 'object') {
     return result.data;
   }
@@ -35,7 +35,7 @@ function getUser() {
  * Returns party object for the current API user
  */
 function getParty() {
-  const result = fetchGet(partyAPI);
+  const result = fetchGet(PartyAPI);
   if (result !== undefined && result && typeof result.data === 'object') {
     return result.data;
   }
@@ -61,7 +61,7 @@ function getPartyMembers(includeAllPublicFields = false, includeTasks = false, l
 function getGroupMembers(groupId, includeAllPublicFields = false, includeTasks = false, limit = 30, lastId = '') {
   if (groupId) {
     const lastIdParam = lastId ? `&lastId=${lastId}` : '';
-    const result = fetchGet(`${groupsAPI}/${groupId}/members?includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}${lastIdParam}`);
+    const result = fetchGet(`${GroupsAPI}/${groupId}/members?includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}${lastIdParam}`);
     if (result !== undefined && result && result.data instanceof Array) {
       return result.data;
     }
@@ -77,7 +77,7 @@ function getGroupMembers(groupId, includeAllPublicFields = false, includeTasks =
  */
 function getMemberById(memberId) {
   if (memberId) {
-    const result = fetchGet(`${membersAPI}/${memberId}`);
+    const result = fetchGet(`${MembersAPI}/${memberId}`);
     if (result !== undefined && result && typeof result.data === 'object') {
       return result.data;
     }
@@ -97,7 +97,7 @@ function getPartyChat() {
  */
 function getGroupChat(groupId) {
   if (groupId) {
-    const result = fetchGet(`${groupsAPI}/${groupId}/chat`);
+    const result = fetchGet(`${GroupsAPI}/${groupId}/chat`);
     if (result !== undefined && result && result.data instanceof Array) {
       return result.data;
     }
@@ -118,7 +118,7 @@ function sendPM(targetUserId, messageText) {
       message: messageText,
       toUserId: targetUserId
     };
-    const result = fetchPost(`${membersAPI}/send-private-message`, requestBody);
+    const result = fetchPost(`${MembersAPI}/send-private-message`, requestBody);
     if (result !== undefined && result) {
       return result.success === true;
     }
@@ -149,7 +149,7 @@ function sendMessageToGroup(targetGroupId, messageText) {
       message: messageText
     };
 
-    const result = fetchPost(`${groupsAPI}/${targetGroupId}/chat`, requestBody);
+    const result = fetchPost(`${GroupsAPI}/${targetGroupId}/chat`, requestBody);
     if (result !== undefined && result) {
       return result.success === true;
     }
@@ -167,7 +167,7 @@ function sendMessageToGroup(targetGroupId, messageText) {
 function buyHealthPotion() {
   console.log('Buying a Health Potion');
 
-  const result = fetchPost(`${userAPI}/buy-health-potion`);
+  const result = fetchPost(`${UserAPI}/buy-health-potion`);
   if (result !== undefined && result) {
     return result.success === true;
   }
@@ -203,7 +203,7 @@ function setSleep(user, sleepValue = true) {
 function toggleSleep() {
   console.log('Toggling sleep');
 
-  const result = fetchPost(`${userAPI}/sleep`);
+  const result = fetchPost(`${UserAPI}/sleep`);
   if (result !== undefined && result && typeof result.data === 'boolean') {
     CurrentSleepStatus = result.data;
     setSentToSleepByScript(CurrentSleepStatus);
@@ -220,7 +220,7 @@ function toggleSleep() {
 function buyEnchantedArmoire() {
   console.log('Buying Enchanted Armoire');
 
-  const result = fetchPost(`${userAPI}/buy-armoire`);
+  const result = fetchPost(`${UserAPI}/buy-armoire`);
   if (result !== undefined && result) {
     console.log(`Armoire json: ${JSON.stringify(result.data.armoire)}`);
     console.log(`Message: ${result.message}`);
@@ -253,7 +253,7 @@ function buyGemPurchasableItem(type, key, amount = 1) {
     const requestBody = {
       quantity: amount
     };
-    const result = fetchPost(`${userAPI}/purchase/${type}/${key}`, requestBody);
+    const result = fetchPost(`${UserAPI}/purchase/${type}/${key}`, requestBody);
     if (result !== undefined && result) {
       return result.success === true;
     }
@@ -265,7 +265,7 @@ function buyGemPurchasableItem(type, key, amount = 1) {
 }
 
 function acceptQuest() {
-  const result = fetchPost(`${partyAPI}/quests/accept`);
+  const result = fetchPost(`${PartyAPI}/quests/accept`);
   return result !== undefined && result && result.success === true;
 }
 
@@ -276,7 +276,7 @@ function acceptQuest() {
  */
 function runCron() {
   console.log('Running cron');
-  const result = fetchPost(`${baseUrl}/v3/cron`);
+  const result = fetchPost(`${BaseUrl}/v3/cron`);
   if (result !== undefined && result && result.success === true) {
     console.log('Cron was successful');
   }
@@ -296,7 +296,7 @@ function allocateStatPoint(stat) {
     if (stat == "str" || stat == "con" || stat == "int" || stat == "per") {
       console.log(`Allocating single Stat Point (${stat})`);
 
-      const result = fetchPost(`${userAPI}/allocate?stat=${stat}`);
+      const result = fetchPost(`${UserAPI}/allocate?stat=${stat}`);
       if (result !== undefined && result && result.success === true) {
         console.log('Stat Point successfully allocated');
       }
@@ -325,7 +325,7 @@ function allocateStatPoints(stat, amount) {
           [stat]: amount
         }
       };
-      const result = fetchPost(`${userAPI}/allocate-bulk`, requestBody);
+      const result = fetchPost(`${UserAPI}/allocate-bulk`, requestBody);
       if (result !== undefined && result && result.success === true) {
         console.log('Stat Point successfully allocated');
       }
@@ -345,7 +345,7 @@ function getUserTasks(type = '', dueDate = undefined) {
   if (!type || type == "habits" || type == "dailys" || type == "todos" || type == "rewards" || type == "completedTodos") {
     type = type ? `&type=${type}` : '';
     dueDate = dueDate ? `&dueDate=${dueDate.toISOString()}` : '';
-    const result = fetchGet(`${tasksAPI}/user?${type}${dueDate}`);
+    const result = fetchGet(`${TasksAPI}/user?${type}${dueDate}`);
     if (result !== undefined && result && result.data instanceof Array) {
       return result.data;
     }
@@ -364,7 +364,7 @@ function getUserTasks(type = '', dueDate = undefined) {
  */
 function scoreTask(taskId, direction = 'up') {
   if (taskId && (direction === 'up' || direction === 'down')) {
-    const result = fetchPost(`${tasksAPI}/${taskId}/score/${direction}`);
+    const result = fetchPost(`${TasksAPI}/${taskId}/score/${direction}`);
     if (result !== undefined && result && typeof result.data === 'object') {
       return result.data;
     }
@@ -387,7 +387,7 @@ function castSkill(spellId, targetId = '') {
       || spellId === "snowball" || spellId === "spookySparkles" || spellId === "seafoam" || spellId === "shinySeed" // Transformation Items
       )) {
     targetId = targetId ? `?targetId=${targetId}` : '';
-    const result = fetchPost(`${userAPI}/class/cast/${spellId}${targetId}`);
+    const result = fetchPost(`${UserAPI}/class/cast/${spellId}${targetId}`);
     if (result !== undefined && result && typeof result.data === 'object') {
       return result.data;
     }
@@ -401,7 +401,7 @@ function castSkill(spellId, targetId = '') {
  * Returns an array of user's webhooks
  */
 function getWebHooks() {
-  const result = fetchGet(`${userAPI}/webhook`);
+  const result = fetchGet(`${UserAPI}/webhook`);
   if (result !== undefined && result && result.data instanceof Array) {
     return result.data;
   }
@@ -435,7 +435,7 @@ function createWebHook(targetUrl, label, type = 'taskActivity', options = undefi
         "id": id
       });
     }
-    const result = fetchPost(`${userAPI}/webhook`, requestBody);
+    const result = fetchPost(`${UserAPI}/webhook`, requestBody);
     if (result !== undefined && result && typeof result.data === 'object') {
       return result.data;
     }
@@ -451,7 +451,7 @@ function createWebHook(targetUrl, label, type = 'taskActivity', options = undefi
  */
 function deleteWebHook(webhookId) {
   if (webhookId && typeof webhookId === 'string') {
-    const result = fetchDelete(`${userAPI}/webhook/${webhookId}`);
+    const result = fetchDelete(`${UserAPI}/webhook/${webhookId}`);
     if (result !== undefined && result && result.data instanceof Array) {
       return result.data;
     }
