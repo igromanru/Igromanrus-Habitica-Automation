@@ -476,17 +476,19 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
         }
 
         const progressType = bossQuest ? 'Damage' : 'Items';
-        message += `Fromat: User | ${progressType} | Last "Day Start" | Status  \n`;
+        message += `Fromat: ${progressType} | Last "Day Start" | User  \n`;
         // message += `--- | --- | --- | ---  \n`;
 
         const addMemberInfoToMessage = (member) => {
-          const pendingDamage = Math.round(member.party.quest.progress.up * 10) / 10;
-          const progress = bossQuest ? pendingDamage : member.party.quest.progress.collectedItems;
+          const pendingDamage = padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
+          const collectedItems = padLeft(member.party.quest.progress.collectedItems, 3);
+          const progress = bossQuest ? `🎯${pendingDamage}` : `🔍${collectedItems}`;
           const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
-          const lastLogin = differenceText ? `${differenceText} ago` : '';
+          const lastLogin = differenceText ? `🕑${differenceText}` : '';
           const sleeping = member.preferences.sleep ? '😴' : '';
+          const mmemberName = `${member.profile.name} (\`@${member.auth.local.username}\`)`;
           // message += `${member.profile.name} &ensp; | ${progress} &ensp; | ${lastLogin} &ensp; | ${sleeping}  \n`;
-          message += `- ${member.profile.name} | ${progress} | ${lastLogin} | ${sleeping}  \n`;
+          message += `- ${progress} | ${lastLogin} | ${mmemberName} ${sleeping}  \n`;
         };
         if (bossQuest) {
           membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
@@ -511,24 +513,30 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
         }
         message += `\n`;
         message += `Members who haven't accepted the quest yet:  \n`;
-        message += `Fromat: User | Last "Day Start" | Status  \n`;
+        message += `Fromat: Last "Day Start" | User  \n`;
         // message += `--- | --- | ---  \n`;
         partyMembers.sort((a, b) => new Date(b.auth.timestamps.loggedin) - new Date(a.auth.timestamps.loggedin));
         for (const member of partyMembers) {
           if (member && member.party._id && member.party.quest.key && member.party.quest.RSVPNeeded === true) {
-            let memberName = member.profile.name;
+            let memberName = `**${member.profile.name}**`;
             const pingMembersAfterHoursAsMs = PARTY_QUEST_PROGRESS_PING_MEMBERS_AFTER_X_HOURS * 60 * 60 * 1000;
             if (questInvitedTime && questInvitedTime instanceof Date && ((new Date() - questInvitedTime) >= pingMembersAfterHoursAsMs)) {
               memberName += ` (@${member.auth.local.username})`;
+            } else {
+              memberName += ` (\`@${member.auth.local.username}\`)`;
             }
             const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
-            const lastLogin = differenceText ? `${differenceText} ago` : '';
+            const lastLogin = differenceText ? `🕑${differenceText}` : '';
             // message += `${member.profile.name} &ensp; | ${lastLogin} &ensp; | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
-            message += `- ${memberName} | ${lastLogin} | ${member.preferences.sleep ? '😴' : ''}  \n`;
+            message += `- ${lastLogin} | ${memberName} ${member.preferences.sleep ? '😴' : ''}  \n`;
           }
         }
       }
       message += `\n`; // end the list
+      message += `🎯 = pending damage  \n`;
+      message += `🔍 = collected items  \n`;
+      message += `🕑 = Passed time since the last cron (Format: days:hours:minutes)  \n`;
+      message += `😴 = Sleeping in the Tavern (damage paused)  \n`;
 
       console.log(`Triggered by: ${JSON.stringify(triggeredBy)}`);
       if (typeof triggeredBy === 'string' && triggeredBy) {
@@ -560,7 +568,7 @@ function sendPartyMembersInfomation(triggeredBy = '') {
         const healers = new Array();
         const rogues = new Array();
 
-        partyMembers.sort((a, b) => a.profile.name - b.profile.name);
+        partyMembers.sort((a, b) => a.profile.name.localeCompare(b.profile.name));
         for (const member of partyMembers) {
           if (member && member.party._id) {
             if (member.flags && member.flags.classSelected === true && !member.preferences.disableClasses) {
@@ -585,17 +593,19 @@ function sendPartyMembersInfomation(triggeredBy = '') {
         }
 
         const addMemberInfoToMessage = (member) => {
-          const health = Math.round(member.stats.hp * 10) / 10;
-          const pendingDamage = Math.round(member.party.quest.progress.up * 10) / 10;
+          const health = padLeft(Math.round(Math.round(member.stats.hp * 10) / 10), 2);
+          const pendingDamage = padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
+          const collectedItems = padLeft(member.party.quest.progress.collectedItems, 3);
           const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
-          const lastLogin = differenceText ? `${differenceText} ago` : '';
+          const lastLogin = differenceText ? `🕑${differenceText}` : '';
           const sleeping = member.preferences.sleep ? '😴' : '';
 
-          message += `- ${member.profile.name} (${member.auth.local.username}) | ⬆${member.stats.lvl} | ❤${health} | ⚔${pendingDamage} | 🔍${member.party.quest.progress.collectedItems} | 🕑${lastLogin} | ${sleeping}  \n`;
+          // message += `- ${member.profile.name} (${member.auth.local.username}) | 🔝${member.stats.lvl} | ❤️${health} | ⚔${pendingDamage} | 🔍${member.party.quest.progress.collectedItems} | 🕑${lastLogin} | ${sleeping}  \n`;
+          message += `- ❤️${health} | 🎯${pendingDamage} | 🔍${collectedItems} | ${lastLogin} | ${member.profile.name} (${member.auth.local.username}) ${sleeping}  \n`;
         };
         const addClassToMessage = (className, members) => {
           if (members && members.length > 0) {
-            message += `**${className}**  \n`;
+            message += `**${className} (${members.length})**  \n`;
             for (const member of members) {
               addMemberInfoToMessage(member);
             }
@@ -607,6 +617,14 @@ function sendPartyMembersInfomation(triggeredBy = '') {
         addClassToMessage("Healer", healers);
         addClassToMessage("Rogue", rogues);
         addClassToMessage("No Class", noClass);
+        message += `\n`;
+
+        // message += `🔝 = current level  \n`;
+        message += `❤️ = current health  \n`;
+        message += `🎯 = pending damage  \n`;
+        message += `🔍 = collected items  \n`;
+        message += `🕑 = Passed time since the last cron (Format: days:hours:minutes)  \n`;
+        message += `😴 = Sleeping in the Tavern (damage paused)  \n`;
       } else {
         const errorMessage = `Error: couldn't get members infomation`;
         message += `${errorMessage}  \n`;

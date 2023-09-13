@@ -51,6 +51,11 @@ function test2() {
   console.log('Send to sleep: ' + bossQuest && ((!ACCUMULATE_UNTIL_ONE_HIT && questProgress < DAMAGE_TO_ACCUMULATE) || questProgress >= quest.progress.hp));
 }
 
+function testPadLeft() {
+  const value1 = 12;
+  console.log(`Original value: ${value1}, padded: ${padLeft(value1, 4, "/\\")}`);
+}
+
 function testFetchLimit() {
   const user = getUser();
   const party = getParty();

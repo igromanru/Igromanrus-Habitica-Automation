@@ -14,6 +14,17 @@ const UserId = ScriptProperties.getProperty('API_ID');
 const ApiToken = ScriptProperties.getProperty('API_KEY');
 const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 
+function padLeft(input, targetLength, padString = "&nbsp;") {
+  if (input && targetLength > 0) {
+    input = input.toString();
+    const padCount = targetLength - input.length;
+    if (padCount > 0) {
+      return padString.repeat(padCount) + input;
+    }
+  }
+  return '';
+}
+
 /**
  * Probability is percentage as a float number from 0 to 1.0
  * 
@@ -78,8 +89,8 @@ function getTimeDifferenceToNowAsString(dateTime) {
     const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
 
-    
-    if (days > 0) {
+    result += `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    /*if (days > 0) {
       result += `${days}d`;
     }
     if (hours > 0) {
@@ -93,7 +104,7 @@ function getTimeDifferenceToNowAsString(dateTime) {
         result += ' ';
       }
       result += `${minutes}min`;
-    }
+    }*/
   }
   return result;
 }
