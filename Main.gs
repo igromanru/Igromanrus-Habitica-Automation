@@ -443,7 +443,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
   const party = getParty();
   if (party && party.quest && party.quest.key) {
     const partyMembers = getPartyMembers(true);
-    if (partyMembers && partyMembers.length) {
+    if (partyMembers && partyMembers.length > 0) {
       const quest = party.quest;
       const questLeader = getMemberFromArrayById(partyMembers, party.quest.leader);
       const bossQuest = quest.progress.hp > 0;
@@ -452,10 +452,10 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
       let message = `### ${SCRIPT_NAME} - Party Quest Status  \n`;
       // message += `**Party:** ${party.name}  \n`;
       message += `**Party Leader:** ${party.leader.profile.name}  \n`;
+      message += `**Members count:** ${party.memberCount}  \n`;
       if (questLeader) {
         message += `**Quest Leader:** ${questLeader.profile.name}  \n`;
       }
-      // message += `**Quest status:** ${quest.active ? 'Active' : 'Waiting for participants'}  \n`;
 
       if (quest.active) {
         if (questStatus && questStatus.questStarted === true) {
@@ -484,7 +484,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
           const progress = bossQuest ? pendingDamage : member.party.quest.progress.collectedItems;
           const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
           const lastLogin = differenceText ? `${differenceText} ago` : '';
-          const sleeping = member.preferences.sleep ? 'Sleeping' : '';
+          const sleeping = member.preferences.sleep ? '😴' : '';
           // message += `${member.profile.name} &ensp; | ${progress} &ensp; | ${lastLogin} &ensp; | ${sleeping}  \n`;
           message += `- ${member.profile.name} | ${progress} | ${lastLogin} | ${sleeping}  \n`;
         };
@@ -524,7 +524,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
             const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
             const lastLogin = differenceText ? `${differenceText} ago` : '';
             // message += `${member.profile.name} &ensp; | ${lastLogin} &ensp; | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
-            message += `- ${memberName} | ${lastLogin} | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
+            message += `- ${memberName} | ${lastLogin} | ${member.preferences.sleep ? '😴' : ''}  \n`;
           }
         }
       }
@@ -540,5 +540,86 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
     } else {
       console.error(`${arguments.callee.name}: Couldn't get party members`);
     }
+  }
+}
+
+function sendPartyMembersInfomation(triggeredBy = '') {
+  if (!sendPartyMembersInfomation.once) {
+    const party = getParty();
+    if (party) {
+      let message = `### ${SCRIPT_NAME} - Party Members  \n`;
+      message += `**Party Leader:** ${party.leader.profile.name}  \n`;
+      message += `**Members count:** ${party.memberCount}  \n`;
+      message += `\n`;
+      
+      const partyMembers = getPartyMembers(true);
+      if (partyMembers && partyMembers.length > 0) {
+        const noClass = new Array();
+        const warriors = new Array();
+        const mages = new Array();
+        const healers = new Array();
+        const rogues = new Array();
+
+        partyMembers.sort((a, b) => a.profile.name - b.profile.name);
+        for (const member of partyMembers) {
+          if (member && member.party._id) {
+            if (member.flags && member.flags.classSelected === true && !member.preferences.disableClasses) {
+              switch (member.stats["class"]) {
+                case "warrior":
+                  warriors.push(member);
+                  break;
+                case "wizard":
+                  mages.push(member);
+                  break;
+                case "healer":
+                  healers.push(member);
+                  break;
+                case "rogue":
+                  rogues.push(member);
+                  break;
+              }
+            } else {
+              noClass.push(member);
+            }
+          }
+        }
+
+        const addMemberInfoToMessage = (member) => {
+          const health = Math.round(member.stats.hp * 10) / 10;
+          const pendingDamage = Math.round(member.party.quest.progress.up * 10) / 10;
+          const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
+          const lastLogin = differenceText ? `${differenceText} ago` : '';
+          const sleeping = member.preferences.sleep ? '😴' : '';
+
+          message += `- ${member.profile.name} (${member.auth.local.username}) | ⬆${member.stats.lvl} | ❤${health} | ⚔${pendingDamage} | 🔍${member.party.quest.progress.collectedItems} | 🕑${lastLogin} | ${sleeping}  \n`;
+        };
+        const addClassToMessage = (className, members) => {
+          if (members && members.length > 0) {
+            message += `**${className}**  \n`;
+            for (const member of members) {
+              addMemberInfoToMessage(member);
+            }
+            message += `\n`;
+          }
+        }
+        addClassToMessage("Warrior", warriors);
+        addClassToMessage("Mage", mages);
+        addClassToMessage("Healer", healers);
+        addClassToMessage("Rogue", rogues);
+        addClassToMessage("No Class", noClass);
+      } else {
+        const errorMessage = `Error: couldn't get members infomation`;
+        message += `${errorMessage}  \n`;
+        console.error(errorMessage);
+      }
+
+
+      console.log(`Triggered by: ${JSON.stringify(triggeredBy)}`);
+      if (typeof triggeredBy === 'string' && triggeredBy) {
+        message += '`The command was triggered by ' + triggeredBy +'`  \n';
+      }
+      sendMessageToParty(message);
+    }
+    sendPartyMembersInfomation.once = true;
   }
 }

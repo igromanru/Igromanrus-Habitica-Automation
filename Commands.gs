@@ -4,11 +4,12 @@
  */
 
 const COMMANDS_PREFIX = '!';
-const COMMANDS_REGEX = /^\!(.*?)(?:$|\s)/g;
+const COMMANDS_REGEX = /^\!(.*?)(?:$|\s)(.*)/g;
 
 const HELP_COMMAND = 'help';
 const QUEST_PROGRESS_COMMAND = 'quest';
 const CAT_COMMAND = 'cat';
+const MEMBERS_COMMAND = 'members';
 
 function scheduledCommandsCheck() {
   /* if (!isLastExecutionOverAMinute()) {
@@ -44,8 +45,11 @@ function evaluateMessage(chat) {
       var matches = COMMANDS_REGEX.exec(chat.text);
       if (matches && matches.length > 1) {
         const userName = chat.user;
-        // first group match
-        const command = matches[1];
+        const command = matches[1].toLowerCase();
+        let params = '';
+        if (matches.length > 2) {
+          params = matches[2].toLowerCase().trim();
+        }
         console.log(`${arguments.callee.name}: Found command "${command}"`);
         switch (command) {
           case HELP_COMMAND:
@@ -60,6 +64,10 @@ function evaluateMessage(chat) {
             console.log(`${arguments.callee.name}: Executing command "${command}"`);
             catCommand(userName);
             break;
+          case MEMBERS_COMMAND:
+            console.log(`${arguments.callee.name}: Executing command "${command}"`);
+            sendPartyMembersInfomation(userName);
+            break;
         }
       }
     }
@@ -73,9 +81,10 @@ function helpCommand() {
     // message += `Currently, the check takes place every ${TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES} minutes, for new commands in chat.  \n\n`;
 
     message += `**Following commands are available:**  \n`;
-    message += `- ${COMMANDS_PREFIX + HELP_COMMAND} : Prints this message  \n`;
-    message += `- ${COMMANDS_PREFIX + QUEST_PROGRESS_COMMAND} : Prints current Party Quest Status  \n`;
-    message += `- ${COMMANDS_PREFIX + CAT_COMMAND} : Prints an image of a random cat  \n`;
+    message += `- ${COMMANDS_PREFIX + HELP_COMMAND} : Shows this message  \n`;
+    message += `- ${COMMANDS_PREFIX + QUEST_PROGRESS_COMMAND} : Shows current Party Quest Status  \n`;
+    message += `- ${COMMANDS_PREFIX + MEMBERS_COMMAND} : Shows infomation about current party members  \n`;
+    message += `- ${COMMANDS_PREFIX + CAT_COMMAND} : Shows an image of a random cat from The Cat API  \n`;
 
     sendMessageToParty(message);
     helpCommand.runOnce = true;
