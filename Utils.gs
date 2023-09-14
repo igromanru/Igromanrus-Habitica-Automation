@@ -89,7 +89,7 @@ function getTimeDifferenceToNowAsString(dateTime) {
     const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
 
-    result += `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    result += `${padLeft(days, 2)}d${padLeft(hours, 2)}h${padLeft(minutes, 2)}m`;
     /*if (days > 0) {
       result += `${days}d`;
     }

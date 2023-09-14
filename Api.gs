@@ -46,7 +46,7 @@ function getParty() {
 /**
  * Get all members for the party
  */
-function getPartyMembers(includeAllPublicFields = false, includeTasks = false, limit = 30, lastId = '') {
+function getPartyMembers(includeAllPublicFields = true, includeTasks = false, limit = 30, lastId = '') {
   return getGroupMembers('party', includeAllPublicFields, includeTasks, limit, lastId);
 }
 
@@ -58,7 +58,7 @@ function getPartyMembers(includeAllPublicFields = false, includeTasks = false, l
  * 
  * @See: https://habitica.com/apidoc/#api-Member-GetMembersForGroup
  */
-function getGroupMembers(groupId, includeAllPublicFields = false, includeTasks = false, limit = 30, lastId = '') {
+function getGroupMembers(groupId, includeAllPublicFields = true, includeTasks = false, limit = 30, lastId = '') {
   if (groupId) {
     const lastIdParam = lastId ? `&lastId=${lastId}` : '';
     const result = fetchGet(`${GroupsAPI}/${groupId}/members?includeTasks=${includeTasks}&includeAllPublicFields=${includeAllPublicFields}&limit=${limit}${lastIdParam}`);

@@ -452,7 +452,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
       let message = `### ${SCRIPT_NAME} - Party Quest Status  \n`;
       // message += `**Party:** ${party.name}  \n`;
       message += `**Party Leader:** ${party.leader.profile.name}  \n`;
-      message += `**Members count:** ${party.memberCount}  \n`;
+      // message += `**Members count:** ${party.memberCount}  \n`;
       if (questLeader) {
         message += `**Quest Leader:** ${questLeader.profile.name}  \n`;
       }
@@ -476,8 +476,6 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
         }
 
         const progressType = bossQuest ? 'Damage' : 'Items';
-        message += `Fromat: ${progressType} | Last "Day Start" | User  \n`;
-        // message += `--- | --- | --- | ---  \n`;
 
         const addMemberInfoToMessage = (member) => {
           const pendingDamage = padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
@@ -513,8 +511,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
         }
         message += `\n`;
         message += `Members who haven't accepted the quest yet:  \n`;
-        message += `Fromat: Last "Day Start" | User  \n`;
-        // message += `--- | --- | ---  \n`;
+        
         partyMembers.sort((a, b) => new Date(b.auth.timestamps.loggedin) - new Date(a.auth.timestamps.loggedin));
         for (const member of partyMembers) {
           if (member && member.party._id && member.party.quest.key && member.party.quest.RSVPNeeded === true) {
