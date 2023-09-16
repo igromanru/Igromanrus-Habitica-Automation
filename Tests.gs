@@ -57,19 +57,30 @@ function testPadLeft() {
 }
 
 function testFetchLimit() {
-  const user = getUser();
-  const party = getParty();
-  const members = getPartyMembers();
+  const user = Habitica.getUser();
+  const party = Habitica.getParty();
+  const members = Habitica.getPartyMembers();
   if (members && members.length > 0) {
     console.log(`${members.length} members found`);
     for (let i = 0; i < members.length; i++) {
       console.log(`Getting member index: ${i}`);
-      const member = getMemberById(members[i]._id);
+      const member = Habitica.getMemberById(members[i]._id);
       if (member) {
         console.log(`Member: ${member.profile.name}`);
       }
     }
   }
-  const chats = getPartyChat();
+  const chats = Habitica.getPartyChat();
   console.log(`Found ${chats.length} party chats`);
+}
+
+function testLibrary() {
+  // console.log(JSON.stringify(Habitica.getRequestHeaders()));
+  /*const triggers = Habitica.getTriggers();
+  for (const trigger of triggers) {
+    console.log(trigger.getHandlerFunction());
+  }*/
+
+  const properties = Habitica.getScriptProperties();
+  console.log(JSON.stringify(properties));
 }

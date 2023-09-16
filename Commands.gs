@@ -18,7 +18,7 @@ function scheduledCommandsCheck() {
   }*/
 
   const lastCheckTime = getLastCommandCheckDateTime();
-  const chatArray = getPartyChat();
+  const chatArray = Habitica.getPartyChat();
   if (chatArray instanceof Array && chatArray) {
     console.log(`scheduledCommandsCheck: Found ${chatArray.length} chat messages for the party`);
     let newMessageCount = 0;
@@ -79,6 +79,7 @@ function helpCommand() {
     let message = `### ${SCRIPT_NAME} - Commands  \n`;
     message += 'The command system allows users to trigger some script functions by sending chat messages with specific commands.  \n';
     // message += `Currently, the check takes place every ${TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES} minutes, for new commands in chat.  \n\n`;
+    message += `\n`;
 
     message += `**Following commands are available:**  \n`;
     message += `- ${COMMANDS_PREFIX + HELP_COMMAND} : Shows this message  \n`;
@@ -86,7 +87,16 @@ function helpCommand() {
     message += `- ${COMMANDS_PREFIX + MEMBERS_COMMAND} : Shows infomation about current party members  \n`;
     message += `- ${COMMANDS_PREFIX + CAT_COMMAND} : Shows an image of a random cat from The Cat API  \n`;
 
-    sendMessageToParty(message);
+    message += `\n`;
+    message += `**Emoji explanation:**  \n`;
+    message += `🔝 = current level  \n`;
+    message += `❤️ = current health  \n`;
+    message += `🎯 = pending damage  \n`;
+    message += `🔍 = collected items  \n`;
+    message += `🕑 = Passed time since the last cron  \n`;
+    message += `😴 = Sleeping in the Tavern (damage paused)  \n`;
+
+    Habitica.sendMessageToParty(message);
     helpCommand.runOnce = true;
   }
 }
@@ -110,7 +120,7 @@ function catCommand(triggeredBy = '') {
           }
           let message = `![cat](${cat.url}${triggeredBy})  \n`;
 
-          sendMessageToParty(message);
+          Habitica.sendMessageToParty(message);
           catCommand.runOnce = true;
         }
       }

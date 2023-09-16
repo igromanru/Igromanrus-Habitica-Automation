@@ -1,5 +1,9 @@
 # Igromanru's Habitica Automation - Scripts framework
 
+## Dependencies
+-  [Igromanru's Habitica Library](https://script.google.com/d/1zUBDNbi5fncQ3-mdKNE6SWucktAZhzvIy9Nho68xGWx317qwSx3E_L_v/edit?usp=sharing)
+
+
 ## Setup
 To be able to use the script as it is, you have to add your User Id and API Key as Script Properties API_ID and API_KEY.  
 Also you have to add a time based trigger.  

@@ -14,28 +14,8 @@ const UserId = ScriptProperties.getProperty('API_ID');
 const ApiToken = ScriptProperties.getProperty('API_KEY');
 const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 
-function padLeft(input, targetLength, padString = "&nbsp;") {
-  if (input && targetLength > 0) {
-    input = input.toString();
-    const padCount = targetLength - input.length;
-    if (padCount > 0) {
-      return padString.repeat(padCount) + input;
-    }
-  }
-  return '';
-}
-
-/**
- * Probability is percentage as a float number from 0 to 1.0
- * 
- * 0.1 = 10%, 1.0 = 100%
- */
-function getRandomBooleanWithProbability(probability) {
-  if (probability < 0 || probability > 1.0) {
-    throw new Error('Chance must be between 0 and 1.0');
-  }
-  return probability === 1 || Math.random() < probability;
-}
+// Initiliaze the Habitica Librariy, with API credentials and script properties
+Habitica.initialize(UserId, ApiToken, ScriptProperties);
 
 /**
  * Hours left till the next day starts
@@ -63,22 +43,6 @@ function getHoursDifferenceToDayStart(user) {
   return hoursDifferenceToDayStart;
 }
 
-/**
- * Checks if last cron were executed before today
- */
-function isCronPending(user) {
-  if(!user || !user.lastCron) {
-    return false;
-  }
-
-  const lastCronDate = new Date(user.lastCron);
-  lastCronDate.setHours(0, 0, 0, 0);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  return lastCronDate < today;
-}
-
 function getTimeDifferenceToNowAsString(dateTime) {
   let result = ``;
   if (dateTime && dateTime instanceof Date) {
@@ -89,7 +53,7 @@ function getTimeDifferenceToNowAsString(dateTime) {
     const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
 
-    result += `${padLeft(days, 2)}d${padLeft(hours, 2)}h${padLeft(minutes, 2)}m`;
+    result += `${Habitica.padLeft(days, 2)}d${Habitica.padLeft(hours, 2)}h${Habitica.padLeft(minutes, 2)}m`;
     /*if (days > 0) {
       result += `${days}d`;
     }
@@ -166,7 +130,7 @@ function isSentToSleepByScript(user) {
   if (user && user.preferences) {
     if (user.preferences.sleep === true) {
       const value = ScriptProperties.getProperty("SENT_TO_SLEEP_BY_SCRIPT");
-      return value !== undefined && value.toLowerCase() === "true";
+      return typeof value === 'string' && value.toLowerCase() === "true";
     } else {
       deleteSentToSleepByScript();
     }

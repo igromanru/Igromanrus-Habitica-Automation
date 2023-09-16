@@ -56,25 +56,21 @@ const ENABLE_COMMANDS_SYSTEM_TRIGGER = false;
 const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5; // Must be 1, 5, 10, 15 or 30
 // Party Quest Status
 const ENABLE_PARTY_QUEST_STATUS_TRIGGER = true;
-const TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS = 2;
+const TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or 12
 // ------------------------------------------------------------
 /**
  * Main entry, that should be executed by a tigger
  */
 function triggerSchedule() {
-  const user = getUser();
+  const user = Habitica.getUser();
   if (user) {
-    if (user.preferences && user.preferences.sleep !== undefined) {
-      CurrentSleepStatus = user.preferences.sleep;
-    }
-
     const hoursDifference = getHoursDifferenceToDayStart(user);
     console.log('Hours difference to the next Day Start: ' + hoursDifference)
 
     if (user.party._id) {
       setPartyIdProperty(user.party._id);
 
-      const party = getParty();
+      const party = Habitica.getParty();
       if (party) {
         let quest = party.quest;
         console.log('Party Id: ' + party.id);
@@ -105,6 +101,8 @@ function triggerSchedule() {
     autoAllocateStatPoints(user);
 
     setLastExecutionDateTime();
+  } else {
+    throw new Error(`Couldn't get user data`); 
   }
 }
 
@@ -180,18 +178,18 @@ function uninstallTriggers() {
 function autoAcceptQuest(quest) {
   if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[UserId]) {
     console.log(`autoAcceptQuest: Accepting inactive quest: "${quest.key}"`);
-    if (acceptQuest()) {
+    if (Habitica.acceptQuest()) {
       onsole.log(`autoAcceptQuest: Quest accepted`);
     }
   }
 }
 
 function checkAndSendMyQuestProgress(user, quest) {
-  if (!AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY) {
+  if (!AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY || !user || !quest) {
     return;
   }
 
-  if (CurrentSleepStatus) {
+  if (user.preferences.sleep === true) {
     console.log(`${arguments.callee.name}: You're already sleeping in the tavern`);
     return;
   }
@@ -225,7 +223,7 @@ function checkAndSendMyQuestProgress(user, quest) {
       if (hoursDifference <= START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART || pendingDamage >= START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED)
       {
         console.log(progressMessage);
-        sendMessageToParty(progressMessage);
+        Habitica.sendMessageToParty(progressMessage);
       }
     }
   }
@@ -234,8 +232,9 @@ function checkAndSendMyQuestProgress(user, quest) {
 function autoSleep(user, quest) {
   if (AUTO_SLEEP && user && quest) {
     // Check if user were sent to sleep by the script and "wake" him up after cron is done
-    if (isSentToSleepByScript(user) && !isCronPending(user)) {
-      setSleep(user, false);
+    if (isSentToSleepByScript(user) && !Habitica.isCronPending(user)) {
+      console.log(`${arguments.callee.name}: You were sent to sleep by the script before, waking up`);
+      setSentToSleepByScript(Habitica.setSleep(user, false));
     }
     /* Old logic, obsolete with autoAccumulateDamage
     if (user.preferences.sleep) {
@@ -243,8 +242,8 @@ function autoSleep(user, quest) {
       return;
     }
     const hoursDifference = getHoursDifferenceToDayStart(user);
-    if ((hoursDifference < 1 || (hoursDifference >= 12 && isCronPending(user)))
-        && (!quest.key || !quest.active) && !CurrentSleepStatus
+    if ((hoursDifference < 1 || (hoursDifference >= 12 && Habitica.isCronPending(user)))
+        && (!quest.key || !quest.active) && !user.preferences.sleep
         && user.party.quest.progress.up >= 10) {
       console.log('No quest is running, toggling sleep...');
       const sleepState = toggleSleep();
@@ -258,7 +257,7 @@ function autoSleep(user, quest) {
 
 function autoAccumulateDamage(user, quest) {
   if (AUTO_ACCUMULATE_DAMAGE && user && quest) {
-    if (CurrentSleepStatus) {
+    if (user.preferences.sleep === true) {
       console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
       return;
     }
@@ -267,12 +266,12 @@ function autoAccumulateDamage(user, quest) {
     const bossQuest = quest.progress.hp > 0;
     const myQuestProgress = user.party.quest.progress.up;
     // ToDo add logic for items collecting
-    if ((hoursDifference <= 0.5 || (hoursDifference >= 12 && isCronPending(user)))
+    if ((hoursDifference <= 0.5 || (hoursDifference >= 12 && Habitica.isCronPending(user)))
       && (!quest.key || !quest.active || quest.progress === undefined
           || (bossQuest && (myQuestProgress < DAMAGE_TO_ACCUMULATE || (ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < quest.progress.hp)))
         )) {
       console.log(`hoursDifference: ${hoursDifference}`);
-      console.log(`isCronPending: ${isCronPending(user)}`);
+      console.log(`isCronPending: ${Habitica.isCronPending(user)}`);
       console.log(`quest.key: ${quest.key}`);
       console.log(`quest.active: ${quest.active}`);
       console.log(`quest.progress: ${quest.progress}`);
@@ -282,8 +281,9 @@ function autoAccumulateDamage(user, quest) {
       console.log(`Progress check evaluation: ${(bossQuest && (myQuestProgress < DAMAGE_TO_ACCUMULATE || (ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < quest.progress.hp)))}`);
 
       console.log('Toggling sleep to accumulate damage...');
-      if (setSleep(user, true)) {
-        console.log('Sleep state: ' + CurrentSleepStatus);
+      if (Habitica.setSleep(user, true)) {
+        console.log('Sleep state: ' + user.preferences.sleep);
+        setSentToSleepByScript(true);
 
         let message = 'You were sent to sleep to accumulate damage ';
         if (!quest.key || !quest.active || quest.progress === undefined) {
@@ -292,24 +292,24 @@ function autoAccumulateDamage(user, quest) {
           message += ` \nCurrent damage: ${myQuestProgress}  \nBosses HP: ${quest.progress.hp}  \n`;
         }
         message += `*${arguments.callee.name} script*`;
-        sendPMToSelf(message);
+        Habitica.sendPrivateMessageToSelf(message);
       }
     }
   }
 }
 
 function autoCron(user, quest) {
-  if (AUTO_CRON && user && isCronPending(user)) {
+  if (AUTO_CRON && user && Habitica.isCronPending(user)) {
     if (AUTO_CRON_ON_TIME) {
       const hoursDifference = getHoursDifferenceToDayStart(user);
       const before = 24.5 - CRON_X_HOURS_AFTER_DAYSTART;
       const after = 23.5 - CRON_X_HOURS_AFTER_DAYSTART;
       if (hoursDifference <= before && hoursDifference >= after) {
-        runCron();
+        Habitica.runCron();
       }
     } else if(quest && quest.key && quest.active) {
       if (user.party.quest.progress.up >= 5 || user.party.quest.progress.collectedItems > 0) {
-        runCron();
+        Habitica.runCron();
       }
     }
   }
@@ -322,7 +322,7 @@ function autoHealSelf(user) {
 
     if (healUnderHp > 0 && currentHp <= healUnderHp) {
       console.log(`${arguments.callee.name}: Current HP is or under ${healUnderHp}, buying a health postion.`);
-      buyHealthPotion();
+      Habitica.buyHealthPotion();
     }
   }
 }
@@ -340,7 +340,7 @@ function autoBuyEnchantedArmoire(user) {
       var pmMessage = '**Bought Enchanted Armoire:**  \n';
       var boughtCount = 0;
       for (var i = 0; i < toBuyCount; i++) {
-        const responseJson = buyEnchantedArmoire();
+        const responseJson = Habitica.buyEnchantedArmoire();
         if (responseJson) {
           pmMessage += `${JSON.stringify(responseJson.data.armoire)}  \n`;
           boughtCount++;
@@ -350,14 +350,14 @@ function autoBuyEnchantedArmoire(user) {
       }
       if (SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO) {
         pmMessage += `**Successfully bought: ${boughtCount} out of ${toBuyCount}**`;
-        sendPMToSelf(pmMessage)
+        Habitica.sendPrivateMessageToSelf(pmMessage)
       }
     }
   }
 }
 
 function autoBuyGems(user) {
-  if (AUTO_BUY_GEMS && user && user.purchased && user.purchased.plan) {
+  if (AUTO_BUY_GEMS && user && user.purchased && user.purchased.plan && user.purchased.plan.dateTerminated === null) {
     const gemCost = 20; // 1 gem costs 20 Gold
     const defaultGemCap = 25;
     const currentGold = user.stats.gp;
@@ -365,7 +365,7 @@ function autoBuyGems(user) {
 
     const gemsToBuy = Math.min(defaultGemCap + plan.consecutive.gemCapExtra - plan.gemsBought, Math.floor(currentGold / gemCost));
     if (gemsToBuy > 0) {
-      buyGems(gemsToBuy);
+      Habitica.buyGems(gemsToBuy);
     }
   }
 }
@@ -377,7 +377,7 @@ function autoAllocateStatPoints(user) {
 
     if (pointsToAllocate > 0 && userLvl >= 10 && !user.preferences.disableClasses) {
       console.log(`${arguments.callee.name}: Allocating ${pointsToAllocate} stat points into "${ALLOCATE_STAT_POINTS_TO}"`);
-      allocateStatPoints(ALLOCATE_STAT_POINTS_TO, pointsToAllocate);
+      Habitica.allocateStatPoints(ALLOCATE_STAT_POINTS_TO, pointsToAllocate);
     }
   }
 }
@@ -391,7 +391,7 @@ function autoCompleteTasks(user) {
       return;
     }
 
-    const tasks = getUserTasks();
+    const tasks = Habitica.getUserTasks();
     if (tasks instanceof Array && tasks.length > 0) {
       const habits = new Array();
       const dueDailies = new Array();
@@ -411,7 +411,7 @@ function autoCompleteTasks(user) {
         let dayliesPerHour = dueDailies.length / Math.round(hoursDifference);
         console.log(`${arguments.callee.name}: Daylies per hour ${dayliesPerHour}`);
         if (dayliesPerHour < 1) {
-          dayliesPerHour = +getRandomBooleanWithProbability(dayliesPerHour);
+          dayliesPerHour = +Habitica.getRandomBooleanWithProbability(dayliesPerHour);
         }
         dayliesPerHour = Math.floor(dayliesPerHour);
         console.log(`${arguments.callee.name}: ${dueDailies.length} dailies due for today`);
@@ -422,7 +422,7 @@ function autoCompleteTasks(user) {
             break;
           }
           const daily = dueDailies[i];
-          if (scoreTask(daily.id)) {
+          if (Habitica.scoreTask(daily.id)) {
             console.log(`${arguments.callee.name}: Daily completed: ${daily.text}`);
             dailiesCompleted++;
           } else {
@@ -440,9 +440,9 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
     return;
   }
 
-  const party = getParty();
+  const party = Habitica.getParty();
   if (party && party.quest && party.quest.key) {
-    const partyMembers = getPartyMembers(true);
+    const partyMembers = Habitica.getPartyMembers(true);
     if (partyMembers && partyMembers.length > 0) {
       const quest = party.quest;
       const questLeader = getMemberFromArrayById(partyMembers, party.quest.leader);
@@ -478,13 +478,13 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
         const progressType = bossQuest ? 'Damage' : 'Items';
 
         const addMemberInfoToMessage = (member) => {
-          const pendingDamage = padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
-          const collectedItems = padLeft(member.party.quest.progress.collectedItems, 3);
+          const pendingDamage = Habitica.padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
+          const collectedItems = Habitica.padLeft(member.party.quest.progress.collectedItems, 3);
           const progress = bossQuest ? `🎯${pendingDamage}` : `🔍${collectedItems}`;
           const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
           const lastLogin = differenceText ? `🕑${differenceText}` : '';
           const sleeping = member.preferences.sleep ? '😴' : '';
-          const mmemberName = `${member.profile.name} (\`@${member.auth.local.username}\`)`;
+          const mmemberName = `${member.profile.name} (\`${member.auth.local.username}\`)`;
           // message += `${member.profile.name} &ensp; | ${progress} &ensp; | ${lastLogin} &ensp; | ${sleeping}  \n`;
           message += `- ${progress} | ${lastLogin} | ${mmemberName} ${sleeping}  \n`;
         };
@@ -520,7 +520,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
             if (questInvitedTime && questInvitedTime instanceof Date && ((new Date() - questInvitedTime) >= pingMembersAfterHoursAsMs)) {
               memberName += ` (@${member.auth.local.username})`;
             } else {
-              memberName += ` (\`@${member.auth.local.username}\`)`;
+              memberName += ` (\`${member.auth.local.username}\`)`;
             }
             const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
             const lastLogin = differenceText ? `🕑${differenceText}` : '';
@@ -530,16 +530,16 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
         }
       }
       message += `\n`; // end the list
-      message += `🎯 = pending damage  \n`;
+      /*message += `🎯 = pending damage  \n`;
       message += `🔍 = collected items  \n`;
       message += `🕑 = Passed time since the last cron (Format: days:hours:minutes)  \n`;
-      message += `😴 = Sleeping in the Tavern (damage paused)  \n`;
+      message += `😴 = Sleeping in the Tavern (damage paused)  \n`;*/
 
       console.log(`Triggered by: ${JSON.stringify(triggeredBy)}`);
       if (typeof triggeredBy === 'string' && triggeredBy) {
         message += '`The command was triggered by ' + triggeredBy +'`  \n';
       }
-      if (sendMessageToParty(message)) {
+      if (Habitica.sendMessageToParty(message)) {
         checkAndSendPartyQuestProgress.once = true;
       }
     } else {
@@ -550,14 +550,14 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
 
 function sendPartyMembersInfomation(triggeredBy = '') {
   if (!sendPartyMembersInfomation.once) {
-    const party = getParty();
+    const party = Habitica.getParty();
     if (party) {
       let message = `### ${SCRIPT_NAME} - Party Members  \n`;
       message += `**Party Leader:** ${party.leader.profile.name}  \n`;
       message += `**Members count:** ${party.memberCount}  \n`;
       message += `\n`;
       
-      const partyMembers = getPartyMembers(true);
+      const partyMembers = Habitica.getPartyMembers(true);
       if (partyMembers && partyMembers.length > 0) {
         const noClass = new Array();
         const warriors = new Array();
@@ -590,9 +590,9 @@ function sendPartyMembersInfomation(triggeredBy = '') {
         }
 
         const addMemberInfoToMessage = (member) => {
-          const health = padLeft(Math.round(Math.round(member.stats.hp * 10) / 10), 2);
-          const pendingDamage = padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
-          const collectedItems = padLeft(member.party.quest.progress.collectedItems, 3);
+          const health = Habitica.padLeft(Math.round(Math.round(member.stats.hp * 10) / 10), 2);
+          const pendingDamage = Habitica.padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
+          const collectedItems = Habitica.padLeft(member.party.quest.progress.collectedItems, 3);
           const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
           const lastLogin = differenceText ? `🕑${differenceText}` : '';
           const sleeping = member.preferences.sleep ? '😴' : '';
@@ -617,11 +617,11 @@ function sendPartyMembersInfomation(triggeredBy = '') {
         message += `\n`;
 
         // message += `🔝 = current level  \n`;
-        message += `❤️ = current health  \n`;
+        /*message += `❤️ = current health  \n`;
         message += `🎯 = pending damage  \n`;
         message += `🔍 = collected items  \n`;
-        message += `🕑 = Passed time since the last cron (Format: days:hours:minutes)  \n`;
-        message += `😴 = Sleeping in the Tavern (damage paused)  \n`;
+        message += `🕑 = Passed time since the last cron  \n`;
+        message += `😴 = Sleeping in the Tavern (damage paused)  \n`;*/
       } else {
         const errorMessage = `Error: couldn't get members infomation`;
         message += `${errorMessage}  \n`;
@@ -633,7 +633,7 @@ function sendPartyMembersInfomation(triggeredBy = '') {
       if (typeof triggeredBy === 'string' && triggeredBy) {
         message += '`The command was triggered by ' + triggeredBy +'`  \n';
       }
-      sendMessageToParty(message);
+      Habitica.sendMessageToParty(message);
     }
     sendPartyMembersInfomation.once = true;
   }

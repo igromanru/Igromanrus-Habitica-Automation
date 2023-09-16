@@ -17,7 +17,7 @@ function createWebhooks() {
       const options = {
         groupId: partyId
       };
-      createWebHook(WebAppUrl, COMMANDS_SYSTEM_WEBHOOK_NAME, 'groupChatReceived', options);
+      Habitica.createWebHook(WebAppUrl, COMMANDS_SYSTEM_WEBHOOK_NAME, 'groupChatReceived', options);
     } else {
       console.error(`Can't create Commands System WebHook, the PARTY_ID property isn't yet set!`);
     }
@@ -28,14 +28,14 @@ function createWebhooks() {
       questFinished: true,
       questInvited: true
     };
-    createWebHook(WebAppUrl, QUEST_ACTIVITY_WEBHOOK_NAME, 'questActivity', options);
+    Habitica.createWebHook(WebAppUrl, QUEST_ACTIVITY_WEBHOOK_NAME, 'questActivity', options);
   }
 }
 
 function deleteWebhooks() {
   console.log("Deleting WebHooks...");
 
-  const webHooks = getWebHooks();
+  const webHooks = Habitica.getWebHooks();
   if (webHooks && webHooks.length > 0) {
     for (const webHook of webHooks) {
       if (webHook && webHook.id) {
@@ -43,7 +43,7 @@ function deleteWebhooks() {
           case COMMANDS_SYSTEM_WEBHOOK_NAME:
           case QUEST_ACTIVITY_WEBHOOK_NAME:
             console.log(`Deleting WebHook: ${webHook.label}`);
-            deleteWebHook(webHook.id);
+            Habitica.deleteWebHook(webHook.id);
             break;
         }
       }
@@ -70,21 +70,7 @@ function doGet(e) {
  */
 function doPost(e) {
   pushWebHookContentQueueProperty(e.postData.contents);
-
-  const triggers = ScriptApp.getProjectTriggers();
-  let triggerExists = false;
-  for (const trigger of triggers) {
-    if (trigger.getHandlerFunction() === evaluateWebHookContentQueue.name) {
-      triggerExists = true;
-      break;
-    }
-  }
-  if (!triggerExists) {
-    ScriptApp.newTrigger(evaluateWebHookContentQueue.name)
-      .timeBased()
-      .after(1)
-      .create();
-  }
+  Habitica.executeAsTriggerAsap(evaluateWebHookContentQueue.name);
 }
 
 function evaluateWebHookContentQueue() {
