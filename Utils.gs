@@ -84,6 +84,21 @@ function getMemberFromArrayById(members, memberId) {
   return undefined;
 }
 
+function getUserStatusAsEmojis(user) {
+  let result = '';
+  if (user && user.preferences && user.stats) {
+    if (user.stats.hp <= 0) {
+      status += '💀';
+    }
+    if (member.preferences.sleep === true) {
+      status += '😴';
+    }
+  } else {
+    console.error(`getUserStatusAsEmojis error: Invalid user parameter`);
+  }
+  return result;
+}
+
 /**
  * Determines if the script was executed longer than 1min ago.
  * It should be used to work around Habitica's rate limit, which is 30 requests per minute

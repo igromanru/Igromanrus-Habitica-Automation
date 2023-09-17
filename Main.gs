@@ -64,6 +64,7 @@ const TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or
 function triggerSchedule() {
   const user = Habitica.getUser();
   if (user) {
+    console.log(`User: ${user.profile.name} (@${member.auth.local.username})\nHealth: ${Math.round(user.stats.hp)}`);
     const hoursDifference = getHoursDifferenceToDayStart(user);
     console.log('Hours difference to the next Day Start: ' + hoursDifference)
 
@@ -95,7 +96,7 @@ function triggerSchedule() {
     }
     
     autoCompleteTasks(user);
-    autoHealSelf(user);
+    autoBuyHealthPotions(user);
     autoBuyEnchantedArmoire(user);
     autoBuyGems(user);
     autoAllocateStatPoints(user);
@@ -315,14 +316,18 @@ function autoCron(user, quest) {
   }
 }
 
-function autoHealSelf(user) {
+function autoBuyHealthPotions(user) {
   if (AUTO_HEALTH_POSTION && user) {
+    const postionHealPower = 15;
     const healUnderHp = AUTO_HEALTH_POSTION_IF_HP_UNDER;
     const currentHp = user.stats.hp;
 
     if (healUnderHp > 0 && currentHp <= healUnderHp) {
-      console.log(`${arguments.callee.name}: Current HP is or under ${healUnderHp}, buying a health postion.`);
-      Habitica.buyHealthPotion();
+      const potionsToBuy = Math.max(Math.round((healUnderHp - currentHp) / postionHealPower), 1);
+      console.log(`${arguments.callee.name}: Current HP (${currentHp}) is or under ${healUnderHp}, buying ${potionsToBuy} amount of health postions.`);
+      for (let i = 0; i < potionsToBuy; i++) {
+        Habitica.buyHealthPotion();
+      }
     }
   }
 }
@@ -475,18 +480,14 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
           }
         }
 
-        const progressType = bossQuest ? 'Damage' : 'Items';
-
         const addMemberInfoToMessage = (member) => {
           const pendingDamage = Habitica.padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
           const collectedItems = Habitica.padLeft(member.party.quest.progress.collectedItems, 3);
           const progress = bossQuest ? `🎯${pendingDamage}` : `🔍${collectedItems}`;
           const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
           const lastLogin = differenceText ? `🕑${differenceText}` : '';
-          const sleeping = member.preferences.sleep ? '😴' : '';
           const mmemberName = `${member.profile.name} (\`${member.auth.local.username}\`)`;
-          // message += `${member.profile.name} &ensp; | ${progress} &ensp; | ${lastLogin} &ensp; | ${sleeping}  \n`;
-          message += `- ${progress} | ${lastLogin} | ${mmemberName} ${sleeping}  \n`;
+          message += `- ${progress} | ${lastLogin} | ${mmemberName} ${getUserStatusAsEmojis(member)}  \n`;
         };
         if (bossQuest) {
           membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
@@ -524,8 +525,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
             }
             const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
             const lastLogin = differenceText ? `🕑${differenceText}` : '';
-            // message += `${member.profile.name} &ensp; | ${lastLogin} &ensp; | ${member.preferences.sleep ? 'Sleeping' : ''}  \n`;
-            message += `- ${lastLogin} | ${memberName} ${member.preferences.sleep ? '😴' : ''}  \n`;
+            message += `- ${lastLogin} | ${memberName} ${getUserStatusAsEmojis(member)}  \n`;
           }
         }
       }
@@ -595,10 +595,14 @@ function sendPartyMembersInfomation(triggeredBy = '') {
           const collectedItems = Habitica.padLeft(member.party.quest.progress.collectedItems, 3);
           const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
           const lastLogin = differenceText ? `🕑${differenceText}` : '';
-          const sleeping = member.preferences.sleep ? '😴' : '';
+          let status = '';
+          if (member.preferences.sleep === true) {
+            status += '😴';
+          }
+          const healthEmoji = member.stats.hp <= 0 ? '💀' : '❤️';
 
           // message += `- ${member.profile.name} (${member.auth.local.username}) | 🔝${member.stats.lvl} | ❤️${health} | ⚔${pendingDamage} | 🔍${member.party.quest.progress.collectedItems} | 🕑${lastLogin} | ${sleeping}  \n`;
-          message += `- ❤️${health} | 🎯${pendingDamage} | 🔍${collectedItems} | ${lastLogin} | ${member.profile.name} (${member.auth.local.username}) ${sleeping}  \n`;
+          message += `- ${healthEmoji}${health} | 🎯${pendingDamage} | 🔍${collectedItems} | ${lastLogin} | **${member.profile.name}** (\`${member.auth.local.username}\`) ${status}  \n`;
         };
         const addClassToMessage = (className, members) => {
           if (members && members.length > 0) {

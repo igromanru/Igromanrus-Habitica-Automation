@@ -95,6 +95,7 @@ function helpCommand() {
     message += `🔍 = collected items  \n`;
     message += `🕑 = Passed time since the last cron  \n`;
     message += `😴 = Sleeping in the Tavern (damage paused)  \n`;
+    message += `💀 = Character is about to die (health in minuse)  \n`;
 
     Habitica.sendMessageToParty(message);
     helpCommand.runOnce = true;
