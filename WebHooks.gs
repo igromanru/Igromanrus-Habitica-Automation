@@ -81,7 +81,7 @@ function evaluateWebHookContentQueue() {
   });
 
   const webHookContents = popAllWebHookContentQueueProperties();
-  if (webHookContents && webHookContents instanceof Array) {
+  if (webHookContents && Array.isArray(webHookContents)) {
     console.log(`${arguments.callee.name}: ${webHookContents.length} object(s) in the queue`);
     for (let i = 0; i < webHookContents.length; i++) {
       const pojo = webHookContents[i];

@@ -12,6 +12,9 @@ const CAT_COMMAND = 'cat';
 const MEMBERS_COMMAND = 'members';
 
 function scheduledCommandsCheck() {
+  if (!ENABLE_COMMANDS) {
+    return;
+  }
   /* if (!isLastExecutionOverAMinute()) {
     console.log("scheduledCommandsCheck: Skipping, last script execution was too recent");
     return;
@@ -19,7 +22,7 @@ function scheduledCommandsCheck() {
 
   const lastCheckTime = getLastCommandCheckDateTime();
   const chatArray = Habitica.getPartyChat();
-  if (chatArray instanceof Array && chatArray) {
+  if (Array.isArray(chatArray) && chatArray) {
     console.log(`scheduledCommandsCheck: Found ${chatArray.length} chat messages for the party`);
     let newMessageCount = 0;
     for (const chat of chatArray) {
@@ -40,7 +43,7 @@ function scheduledCommandsCheck() {
 
 function evaluateMessage(chat) {
   // Filter for user messages
-  if (chat && (!chat.info || chat.type === undefined)) {
+  if (ENABLE_COMMANDS && chat && (!chat.info || chat.type === undefined)) {
     if (chat.text && chat.text.trim().startsWith(COMMANDS_PREFIX)) {
       var matches = COMMANDS_REGEX.exec(chat.text);
       if (matches && matches.length > 1) {
@@ -113,7 +116,7 @@ function catCommand(triggeredBy = '') {
     });
     if (response.getResponseCode() == 200) {
       const cats = JSON.parse(response.getContentText());
-      if (cats instanceof Array && cats.length > 0) {
+      if (Array.isArray(cats) && cats.length > 0) {
         const cat = cats[0];
         if (cat) {
           if (triggeredBy) {

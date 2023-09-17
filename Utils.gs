@@ -74,7 +74,7 @@ function getTimeDifferenceToNowAsString(dateTime) {
 }
 
 function getMemberFromArrayById(members, memberId) {
-  if (members && members instanceof Array && memberId && typeof memberId === 'string') {
+  if (members && Array.isArray(members) && memberId && typeof memberId === 'string') {
     for (const member of members) {
       if (member && member._id == memberId) {
         return member;

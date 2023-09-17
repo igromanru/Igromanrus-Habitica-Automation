@@ -64,7 +64,7 @@ const TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or
 function triggerSchedule() {
   const user = Habitica.getUser();
   if (user) {
-    console.log(`User: ${user.profile.name} (@${member.auth.local.username})\nHealth: ${Math.round(user.stats.hp)}`);
+    console.log(`User: ${user.profile.name} (@${user.auth.local.username})\nHealth: ${Math.round(user.stats.hp)}`);
     const hoursDifference = getHoursDifferenceToDayStart(user);
     console.log('Hours difference to the next Day Start: ' + hoursDifference)
 
@@ -141,7 +141,7 @@ function installTriggers() {
   if (ENABLE_WEEKLY_WEBHOOK_REFRESH_TRIGGER) {
     triggers.push(ScriptApp.newTrigger(createWebhooks.name)
       .timeBased()
-      .everyWeeks(1)
+      .everyDays(6)
       .create()
     );
   }
@@ -397,7 +397,7 @@ function autoCompleteTasks(user) {
     }
 
     const tasks = Habitica.getUserTasks();
-    if (tasks instanceof Array && tasks.length > 0) {
+    if (Array.isArray(tasks) && tasks.length > 0) {
       const habits = new Array();
       const dueDailies = new Array();
       for (const task of tasks) {
