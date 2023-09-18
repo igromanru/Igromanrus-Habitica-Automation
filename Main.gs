@@ -599,10 +599,9 @@ function sendPartyMembersInfomation(triggeredBy = '') {
           if (member.preferences.sleep === true) {
             status += '😴';
           }
-          const healthEmoji = member.stats.hp <= 0 ? '💀' : '❤️';
 
           // message += `- ${member.profile.name} (${member.auth.local.username}) | 🔝${member.stats.lvl} | ❤️${health} | ⚔${pendingDamage} | 🔍${member.party.quest.progress.collectedItems} | 🕑${lastLogin} | ${sleeping}  \n`;
-          message += `- ${healthEmoji}${health} | 🎯${pendingDamage} | 🔍${collectedItems} | ${lastLogin} | **${member.profile.name}** (\`${member.auth.local.username}\`) ${status}  \n`;
+          message += `- ${getUserHealthAsEmoji(member)}${health} | 🎯${pendingDamage} | 🔍${collectedItems} | ${lastLogin} | **${member.profile.name}** (\`${member.auth.local.username}\`) ${status}  \n`;
         };
         const addClassToMessage = (className, members) => {
           if (members && members.length > 0) {

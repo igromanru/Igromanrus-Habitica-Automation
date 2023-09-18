@@ -44,14 +44,14 @@ function scheduledCommandsCheck() {
 function evaluateMessage(chat) {
   // Filter for user messages
   if (ENABLE_COMMANDS && chat && (!chat.info || chat.type === undefined)) {
-    if (chat.text && chat.text.trim().startsWith(COMMANDS_PREFIX)) {
-      var matches = COMMANDS_REGEX.exec(chat.text);
+    if (typeof chat.text === 'string' && chat.text.trim().startsWith(COMMANDS_PREFIX)) {
+      var matches = COMMANDS_REGEX.exec(chat.text.toLowerCase());
       if (matches && matches.length > 1) {
         const userName = chat.user;
-        const command = matches[1].toLowerCase();
+        const command = matches[1];
         let params = '';
         if (matches.length > 2) {
-          params = matches[2].toLowerCase().trim();
+          params = matches[2].trim();
         }
         console.log(`${arguments.callee.name}: Found command "${command}"`);
         switch (command) {

@@ -43,7 +43,7 @@ function getHoursDifferenceToDayStart(user) {
   return hoursDifferenceToDayStart;
 }
 
-function getTimeDifferenceToNowAsString(dateTime) {
+function getTimeDifferenceToNowAsString(dateTime, highlightAfterXDays = 10) {
   let result = ``;
   if (dateTime && dateTime instanceof Date) {
     const now = new Date();
@@ -54,21 +54,9 @@ function getTimeDifferenceToNowAsString(dateTime) {
     const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
 
     result += `${Habitica.padLeft(days, 2)}d${Habitica.padLeft(hours, 2)}h${Habitica.padLeft(minutes, 2)}m`;
-    /*if (days > 0) {
-      result += `${days}d`;
+    if (days >= highlightAfterXDays) {
+      result = `**${result}**`;
     }
-    if (hours > 0) {
-      if (result) {
-        result += ' ';
-      }
-      result += `${hours}h`;
-    }
-    if (minutes > 0) {
-      if (result) {
-        result += ' ';
-      }
-      result += `${minutes}min`;
-    }*/
   }
   return result;
 }
@@ -88,15 +76,29 @@ function getUserStatusAsEmojis(user) {
   let result = '';
   if (user && user.preferences && user.stats) {
     if (user.stats.hp <= 0) {
-      status += '💀';
+      result += '💀';
     }
-    if (member.preferences.sleep === true) {
-      status += '😴';
+    if (user.preferences.sleep === true) {
+      result += '😴';
     }
   } else {
     console.error(`getUserStatusAsEmojis error: Invalid user parameter`);
   }
   return result;
+}
+
+function getUserHealthAsEmoji(user) {
+  let result = '❤️';
+  if (user && user.stats && user.stats.maxHealth > 0) {
+    if (user.stats.hp <= 0) {
+      result = '💀';
+    } else if(user.stats.hp < user.stats.maxHealth) {
+      result = '💔';
+    }
+  } else {
+    console.error(`getUserHealthAsEmoji error: Invalid user parameter`);
+  }
+  return result; 
 }
 
 /**
