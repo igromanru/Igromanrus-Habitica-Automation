@@ -75,11 +75,16 @@ function triggerSchedule() {
     const hoursDifference = getHoursDifferenceToDayStart(user);
     console.log('Hours difference to the next Day Start: ' + hoursDifference)
 
+    let partyMembers = [];
     if (user.party._id) {
       setPartyIdProperty(user.party._id);
 
       const party = Habitica.getParty();
       if (party) {
+        if (AUTO_USE_SKILLS) { // For now only get party members for autoUseSkills
+          partyMembers = Habitica.getPartyMembers(true);
+        }
+
         let quest = party.quest;
         console.log('Party Id: ' + party.id);
 
@@ -103,6 +108,7 @@ function triggerSchedule() {
     }
     
     autoCompleteTasks(user);
+    autoUseSkills(user, partyMembers);
     autoBuyHealthPotions(user);
     autoBuyEnchantedArmoire(user);
     autoBuyGems(user);
@@ -400,23 +406,23 @@ function autoAllocateStatPoints(user) {
   }
 }
 
-function autoUseSkills(user) {
+function autoUseSkills(user, members = []) {
   if (AUTO_USE_SKILLS) {
     if (user && user.flags) {
       if (user.flags.classSelected === true && !user.preferences.disableClasses) {
         let userClass = undefined;
         switch (user.stats["class"]) {
           case "warrior":
-            userClass = new Warrior(user);
+            userClass = new Warrior(user, members);
             break;
           case "wizard":
-            userClass = new Mage(user);
+            userClass = new Mage(user, members);
             break;
           case "healer":
-            userClass = new Healer(user);
+            userClass = new Healer(user, members);
             break;
           case "rogue":
-            userClass = new Rogue(user);
+            userClass = new Rogue(user, members);
             break;
         }
         if (userClass && userClass instanceof ClassBase) {
@@ -479,196 +485,5 @@ function autoCompleteTasks(user) {
         console.log(`${arguments.callee.name}: Completed ${dailiesCompleted} dalies`);
       }
     }
-  }
-}
-
-function checkAndSendPartyQuestStatus(triggeredBy = '') {
-  if (checkAndSendPartyQuestStatus.once === true) {
-    return;
-  }
-
-  const party = Habitica.getParty();
-  if (party && party.quest && party.quest.key) {
-    const partyMembers = Habitica.getPartyMembers(true);
-    if (partyMembers && partyMembers.length > 0) {
-      const quest = party.quest;
-      const questLeader = getMemberFromArrayById(partyMembers, party.quest.leader);
-      const bossQuest = quest.progress.hp > 0;
-      const questStatus = getLastKnownQuestStatus();
-  
-      let message = `### ${SCRIPT_NAME} - Party Quest Status  \n`;
-      // message += `**Party:** ${party.name}  \n`;
-      message += `**Party Leader:** ${party.leader.profile.name}  \n`;
-      // message += `**Members count:** ${party.memberCount}  \n`;
-      if (questLeader) {
-        message += `**Quest Leader:** ${questLeader.profile.name}  \n`;
-      }
-
-      if (quest.active) {
-        if (questStatus && questStatus.questStarted === true) {
-          message += `**Quest started:** ${getTimeDifferenceToNowAsString(questStatus.timestamp)} ago  \n`;
-        }
-        message += `\n`;
-
-        const membersWithProgress = new Array();
-        const membersWithoutProgress = new Array();
-        for (const member of partyMembers) {
-          if (member && member.party._id && member.party.quest.key) {
-            if (member.party.quest.progress.up > 0 || member.party.quest.progress.collectedItems > 0) {
-              membersWithProgress.push(member);
-            } else if(!PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-              membersWithoutProgress.push(member);
-            }
-          }
-        }
-
-        const addMemberInfoToMessage = (member) => {
-          const pendingDamage = Habitica.padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
-          const collectedItems = Habitica.padLeft(member.party.quest.progress.collectedItems, 3);
-          const progress = bossQuest ? `🎯${pendingDamage}` : `🔍${collectedItems}`;
-          const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
-          const lastLogin = differenceText ? `🕑${differenceText}` : '';
-          const mmemberName = `${member.profile.name} (\`${member.auth.local.username}\`)`;
-          message += `- ${progress} | ${lastLogin} | ${mmemberName} ${getUserStatusAsEmojis(member)}  \n`;
-        };
-        if (bossQuest) {
-          membersWithProgress.sort((a, b) => b.party.quest.progress.up - a.party.quest.progress.up);
-        } else {
-          membersWithProgress.sort((a, b) => b.party.quest.progress.collectedItems - a.party.quest.progress.collectedItems);
-        }
-        for (const member of membersWithProgress) {
-          addMemberInfoToMessage(member);
-        }
-        if (PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-          message += `\n*The list doesn't contain users who have no quest progress*  \n`;
-        } else {
-          for (const member of membersWithoutProgress) {
-            addMemberInfoToMessage(member);
-          }
-        }
-      } else {
-        let questInvitedTime = undefined;
-        if (questStatus && questStatus.questInvited === true) {
-          questInvitedTime = questStatus.timestamp;
-          message += `**Invited to the Quest:** ${getTimeDifferenceToNowAsString(questInvitedTime)} ago  \n`;
-        }
-        message += `\n`;
-        message += `Members who haven't accepted the quest yet:  \n`;
-        
-        partyMembers.sort((a, b) => new Date(b.auth.timestamps.loggedin) - new Date(a.auth.timestamps.loggedin));
-        for (const member of partyMembers) {
-          if (member && member.party._id && member.party.quest.key && member.party.quest.RSVPNeeded === true) {
-            let memberName = `**${member.profile.name}**`;
-            const pingMembersAfterHoursAsMs = PARTY_QUEST_STATUS_PING_MEMBERS_AFTER_X_HOURS * 60 * 60 * 1000;
-            if (questInvitedTime && questInvitedTime instanceof Date && ((new Date() - questInvitedTime) >= pingMembersAfterHoursAsMs)) {
-              memberName += ` (@${member.auth.local.username})`;
-            } else {
-              memberName += ` (\`${member.auth.local.username}\`)`;
-            }
-            const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
-            const lastLogin = differenceText ? `🕑${differenceText}` : '';
-            message += `- ${lastLogin} | ${memberName} ${getUserStatusAsEmojis(member)}  \n`;
-          }
-        }
-      }
-      message += `\n`; // end the list
-
-      console.log(`Triggered by: ${JSON.stringify(triggeredBy)}`);
-      if (typeof triggeredBy === 'string' && triggeredBy) {
-        message += '`The command was triggered by ' + triggeredBy +'`  \n';
-      }
-      if (Habitica.sendMessageToParty(message)) {
-        checkAndSendPartyQuestStatus.once = true;
-      }
-    } else {
-      console.error(`${arguments.callee.name}: Couldn't get party members`);
-    }
-  }
-}
-
-function sendPartyMembersInfomation(triggeredBy = '') {
-  if (!sendPartyMembersInfomation.once) {
-    const party = Habitica.getParty();
-    if (party) {
-      let message = `### ${SCRIPT_NAME} - Party Members  \n`;
-      message += `**Party Leader:** ${party.leader.profile.name}  \n`;
-      message += `**Members count:** ${party.memberCount}  \n`;
-      message += `\n`;
-      
-      const partyMembers = Habitica.getPartyMembers(true);
-      if (partyMembers && partyMembers.length > 0) {
-        const withoutClass = new Array();
-        const warriors = new Array();
-        const mages = new Array();
-        const healers = new Array();
-        const rogues = new Array();
-
-        partyMembers.sort((a, b) => a.profile.name.localeCompare(b.profile.name));
-        for (const member of partyMembers) {
-          if (member && member.party._id) {
-            if (member.flags && member.flags.classSelected === true && !member.preferences.disableClasses) {
-              switch (member.stats["class"]) {
-                case "warrior":
-                  warriors.push(member);
-                  break;
-                case "wizard":
-                  mages.push(member);
-                  break;
-                case "healer":
-                  healers.push(member);
-                  break;
-                case "rogue":
-                  rogues.push(member);
-                  break;
-              }
-            } else {
-              withoutClass.push(member);
-            }
-          }
-        }
-
-        const addMemberInfoToMessage = (member) => {
-          const health = Habitica.padLeft(Math.round(Math.round(member.stats.hp * 10) / 10), 2);
-          const pendingDamage = Habitica.padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
-          const collectedItems = Habitica.padLeft(member.party.quest.progress.collectedItems, 3);
-          const differenceText = getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
-          const lastLogin = differenceText ? `🕑${differenceText}` : '';
-          let status = '';
-          if (member.preferences.sleep === true) {
-            status += '😴';
-          }
-
-          // message += `- ${member.profile.name} (${member.auth.local.username}) | 🔝${member.stats.lvl} | ❤️${health} | ⚔${pendingDamage} | 🔍${member.party.quest.progress.collectedItems} | 🕑${lastLogin} | ${sleeping}  \n`;
-          message += `- ${getUserHealthAsEmoji(member)}${health} | 🎯${pendingDamage} | 🔍${collectedItems} | ${lastLogin} | **${member.profile.name}** (\`${member.auth.local.username}\`) ${status}  \n`;
-        };
-        const addClassToMessage = (className, members) => {
-          if (members && members.length > 0) {
-            message += `**${className} (${members.length})**  \n`;
-            for (const member of members) {
-              addMemberInfoToMessage(member);
-            }
-            message += `\n`;
-          }
-        }
-        addClassToMessage("Warrior", warriors);
-        addClassToMessage("Mage", mages);
-        addClassToMessage("Healer", healers);
-        addClassToMessage("Rogue", rogues);
-        addClassToMessage("Without Class", withoutClass);
-        message += `\n`;
-      } else {
-        const errorMessage = `Error: couldn't get members infomation`;
-        message += `${errorMessage}  \n`;
-        console.error(errorMessage);
-      }
-
-
-      console.log(`Triggered by: ${JSON.stringify(triggeredBy)}`);
-      if (typeof triggeredBy === 'string' && triggeredBy) {
-        message += '`The command was triggered by ' + triggeredBy +'`  \n';
-      }
-      Habitica.sendMessageToParty(message);
-    }
-    sendPartyMembersInfomation.once = true;
   }
 }

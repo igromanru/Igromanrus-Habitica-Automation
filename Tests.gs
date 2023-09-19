@@ -84,3 +84,15 @@ function testLibrary() {
   const properties = Habitica.getScriptProperties();
   console.log(JSON.stringify(properties));
 }
+
+function testGetUserStats() {
+  console.time('getUser');
+  const user = Habitica.getUser();
+  console.timeEnd('getUser');
+
+  const timeHandler = 'getUserStats';
+  console.time(timeHandler);
+  const userStats = Habitica.getUserStats(user);
+  console.timeEnd(timeHandler);
+  console.log(JSON.stringify(userStats));
+}
