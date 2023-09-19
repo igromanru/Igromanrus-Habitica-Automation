@@ -22,7 +22,7 @@ class Skill {
   cast(targetId = '') {
     if (typeof this._spellId === 'string' && this._spellId) {
       console.log(`Skill.cast: ${this._spellId} on "${targetId}"`);
-      return castSkill(this._spellId, targetId);
+      return Habitica.castSkill(this._spellId, targetId);
     }
     return undefined;
   }
@@ -38,7 +38,7 @@ class ClassBase {
   }
 
   autoCastSkills() {
-    return this._user && this._user.stats && this._user.stats.hp > 1;
+    return this._user && this._user.stats && this._user.stats.mp > 1;
   }
 }
 
@@ -85,7 +85,7 @@ class Healer extends ClassBase {
 
   calcBlessingHealingPower() {
     if (this._user && this._user.stats) {
-      const userStats = Habitica.getUserStats(user);
+      const userStats = Habitica.getUserStats(this._user);
       if (userStats) {
         return (userStats.int + userStats.con + 5) * 0.04;
       }
@@ -112,24 +112,28 @@ class Healer extends ClassBase {
 
   autoCastSkills() {
     if (super.autoCastSkills()) {
-      if (AUTO_HEAL_PARTY && this._user.lvl >= this._blessing.levelRequirement && this._user.stats.mp > this._blessing.manaCost && Array.isArray(this._members) &&  this._members.length > 1) {
-        const memberWithLowestHp = getMemberWithLowestHp();
+      if (AUTO_HEAL_PARTY && this._user.stats.lvl >= this._blessing.levelRequirement && this._user.stats.mp > this._blessing.manaCost && Array.isArray(this._members) &&  this._members.length > 1) {
+        const memberWithLowestHp = this.getMemberWithLowestHp();
         if (memberWithLowestHp) {
           const health = Math.ceil(memberWithLowestHp.stats.hp);
           const maxHealth = memberWithLowestHp.stats.maxHealth;
           const healthToHeal = maxHealth - health;
-          console.log(`${arguments.callee.name}: memberWithLowestHp: ${memberWithLowestHp.profile.name} HP: ${health} To Heal: ${healthToHeal}`);
+          console.log(`autoCastSkills: memberWithLowestHp: ${memberWithLowestHp.profile.name} HP: ${health} To Heal: ${healthToHeal}`);
+
           if (healthToHeal >= HEAL_PARTY_WHEN_X_TO_HEAL) {
-            const blessingPower = calcBlessingHealingPower();
-            const castsCount = Math.ceil(healthToHeal / blessingPower);
-            console.log(`${arguments.callee.name}: Blessing power: ${blessingPower}\nCasts count: ${castsCount}`);
+            const blessingPower = this.calcBlessingHealingPower();
+            const castsNeeded = Math.ceil(healthToHeal / blessingPower);
+            const maxCastsPossible = Math.floor(this._user.stats.mp / this._blessing.manaCost)
+            const castsCount = Math.min(castsNeeded, maxCastsPossible);
+
+            console.log(`autoCastSkills: Blessing power: ${blessingPower}\nCasts needed: ${castsNeeded}\nMana enough for: ${maxCastsPossible}\nWeill be casted: ${castsCount} times`);
             for (let i = 0; i < castsCount; i++) {
               this._blessing.cast();
             }
           }
         }
       }
-      if (AUTO_HEAL_YOURSELF && this._user.lvl >= this._healingLight.levelRequirement && this._user.stats.mp > this._healingLight.manaCost) {
+      if (AUTO_HEAL_YOURSELF && this._user.stats.lvl >= this._healingLight.levelRequirement && this._user.stats.mp > this._healingLight.manaCost) {
        
       }
     }

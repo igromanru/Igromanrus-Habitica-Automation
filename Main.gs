@@ -32,8 +32,8 @@ const AUTO_ACCUMULATE_DAMAGE = true;
 const DAMAGE_TO_ACCUMULATE = 80;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
 
-const AUTO_USE_SKILLS = true;
-const USE_SKILLS_WHEN_MANA_OVER_X_PERCENT = 0.3; // 0.1 = 10%, 1.0 = 100%
+const AUTO_USE_SKILLS = false;
+// const USE_SKILLS_WHEN_MANA_OVER_X_PERCENT = 0.3; // 0.1 = 10%, 1.0 = 100%
 // Healer features
 const AUTO_HEAL_PARTY = true;  // Blessing
 const HEAL_PARTY_WHEN_X_TO_HEAL = 5; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
@@ -73,9 +73,9 @@ const TRIGGER_PARTY_QUEST_STATUS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or 1
 function triggerSchedule() {
   const user = Habitica.getUser();
   if (user) {
-    console.log(`User: ${user.profile.name} (@${user.auth.local.username})\nHealth: ${Math.round(user.stats.hp)}`);
+    console.info(`User: ${user.profile.name} (@${user.auth.local.username})\nHealth: ${Math.round(user.stats.hp)}`);
     const hoursDifference = getHoursDifferenceToDayStart(user);
-    console.log('Hours difference to the next Day Start: ' + hoursDifference)
+    console.info('Hours difference to the next Day Start: ' + hoursDifference)
 
     let partyMembers = [];
     if (user.party._id) {
@@ -83,20 +83,21 @@ function triggerSchedule() {
 
       const party = Habitica.getParty();
       if (party) {
+        let quest = party.quest;
+        console.info('Party Id: ' + party.id);
+
         if (AUTO_USE_SKILLS) { // For now only get party members for autoUseSkills
+          console.info(`Auto Use Skill is enabled, getting members info`);
           partyMembers = Habitica.getPartyMembers(true);
         }
 
-        let quest = party.quest;
-        console.log('Party Id: ' + party.id);
-
         if (quest.key) {
-          console.log('Quest key: ' + quest.key);
+          console.info('Quest key: ' + quest.key);
           if (quest.active) {
-            console.log('The quest is active');
+            console.info('The quest is active');
           }
         } else {
-          console.log('No active quest');
+          console.info('No active quest');
         }
 
         autoAcceptQuest(quest);
@@ -106,7 +107,7 @@ function triggerSchedule() {
         checkAndSendMyQuestProgress(user, quest);
       }
     } else {
-      console.log('User is not in a party. Ignoring party request and party related functions.');
+      console.info('User is not in a party. Ignoring party request and party related functions.');
     }
     
     autoCompleteTasks(user);
@@ -127,7 +128,7 @@ function triggerSchedule() {
  */
 function installTriggers() {
   uninstallTriggers();
-  console.log("Creating triggers...");
+  console.info("Creating triggers...");
 
   let triggers = []; 
 
@@ -163,7 +164,7 @@ function installTriggers() {
 
   for (const trigger of triggers) {
     if (trigger) {
-      console.log("Trigger created for: " + trigger.getHandlerFunction());
+      console.info("Trigger created for: " + trigger.getHandlerFunction());
     }
   }
 }
@@ -174,7 +175,7 @@ function installTriggers() {
 function uninstallTriggers() {
   const triggers = ScriptApp.getProjectTriggers();
   if (triggers.length > 0) {
-    console.log("Deleting triggers");
+    console.info("Deleting triggers");
 
     for (const trigger of triggers) {
       const functionName = trigger.getHandlerFunction();
@@ -184,7 +185,7 @@ function uninstallTriggers() {
         case checkAndSendPartyQuestStatus.name:
         case createWebhooks.name:
           ScriptApp.deleteTrigger(trigger);
-          console.log("Trigger deleted: " + functionName);
+          console.info("Trigger deleted: " + functionName);
           break;
       }
     }
@@ -193,7 +194,7 @@ function uninstallTriggers() {
 
 function autoAcceptQuest(quest) {
   if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[UserId]) {
-    console.log(`autoAcceptQuest: Accepting inactive quest: "${quest.key}"`);
+    console.info(`autoAcceptQuest: Accepting inactive quest: "${quest.key}"`);
     if (Habitica.acceptQuest()) {
       console.log(`autoAcceptQuest: Quest accepted`);
     }
@@ -206,7 +207,7 @@ function checkAndSendMyQuestProgress(user, quest) {
   }
 
   if (user.preferences.sleep === true) {
-    console.log(`${arguments.callee.name}: You're already sleeping in the tavern`);
+    console.info(`${arguments.callee.name}: You're already sleeping in the tavern`);
     return;
   }
 
@@ -249,7 +250,7 @@ function autoSleep(user, quest) {
   if (AUTO_SLEEP && user && quest) {
     // Check if user were sent to sleep by the script and "wake" him up after cron is done
     if (isSentToSleepByScript(user) && !Habitica.isCronPending(user)) {
-      console.log(`${arguments.callee.name}: You were sent to sleep by the script before, waking up`);
+      console.info(`${arguments.callee.name}: You were sent to sleep by the script before, waking up`);
       setSentToSleepByScript(Habitica.setSleep(user, false));
     }
     /* Old logic, obsolete with autoAccumulateDamage
@@ -274,7 +275,7 @@ function autoSleep(user, quest) {
 function autoAccumulateDamage(user, quest) {
   if (AUTO_ACCUMULATE_DAMAGE && user && quest) {
     if (user.preferences.sleep === true) {
-      console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
+      console.info(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
       return;
     }
 
@@ -339,7 +340,7 @@ function autoBuyHealthPotions(user) {
 
     if (healUnderHp > 0 && currentHp <= healUnderHp) {
       const potionsToBuy = Math.max(Math.round((healUnderHp - currentHp) / postionHealPower), 1);
-      console.log(`${arguments.callee.name}: Current HP (${currentHp}) is or under ${healUnderHp}, buying ${potionsToBuy} amount of health postions.`);
+      console.info(`${arguments.callee.name}: Current HP (${currentHp}) is or under ${healUnderHp}, buying ${potionsToBuy} amount of health postions.`);
       for (let i = 0; i < potionsToBuy; i++) {
         const response = Habitica.buyHealthPotion();
         if (response !== undefined) {
