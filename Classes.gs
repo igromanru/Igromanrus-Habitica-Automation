@@ -21,6 +21,7 @@ class Skill {
 
   cast(targetId = '') {
     if (typeof this._spellId === 'string' && this._spellId) {
+      console.log(`Skill.cast: ${this._spellId} on "${targetId}"`);
       return castSkill(this._spellId, targetId);
     }
     return undefined;
@@ -92,12 +93,43 @@ class Healer extends ClassBase {
     return 0;
   }
 
+  /**
+   * Returns the member with lowest HP or undefined when all members have full health
+   */
+  getMemberWithLowestHp() {
+    let memberWithLowestHp = undefined;
+    if (this._user && Array.isArray(this._members) && this._members.length > 0) {
+      for (const member of this._members) {
+        const membersHp = Math.ceil(member.stats.hp);
+        if (member.id !== this._user.id && membersHp < member.stats.maxHealth && (memberWithLowestHp === undefined || membersHp < memberWithLowestHp.stats.hp) ) {
+          memberWithLowestHp = member;
+        }
+      }
+    }
+
+    return memberWithLowestHp;
+  }
+
   autoCastSkills() {
     if (super.autoCastSkills()) {
-      if (AUTO_HEAL_PARTY && this._user.stats.mp > this._blessing.manaCost && Array.isArray(this._members) &&  this._members.length > 1) {
-        
+      if (AUTO_HEAL_PARTY && this._user.lvl >= this._blessing.levelRequirement && this._user.stats.mp > this._blessing.manaCost && Array.isArray(this._members) &&  this._members.length > 1) {
+        const memberWithLowestHp = getMemberWithLowestHp();
+        if (memberWithLowestHp) {
+          const health = Math.ceil(memberWithLowestHp.stats.hp);
+          const maxHealth = memberWithLowestHp.stats.maxHealth;
+          const healthToHeal = maxHealth - health;
+          console.log(`${arguments.callee.name}: memberWithLowestHp: ${memberWithLowestHp.profile.name} HP: ${health} To Heal: ${healthToHeal}`);
+          if (healthToHeal >= HEAL_PARTY_WHEN_X_TO_HEAL) {
+            const blessingPower = calcBlessingHealingPower();
+            const castsCount = Math.ceil(healthToHeal / blessingPower);
+            console.log(`${arguments.callee.name}: Blessing power: ${blessingPower}\nCasts count: ${castsCount}`);
+            for (let i = 0; i < castsCount; i++) {
+              this._blessing.cast();
+            }
+          }
+        }
       }
-      if (AUTO_HEAL_YOURSELF && this._user.stats.mp > this._healingLight.manaCost) {
+      if (AUTO_HEAL_YOURSELF && this._user.lvl >= this._healingLight.levelRequirement && this._user.stats.mp > this._healingLight.manaCost) {
        
       }
     }

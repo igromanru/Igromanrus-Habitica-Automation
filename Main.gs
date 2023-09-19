@@ -36,6 +36,7 @@ const AUTO_USE_SKILLS = true;
 const USE_SKILLS_WHEN_MANA_OVER_X_PERCENT = 0.3; // 0.1 = 10%, 1.0 = 100%
 // Healer features
 const AUTO_HEAL_PARTY = true;  // Blessing
+const HEAL_PARTY_WHEN_X_TO_HEAL = 5; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
 const AUTO_HEAL_YOURSELF = true; // Healing Light
 
 // Commands settings
@@ -49,6 +50,7 @@ const PARTY_QUEST_STATUS_PING_MEMBERS_AFTER_X_HOURS = 6;
 // Cheats
 const AUTO_COMPLETE_TASKS = false;
 const START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START = 10;
+const AUTO_REGEN_MANA_FROM_HABIT = false;
 
 // --- Install settings ---
 const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
@@ -475,7 +477,8 @@ function autoCompleteTasks(user) {
             break;
           }
           const daily = dueDailies[i];
-          if (Habitica.scoreTask(daily.id)) {
+          const data = Habitica.scoreTask(daily.id);
+          if (data) {
             console.log(`${arguments.callee.name}: Daily completed: ${daily.text}`);
             dailiesCompleted++;
           } else {
@@ -485,5 +488,11 @@ function autoCompleteTasks(user) {
         console.log(`${arguments.callee.name}: Completed ${dailiesCompleted} dalies`);
       }
     }
+  }
+}
+
+function autoRegenManaFromHabit(user) {
+  if (AUTO_REGEN_MANA_FROM_HABIT && user) {
+    // ToDo
   }
 }
