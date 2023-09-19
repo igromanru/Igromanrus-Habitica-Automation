@@ -32,12 +32,19 @@ const AUTO_ACCUMULATE_DAMAGE = true;
 const DAMAGE_TO_ACCUMULATE = 80;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
 
+const AUTO_USE_SKILLS = true;
+const USE_SKILLS_WHEN_MANA_OVER_X_PERCENT = 0.3; // 0.1 = 10%, 1.0 = 100%
+// Healer features
+const AUTO_HEAL_PARTY = true;  // Blessing
+const AUTO_HEAL_YOURSELF = true; // Healing Light
+
 // Commands settings
 const ENABLE_COMMANDS = true;
-const COMMAND_SEND_PARTY_QUEST_PROGRESS = true;
-const PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
-const PARTY_QUEST_PROGRESS_IGNORE_NOT_PARTICIPATING_MEMBERS = true;
-const PARTY_QUEST_PROGRESS_PING_MEMBERS_AFTER_X_HOURS = 6;
+// unused const COMMAND_PARTY_QUEST_STATUS = true;
+const PARTY_QUEST_STATUS_SEND_AFTER_QUEST_STARTED = true;
+const PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
+const PARTY_QUEST_STATUS_IGNORE_NOT_PARTICIPATING_MEMBERS = true;
+const PARTY_QUEST_STATUS_PING_MEMBERS_AFTER_X_HOURS = 6;
 
 // Cheats
 const AUTO_COMPLETE_TASKS = false;
@@ -56,7 +63,7 @@ const ENABLE_COMMANDS_SYSTEM_TRIGGER = false;
 const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5; // Must be 1, 5, 10, 15 or 30
 // Party Quest Status
 const ENABLE_PARTY_QUEST_STATUS_TRIGGER = true;
-const TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or 12
+const TRIGGER_PARTY_QUEST_STATUS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or 12
 // ------------------------------------------------------------
 /**
  * Main entry, that should be executed by a tigger
@@ -131,9 +138,9 @@ function installTriggers() {
   }
   
   if (ENABLE_PARTY_QUEST_STATUS_TRIGGER) {
-    triggers.push(ScriptApp.newTrigger(checkAndSendPartyQuestProgress.name)
+    triggers.push(ScriptApp.newTrigger(checkAndSendPartyQuestStatus.name)
       .timeBased()
-      .everyHours(TRIGGER_PARTY_QUEST_PROGRESS_EACH_X_HOURS)
+      .everyHours(TRIGGER_PARTY_QUEST_STATUS_EACH_X_HOURS)
       .create()
     );
   }
@@ -166,7 +173,7 @@ function uninstallTriggers() {
       switch (functionName) {
         case triggerSchedule.name:
         case scheduledCommandsCheck.name:
-        case checkAndSendPartyQuestProgress.name:
+        case checkAndSendPartyQuestStatus.name:
         case createWebhooks.name:
           ScriptApp.deleteTrigger(trigger);
           console.log("Trigger deleted: " + functionName);
@@ -180,7 +187,7 @@ function autoAcceptQuest(quest) {
   if (AUTO_ACCEPT_QUESTS && quest.key && !quest.active && !quest.members[UserId]) {
     console.log(`autoAcceptQuest: Accepting inactive quest: "${quest.key}"`);
     if (Habitica.acceptQuest()) {
-      onsole.log(`autoAcceptQuest: Quest accepted`);
+      console.log(`autoAcceptQuest: Quest accepted`);
     }
   }
 }
@@ -326,7 +333,13 @@ function autoBuyHealthPotions(user) {
       const potionsToBuy = Math.max(Math.round((healUnderHp - currentHp) / postionHealPower), 1);
       console.log(`${arguments.callee.name}: Current HP (${currentHp}) is or under ${healUnderHp}, buying ${potionsToBuy} amount of health postions.`);
       for (let i = 0; i < potionsToBuy; i++) {
-        Habitica.buyHealthPotion();
+        const response = Habitica.buyHealthPotion();
+        if (response !== undefined) {
+          console.info(`Health Postion: ${response.message}\nPrevios Health: ${currentHp}\nNew Health: ${response.data.hp}`);
+          if (response.data.hp !== undefined) {
+            user.stats.hp = response.data.hp;
+          }
+        }
       }
     }
   }
@@ -387,6 +400,35 @@ function autoAllocateStatPoints(user) {
   }
 }
 
+function autoUseSkills(user) {
+  if (AUTO_USE_SKILLS) {
+    if (user && user.flags) {
+      if (user.flags.classSelected === true && !user.preferences.disableClasses) {
+        let userClass = undefined;
+        switch (user.stats["class"]) {
+          case "warrior":
+            userClass = new Warrior(user);
+            break;
+          case "wizard":
+            userClass = new Mage(user);
+            break;
+          case "healer":
+            userClass = new Healer(user);
+            break;
+          case "rogue":
+            userClass = new Rogue(user);
+            break;
+        }
+        if (userClass && userClass instanceof ClassBase) {
+          userClass.autoCastSkills();
+        }
+      }
+    } else {
+      console.error(`${arguments.callee.name} error: Invalid user paramter`);
+    }
+  }
+}
+
 function autoCompleteTasks(user) {
   if (AUTO_COMPLETE_TASKS && user) {
     const hoursDifference = getHoursDifferenceToDayStart(user);
@@ -440,8 +482,8 @@ function autoCompleteTasks(user) {
   }
 }
 
-function checkAndSendPartyQuestProgress(triggeredBy = '') {
-  if (checkAndSendPartyQuestProgress.once === true) {
+function checkAndSendPartyQuestStatus(triggeredBy = '') {
+  if (checkAndSendPartyQuestStatus.once === true) {
     return;
   }
 
@@ -474,7 +516,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
           if (member && member.party._id && member.party.quest.key) {
             if (member.party.quest.progress.up > 0 || member.party.quest.progress.collectedItems > 0) {
               membersWithProgress.push(member);
-            } else if(!PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+            } else if(!PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
               membersWithoutProgress.push(member);
             }
           }
@@ -497,7 +539,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
         for (const member of membersWithProgress) {
           addMemberInfoToMessage(member);
         }
-        if (PARTY_QUEST_PROGRESS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
+        if (PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
           message += `\n*The list doesn't contain users who have no quest progress*  \n`;
         } else {
           for (const member of membersWithoutProgress) {
@@ -517,7 +559,7 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
         for (const member of partyMembers) {
           if (member && member.party._id && member.party.quest.key && member.party.quest.RSVPNeeded === true) {
             let memberName = `**${member.profile.name}**`;
-            const pingMembersAfterHoursAsMs = PARTY_QUEST_PROGRESS_PING_MEMBERS_AFTER_X_HOURS * 60 * 60 * 1000;
+            const pingMembersAfterHoursAsMs = PARTY_QUEST_STATUS_PING_MEMBERS_AFTER_X_HOURS * 60 * 60 * 1000;
             if (questInvitedTime && questInvitedTime instanceof Date && ((new Date() - questInvitedTime) >= pingMembersAfterHoursAsMs)) {
               memberName += ` (@${member.auth.local.username})`;
             } else {
@@ -530,17 +572,13 @@ function checkAndSendPartyQuestProgress(triggeredBy = '') {
         }
       }
       message += `\n`; // end the list
-      /*message += `🎯 = pending damage  \n`;
-      message += `🔍 = collected items  \n`;
-      message += `🕑 = Passed time since the last cron (Format: days:hours:minutes)  \n`;
-      message += `😴 = Sleeping in the Tavern (damage paused)  \n`;*/
 
       console.log(`Triggered by: ${JSON.stringify(triggeredBy)}`);
       if (typeof triggeredBy === 'string' && triggeredBy) {
         message += '`The command was triggered by ' + triggeredBy +'`  \n';
       }
       if (Habitica.sendMessageToParty(message)) {
-        checkAndSendPartyQuestProgress.once = true;
+        checkAndSendPartyQuestStatus.once = true;
       }
     } else {
       console.error(`${arguments.callee.name}: Couldn't get party members`);
@@ -559,7 +597,7 @@ function sendPartyMembersInfomation(triggeredBy = '') {
       
       const partyMembers = Habitica.getPartyMembers(true);
       if (partyMembers && partyMembers.length > 0) {
-        const noClass = new Array();
+        const withoutClass = new Array();
         const warriors = new Array();
         const mages = new Array();
         const healers = new Array();
@@ -584,7 +622,7 @@ function sendPartyMembersInfomation(triggeredBy = '') {
                   break;
               }
             } else {
-              noClass.push(member);
+              withoutClass.push(member);
             }
           }
         }
@@ -616,15 +654,8 @@ function sendPartyMembersInfomation(triggeredBy = '') {
         addClassToMessage("Mage", mages);
         addClassToMessage("Healer", healers);
         addClassToMessage("Rogue", rogues);
-        addClassToMessage("No Class", noClass);
+        addClassToMessage("Without Class", withoutClass);
         message += `\n`;
-
-        // message += `🔝 = current level  \n`;
-        /*message += `❤️ = current health  \n`;
-        message += `🎯 = pending damage  \n`;
-        message += `🔍 = collected items  \n`;
-        message += `🕑 = Passed time since the last cron  \n`;
-        message += `😴 = Sleeping in the Tavern (damage paused)  \n`;*/
       } else {
         const errorMessage = `Error: couldn't get members infomation`;
         message += `${errorMessage}  \n`;

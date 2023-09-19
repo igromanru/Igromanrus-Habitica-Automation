@@ -3,168 +3,85 @@
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
 
-class CharacterClass {
-  constructor() {}
-
-  castPrimarySkill(targetId = '') {}
-
-  castSecondarySkill(targetId = '') {}
-
-  castPrimaryBuff() {}
-
-  castSecondaryBuff() {}
-
-  castTertiaryBuff() {}
-}
-
-class Warrior extends CharacterClass {
-  constructor() {
-    super();
+class Skill {
+  constructor(spellId, skillName, manaCost, levelRequirement) {
+    this._spellId = spellId;
+    this._skillName = skillName;
+    this._manaCost = manaCost;
+    this._levelRequirement = levelRequirement;
   }
 
-  castBrutalSmash(taskId) {
-    castSkill("smash", taskId);
-  }
-  
-  castDefensiveStance() {
-    castSkill("defensiveStance");
-  }
-  
-  castValorousPresence() {
-    castSkill("valorousPresence");
-  }
-  
-  castIntimidatingGaze() {
-    castSkill("intimidate");
+  get manaCost() {
+    return this._manaCost;
   }
 
-  castPrimarySkill(targetId) {
-    this.castBrutalSmash(targetId);
+  get levelRequirement() {
+    return this._levelRequirement;
   }
 
-  castPrimaryBuff() {
-    this.castValorousPresence();
-  }
-
-  castSecondaryBuff() {
-    this.castIntimidatingGaze();
-  }
-
-  castTertiaryBuff() {
-    this.castDefensiveStance();
+  cast(targetId = '') {
+    if (typeof this._spellId === 'string' && this._spellId) {
+      return castSkill(this._spellId, targetId);
+    }
+    return undefined;
   }
 }
 
-class Mage extends CharacterClass {
-  constructor() {
-    super();
+class ClassBase {
+  constructor(user) {
+    if (this.constructor == ClassBase) {
+      throw new Error("Abstract classes can't be instantiated.");
+    }
+    this._user = user;
   }
 
-  castBurstOfFlames(taskId) {
-    castSkill("fireball", taskId);
-  }
-
-  castEtherealSurge() {
-    castSkill("mpheal");
-  }
-
-  castEarthquake() {
-    castSkill("earth");
-  }
-  
-  castChillingFrost() {
-    castSkill("frost");
-  }
-
-  castPrimarySkill(targetId) {
-    this.castBurstOfFlames(targetId);
-  }
-
-  castPrimaryBuff() {
-    this.castEarthquake();
-  }
-
-  castSecondaryBuff() {
-    this.castEtherealSurge();
-  }
-
-  castTertiaryBuff() {
-    this.castChillingFrost();
-  }
+  autoCastSkills() {}
 }
 
-class Healer extends CharacterClass {
-  constructor() {
-    super();
+class Warrior extends ClassBase {
+  constructor(user) {
+    super(user);
+    this._brutalSmash = new Skill("smash", "Brutal Smash", 10, 10);
+    this._defensiveStance = new Skill("defensiveStance", "Defensive Stance", 25, 12);
+    this._valorousPresence = new Skill("valorousPresence", "Valorous Presence", 20, 13);
+    this._intimidatingGaze = new Skill("intimidate", "Intimidating Gaze", 15, 14);
   }
 
-  castHealingLight() {
-    castSkill("heal");
-  }
-  
-  castSearingBrightness() {
-    castSkill("protectAura");
-  }
-  
-  castProtectiveAura() {
-    castSkill("brightness");
-  }
-  
-  castBlessing() {
-    castSkill("healAll");
-  }
-
-  castPrimarySkill(targetId = '') {
-    this.castHealingLight();
-  }
-
-  castSecondarySkill(targetId = '') {
-    this.castBlessing();
-  }
-
-  castPrimaryBuff() {
-    this.castProtectiveAura();
-  }
-
-  castSecondaryBuff() {
-    this.castSearingBrightness();
-  }
+  autoCastSkills() {}
 }
 
-class Rogue extends CharacterClass {
-  constructor() {
-    super();
+class Mage extends ClassBase {
+  constructor(user) {
+    super(user);
+    this._burstOfFlames = new Skill("fireball", "Burst of Flames", 10, 10);
+    this._etherealSurge = new Skill("mpheal", "Ethereal Surge", 30, 12);
+    this._earthquake = new Skill("earth", "Earthquake", 35, 13);
+    this._chillingFrost = new Skill("frost", "Chilling Frost", 40, 14);
   }
 
-  castPickpocket(taskId) {
-    castSkill("pickPocket", taskId);
+  autoCastSkills() {}
+}
+
+class Healer extends ClassBase {
+  constructor(user) {
+    super(user);
+    this._healingLight = new Skill("heal", "Healing Light", 15, 10);
+    this._searingBrightness = new Skill("protectAura", "Protective Aura", 15, 12);
+    this._protectiveAura = new Skill("brightness", "Searing Brightness", 30, 13);
+    this._blessing = new Skill("healAll", "Blessing", 25, 14);
   }
 
-  castBackstab(taskId) {
-    castSkill("backStab", taskId);
-  }
-  
-  castToolsOfTheTrade() {
-    castSkill("toolsOfTrade");
-  }
-  
-  castStealth() {
-    castSkill("stealth");
+  autoCastSkills() {}
+}
+
+class Rogue extends ClassBase {
+  constructor(user) {
+    super(user);
+    this._pickPocket = new Skill("pickPocket", "Pickpocket", 10, 10);
+    this._backStab = new Skill("backStab", "Backstab", 15, 12);
+    this._toolsOfTrade = new Skill("toolsOfTrade", "Tools of the Trade", 25, 13);
+    this._stealth = new Skill("stealth", "Stealth", 45, 14);
   }
 
-  castPrimarySkill(targetId = '') {
-    this.castBackstab(targetId);
-  }
-
-  castSecondarySkill(targetId = '') {
-    this.castPickpocket(targetId);
-  }
-
-  castPrimaryBuff() {
-    this.castToolsOfTheTrade();
-  }
-
-  castSecondaryBuff() {
-    this.castStealth();
-  }
+  autoCastSkills() {}
 }

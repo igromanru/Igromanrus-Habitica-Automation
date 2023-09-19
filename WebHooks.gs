@@ -94,6 +94,11 @@ function evaluateWebHookContentQueue() {
           }
         } else if (pojo.webhookType === 'questActivity') {
           setLastKnownQuestStatus(pojo.type);
+          if (pojo.type === 'questStarted') {
+            if (PARTY_QUEST_STATUS_SEND_AFTER_QUEST_STARTED) {
+              checkAndSendPartyQuestStatus('started quest');
+            }
+          }
         } else {
           const json = JSON.stringify(pojo);
           console.log(json);

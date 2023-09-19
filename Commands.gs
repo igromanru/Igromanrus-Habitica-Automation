@@ -61,7 +61,7 @@ function evaluateMessage(chat) {
             break;
           case QUEST_PROGRESS_COMMAND:
             console.log(`${arguments.callee.name}: Executing command "${command}"`);
-            checkAndSendPartyQuestProgress(userName);
+            checkAndSendPartyQuestStatus(userName);
             break;
           case CAT_COMMAND:
             console.log(`${arguments.callee.name}: Executing command "${command}"`);

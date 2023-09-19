@@ -92,8 +92,8 @@ function getUserHealthAsEmoji(user) {
   if (user && user.stats && user.stats.maxHealth > 0) {
     if (user.stats.hp <= 0) {
       result = '💀';
-    } else if(user.stats.hp < user.stats.maxHealth) {
-      result = '💔';
+    } else if(Math.round(user.stats.hp) < user.stats.maxHealth) {
+      result = '💜';
     }
   } else {
     console.error(`getUserHealthAsEmoji error: Invalid user parameter`);
