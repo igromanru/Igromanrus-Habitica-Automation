@@ -32,12 +32,15 @@ const AUTO_ACCUMULATE_DAMAGE = true;
 const DAMAGE_TO_ACCUMULATE = 80;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
 
+// --- Auto Skill/Buff System ---
 const AUTO_USE_SKILLS = false;
 // const USE_SKILLS_WHEN_MANA_OVER_X_PERCENT = 0.3; // 0.1 = 10%, 1.0 = 100%
 // Healer features
+const AUTO_USE_PROTECTIVE_AURA = true;
 const AUTO_HEAL_PARTY = true;  // Blessing
 const HEAL_PARTY_WHEN_X_TO_HEAL = 5; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
 const AUTO_HEAL_YOURSELF = true; // Healing Light
+// ------------------------------
 
 // Commands settings
 const ENABLE_COMMANDS = true;

@@ -81,7 +81,7 @@ function helpCommand() {
   if (!helpCommand.runOnce) {
     let message = `### ${SCRIPT_NAME} - Commands  \n`;
     message += 'The command system allows users to trigger some script functions by sending chat messages with specific commands.  \n';
-    // message += `Currently, the check takes place every ${TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES} minutes, for new commands in chat.  \n\n`;
+    message += `It may take about a minute for the commands to be processed.  \n\n`;
     message += `\n`;
 
     message += `**Following commands are available:**  \n`;
@@ -93,10 +93,11 @@ function helpCommand() {
     message += `\n`;
     message += `**Emoji explanation:**  \n`;
     message += `🔝 = current level  \n`;
-    message += `❤️ = current health  \n`;
+    message += `❤️ = full health  \n`;
+    message += `💜 = damaged health  \n`;
     message += `🎯 = pending damage  \n`;
     message += `🔍 = collected items  \n`;
-    message += `🕑 = Passed time since the last cron  \n`;
+    message += `🕑 = Passed time since the last "first check-in of the day"  \n`;
     message += `😴 = Sleeping in the Tavern (damage paused)  \n`;
     message += `💀 = Character is about to die (health in minuse)  \n`;
 

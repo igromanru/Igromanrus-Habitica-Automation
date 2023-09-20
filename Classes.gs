@@ -78,9 +78,19 @@ class Healer extends ClassBase {
   constructor(user, members = []) {
     super(user, members);
     this._healingLight = new Skill("heal", "Healing Light", 15, 10);
-    this._searingBrightness = new Skill("protectAura", "Protective Aura", 15, 12);
-    this._protectiveAura = new Skill("brightness", "Searing Brightness", 30, 13);
+    this._searingBrightness = new Skill("brightness", "Searing Brightness", 15, 12);
+    this._protectiveAura = new Skill("protectAura", "Protective Aura", 30, 13);
     this._blessing = new Skill("healAll", "Blessing", 25, 14);
+  }
+
+  calcHealingLightPower() {
+    if (this._user && this._user.stats) {
+      const userStats = Habitica.getUserStats(this._user);
+      if (userStats) {
+        return (userStats.int + userStats.con + 5) * 0.075;
+      }
+    }
+    return 0;
   }
 
   calcBlessingHealingPower() {
@@ -110,31 +120,73 @@ class Healer extends ClassBase {
     return memberWithLowestHp;
   }
 
-  autoCastSkills() {
-    if (super.autoCastSkills()) {
-      if (AUTO_HEAL_PARTY && this._user.stats.lvl >= this._blessing.levelRequirement && this._user.stats.mp > this._blessing.manaCost && Array.isArray(this._members) &&  this._members.length > 1) {
-        const memberWithLowestHp = this.getMemberWithLowestHp();
-        if (memberWithLowestHp) {
-          const health = Math.ceil(memberWithLowestHp.stats.hp);
-          const maxHealth = memberWithLowestHp.stats.maxHealth;
-          const healthToHeal = maxHealth - health;
-          console.log(`autoCastSkills: memberWithLowestHp: ${memberWithLowestHp.profile.name} HP: ${health} To Heal: ${healthToHeal}`);
+  autoCastProtectiveAura() {
+    if (this._user.stats.lvl >= this._protectiveAura.levelRequirement && this._user.stats.mp > this._protectiveAura.manaCost) {
+       
+    }
+  }
 
-          if (healthToHeal >= HEAL_PARTY_WHEN_X_TO_HEAL) {
-            const blessingPower = this.calcBlessingHealingPower();
-            const castsNeeded = Math.ceil(healthToHeal / blessingPower);
-            const maxCastsPossible = Math.floor(this._user.stats.mp / this._blessing.manaCost)
-            const castsCount = Math.min(castsNeeded, maxCastsPossible);
+  autoCastBlessing() {
+    if (this._user.stats.lvl >= this._blessing.levelRequirement && this._user.stats.mp > this._blessing.manaCost && Array.isArray(this._members) &&  this._members.length > 1) {
+      const memberWithLowestHp = this.getMemberWithLowestHp();
+      if (memberWithLowestHp) {
+        const health = Math.ceil(memberWithLowestHp.stats.hp);
+        const maxHealth = memberWithLowestHp.stats.maxHealth;
+        const healthToHeal = maxHealth - health;
+        console.log(`autoCastBlessing: memberWithLowestHp: ${memberWithLowestHp.profile.name} HP: ${health} To Heal: ${healthToHeal}`);
 
-            console.log(`autoCastSkills: Blessing power: ${blessingPower}\nCasts needed: ${castsNeeded}\nMana enough for: ${maxCastsPossible}\nWeill be casted: ${castsCount} times`);
-            for (let i = 0; i < castsCount; i++) {
-              this._blessing.cast();
+        if (healthToHeal >= HEAL_PARTY_WHEN_X_TO_HEAL) {
+          const blessingPower = this.calcBlessingHealingPower();
+          const castsNeeded = Math.ceil(healthToHeal / blessingPower);
+          const maxCastsPossible = Math.floor(this._user.stats.mp / this._blessing.manaCost)
+          const castsCount = Math.min(castsNeeded, maxCastsPossible);
+
+          console.log(`autoCastBlessing: Blessing power: ${blessingPower}\nCasts needed: ${castsNeeded}\nMana enough for: ${maxCastsPossible}\nWill be casted: ${castsCount} times`);
+          for (let i = 0; i < castsCount; i++) {
+            const data = this._blessing.cast();
+            if (data && data.user) {
+              Habitica.updateUserStats(this._user, data.user.stats);
             }
           }
         }
       }
-      if (AUTO_HEAL_YOURSELF && this._user.stats.lvl >= this._healingLight.levelRequirement && this._user.stats.mp > this._healingLight.manaCost) {
-       
+    }
+  }
+
+  autoCastHealingLight() {
+    if (this._user.stats.lvl >= this._healingLight.levelRequirement && this._user.stats.mp > this._healingLight.manaCost) {
+      const health = Math.ceil(this._user.stats.hp);
+      const maxHealth = this._user.stats.maxHealth;
+      const healthToHeal = maxHealth - health;
+      console.log(`autoCastHealingLight: User Health: ${health} To Heal: ${healthToHeal}`);
+
+      if (healthToHeal > 0) {
+        const healingLightPower = this.calcHealingLightPower();
+        const castsNeeded = Math.ceil(healthToHeal / healingLightPower);
+        const maxCastsPossible = Math.floor(this._user.stats.mp / this._healingLight.manaCost)
+        const castsCount = Math.min(castsNeeded, maxCastsPossible);
+
+        console.log(`autoCastHealingLight: Healing Light power: ${healingLightPower}\nCasts needed: ${castsNeeded}\nMana enough for: ${maxCastsPossible}\nWill be casted: ${castsCount} times`);
+        for (let i = 0; i < castsCount; i++) {
+          const data = this._healingLight.cast();
+          if (data && data.user) {
+            Habitica.updateUserStats(this._user, data.user.stats);
+          }
+        }
+      }
+    }
+  }
+
+  autoCastSkills() {
+    if (super.autoCastSkills()) {
+      if (AUTO_USE_PROTECTIVE_AURA) {
+        this.autoCastProtectiveAura();
+      }
+      if (AUTO_HEAL_PARTY) {
+        this.autoCastBlessing();
+      }
+      if (AUTO_HEAL_YOURSELF) {
+        this.autoCastHealingLight();
       }
     }
   }
