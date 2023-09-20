@@ -186,11 +186,19 @@ function checkAndSendPartyQuestStatus(triggeredBy = '') {
         } else {
           membersWithProgress.sort((a, b) => b.party.quest.progress.collectedItems - a.party.quest.progress.collectedItems);
         }
-        for (const member of membersWithProgress) {
-          addMemberInfoToMessage(member);
+        const membersCount = PARTY_QUEST_STATUS_SEND_ONLY_TOP_X_MEMBERS > 0 ? Math.min(PARTY_QUEST_STATUS_SEND_ONLY_TOP_X_MEMBERS, membersWithProgress.length) : membersWithProgress.length;
+        for (let i = 0; i < membersCount; i++) {
+          const member = membersWithProgress[i];
+          if (member) {
+            addMemberInfoToMessage(member);
+          }
+        }
+        message += `\n`;
+        if (PARTY_QUEST_STATUS_SEND_ONLY_TOP_X_MEMBERS > 0) {
+          message += `*The list contains only ${PARTY_QUEST_STATUS_SEND_ONLY_TOP_X_MEMBERS} members with most progress*  \n`;
         }
         if (PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITHOUT_PROGRESS) {
-          message += `\n*The list doesn't contain users who have no quest progress*  \n`;
+          message += `*The list doesn't contain members who have no quest progress*  \n`;
         } else {
           for (const member of membersWithoutProgress) {
             addMemberInfoToMessage(member);
@@ -241,7 +249,7 @@ function sendPartyMembersInfomation(triggeredBy = '') {
     const party = Habitica.getParty();
     if (party) {
       let message = `### ${SCRIPT_NAME} - Party Members  \n`;
-      message += `**Party Leader:** ${party.leader.profile.name}  \n`;
+      // message += `**Party Leader:** ${party.leader.profile.name}  \n`;
       message += `**Members count:** ${party.memberCount}  \n`;
       message += `\n`;
       
