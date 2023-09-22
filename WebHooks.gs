@@ -11,15 +11,15 @@ function createWebhooks() {
   deleteWebhooks();
   console.log("Creating WebHooks...");
 
-  if (ENABLE_COMMANDS_SYSTEM_WEBHOOK) {
+  if (ENABLE_PARTY_CHAT_WEBHOOK) {
     const partyId = getPartyIdProperty();
     if (partyId) {
       const options = {
         groupId: partyId
       };
-      Habitica.createWebHook(WebAppUrl, COMMANDS_SYSTEM_WEBHOOK_NAME, 'groupChatReceived', options);
+      Habitica.createWebHook(WebAppUrl, PARTY_CHAT_WEBHOOK_NAME, 'groupChatReceived', options);
     } else {
-      console.error(`Can't create Commands System WebHook, the PARTY_ID property isn't yet set!`);
+      console.error(`Can't create Party Chat WebHook, the PARTY_ID property isn't yet set!`);
     }
   }
   if (ENABLE_QUEST_ACTIVITY_WEBHOOK) {
@@ -40,7 +40,7 @@ function deleteWebhooks() {
     for (const webHook of webHooks) {
       if (webHook && webHook.id) {
         switch (webHook.label) {
-          case COMMANDS_SYSTEM_WEBHOOK_NAME:
+          case PARTY_CHAT_WEBHOOK_NAME:
           case QUEST_ACTIVITY_WEBHOOK_NAME:
             console.log(`Deleting WebHook: ${webHook.label}`);
             Habitica.deleteWebHook(webHook.id);
@@ -89,8 +89,16 @@ function evaluateWebHookContentQueue() {
         console.log(`${arguments.callee.name}: #${i} webhookType: ${pojo.webhookType}`);
         if (pojo.webhookType === 'groupChatReceived') {
           if (pojo.chat) {
-            console.log(`User: ${pojo.chat.user}(@${pojo.chat.username})\nMessage: ${pojo.chat.text}`);
-            evaluateMessage(pojo.chat);
+            let log = '';
+            if (pojo.chat.info && pojo.chat.info.type) {
+              log += `System: ${JSON.stringify(pojo.chat.info)}\n`;
+            } else {
+              log += `User: ${pojo.chat.user}(@${pojo.chat.username})\n`;
+            }
+            log += `Message: ${pojo.chat.text}`;
+            console.log(log);
+            checkMessageForCommands(pojo.chat);
+            checkMessageForBossDamage(pojo.chat);
           }
         } else if (pojo.webhookType === 'questActivity') {
           setLastKnownQuestStatus(pojo.type);

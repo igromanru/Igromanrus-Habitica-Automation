@@ -29,7 +29,7 @@ function scheduledCommandsCheck() {
       const chatTimestamp = new Date(chat.timestamp);
       // Evaluate only messages that were send after the last check
       if (chatTimestamp > lastCheckTime) {
-        evaluateMessage(chat);
+        checkMessageForCommands(chat);
         newMessageCount++;
       }
     }
@@ -41,7 +41,7 @@ function scheduledCommandsCheck() {
   setLastCommandCheckDateTime();
 }
 
-function evaluateMessage(chat) {
+function checkMessageForCommands(chat) {
   // Filter for user messages
   if (ENABLE_COMMANDS && chat && (!chat.info || chat.type === undefined)) {
     if (typeof chat.text === 'string' && chat.text.trim().startsWith(COMMANDS_PREFIX)) {
@@ -249,8 +249,13 @@ function sendPartyMembersInfomation(triggeredBy = '') {
   if (!sendPartyMembersInfomation.once) {
     const party = Habitica.getParty();
     if (party) {
-      let message = ''; //`### ${SCRIPT_NAME} - Party Members  \n`;
-      // message += `**Party Leader:** ${party.leader.profile.name}  \n`;
+      let message = ''; 
+      if (party.memberCount < 29) {
+        message += `### ${SCRIPT_NAME} - Party Members  \n`;
+      }
+      if (party.memberCount < 28) {
+        message += `**Party Leader:** ${party.leader.profile.name}  \n`;
+      }
       message += `**Members count:** ${party.memberCount}  \n`;
       message += `\n`;
       

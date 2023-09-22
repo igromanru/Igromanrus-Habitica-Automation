@@ -29,11 +29,12 @@ const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, in
 const AUTO_SLEEP = true;
 
 const AUTO_ACCUMULATE_DAMAGE = true;
-const DAMAGE_TO_ACCUMULATE = 80;
+const DAMAGE_TO_ACCUMULATE = 30;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
 
 // --- Auto Skill/Buff System ---
 const AUTO_USE_SKILLS = false;
+const TRIGGER_AUTO_USE_SKILL_ON_BOSS_DAMAGE = true;
 // const USE_SKILLS_WHEN_MANA_OVER_X_PERCENT = 0.3; // 0.1 = 10%, 1.0 = 100%
 // Healer features
 const AUTO_USE_PROTECTIVE_AURA = true;
@@ -62,10 +63,10 @@ const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
 
 const ENABLE_QUEST_ACTIVITY_WEBHOOK = true;
 const QUEST_ACTIVITY_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Quest-Activity`;
+const ENABLE_PARTY_CHAT_WEBHOOK = true;
+const PARTY_CHAT_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Party-Chat`;
 const ENABLE_WEEKLY_WEBHOOK_REFRESH_TRIGGER = true;
 // Commands System
-const ENABLE_COMMANDS_SYSTEM_WEBHOOK = true;
-const COMMANDS_SYSTEM_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Commands-System`;
 const ENABLE_COMMANDS_SYSTEM_TRIGGER = false;
 const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5; // Must be 1, 5, 10, 15 or 30
 // Party Quest Status
@@ -408,6 +409,21 @@ function autoAllocateStatPoints(user) {
     if (pointsToAllocate > 0 && userLvl >= 10 && !user.preferences.disableClasses) {
       console.log(`${arguments.callee.name}: Allocating ${pointsToAllocate} stat points into "${ALLOCATE_STAT_POINTS_TO}"`);
       Habitica.allocateStatPoints(ALLOCATE_STAT_POINTS_TO, pointsToAllocate);
+    }
+  }
+}
+
+function checkMessageForBossDamage(chat) {
+  if (chat.info && chat.info.type) {
+    if (AUTO_USE_SKILLS && TRIGGER_AUTO_USE_SKILL_ON_BOSS_DAMAGE && chat.info.bossDamage) {
+      const bossDamage = parseFloat(chat.info.bossDamage);
+      if (bossDamage >= 1) {
+        const user = Habitica.getUser();
+        if (user) {
+          const members = Habitica.getPartyMembers(true);
+          autoUseSkills(user, members);
+        }
+      }
     }
   }
 }
