@@ -37,8 +37,9 @@ const AUTO_USE_SKILLS = false;
 // const USE_SKILLS_WHEN_MANA_OVER_X_PERCENT = 0.3; // 0.1 = 10%, 1.0 = 100%
 // Healer features
 const AUTO_USE_PROTECTIVE_AURA = true;
+const USE_PROTECTIVE_AURA_WHEN_MAX_MANA = true;
 const AUTO_HEAL_PARTY = true;  // Blessing
-const HEAL_PARTY_WHEN_X_TO_HEAL = 5; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
+const HEAL_PARTY_WHEN_X_TO_HEAL = 2; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
 const AUTO_HEAL_YOURSELF = true; // Healing Light
 // ------------------------------
 
@@ -53,7 +54,7 @@ const PARTY_QUEST_STATUS_PING_MEMBERS_AFTER_X_HOURS = 6;
 
 // Cheats
 const AUTO_COMPLETE_TASKS = false;
-const START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START = 10;
+const START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START = 6;
 const AUTO_REGEN_MANA_FROM_HABIT = false;
 
 // --- Install settings ---
@@ -349,9 +350,7 @@ function autoBuyHealthPotions(user) {
         const response = Habitica.buyHealthPotion();
         if (response !== undefined) {
           console.info(`Health Postion: ${response.message}\nPrevios Health: ${currentHp}\nNew Health: ${response.data.hp}`);
-          if (response.data.hp !== undefined) {
-            user.stats.hp = response.data.hp;
-          }
+          Habitica.updateUserStats(user, response.data);
         }
       }
     }

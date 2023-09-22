@@ -249,7 +249,7 @@ function sendPartyMembersInfomation(triggeredBy = '') {
   if (!sendPartyMembersInfomation.once) {
     const party = Habitica.getParty();
     if (party) {
-      let message = `### ${SCRIPT_NAME} - Party Members  \n`;
+      let message = ''; //`### ${SCRIPT_NAME} - Party Members  \n`;
       // message += `**Party Leader:** ${party.leader.profile.name}  \n`;
       message += `**Members count:** ${party.memberCount}  \n`;
       message += `\n`;
@@ -314,13 +314,11 @@ function sendPartyMembersInfomation(triggeredBy = '') {
         addClassToMessage("Healer", healers);
         addClassToMessage("Rogue", rogues);
         addClassToMessage("Without Class", withoutClass);
-        message += `\n`;
       } else {
         const errorMessage = `Error: couldn't get members infomation`;
         message += `${errorMessage}  \n`;
         console.error(errorMessage);
       }
-
 
       console.log(`Triggered by: ${JSON.stringify(triggeredBy)}`);
       if (typeof triggeredBy === 'string' && triggeredBy) {

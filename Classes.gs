@@ -122,7 +122,12 @@ class Healer extends ClassBase {
 
   autoCastProtectiveAura() {
     if (this._user.stats.lvl >= this._protectiveAura.levelRequirement && this._user.stats.mp > this._protectiveAura.manaCost) {
-       
+       if (USE_PROTECTIVE_AURA_WHEN_MAX_MANA && Math.ceil(this._user.stats.mp) >= this._user.stats.maxMP) {
+          const data = this._protectiveAura.cast();
+          if (data && data.user) {
+            Habitica.updateUserStats(this._user, data.user.stats);
+          }
+       }
     }
   }
 
