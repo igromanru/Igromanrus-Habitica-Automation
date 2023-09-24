@@ -59,8 +59,8 @@ function deleteWebhooks() {
  * See: https://developers.google.com/apps-script/guides/web
  */
 function doGet(e) {
-  var data = JSON.stringify(e.postData);
-  return ContentService.createTextOutput(data).setMimeType(ContentService.MimeType.JSON);
+  const currentApp = DriveApp.getFileById(ScriptApp.getScriptId());
+  return ContentService.createTextOutput(currentApp.getName());
 }
 
 /**

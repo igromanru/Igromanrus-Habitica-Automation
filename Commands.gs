@@ -10,6 +10,10 @@ const HELP_COMMAND = 'help';
 const QUEST_PROGRESS_COMMAND = 'quest';
 const CAT_COMMAND = 'cat';
 const MEMBERS_COMMAND = 'members';
+const FACTS_COMMAND = 'facts';
+
+const CatApiKey = ScriptProperties.getProperty('CAT_API_KEY');
+const ApiNinjasKey = ScriptProperties.getProperty('API_NINJAS_KEY');
 
 function scheduledCommandsCheck() {
   if (!ENABLE_COMMANDS) {
@@ -67,6 +71,10 @@ function checkMessageForCommands(chat) {
             console.log(`${arguments.callee.name}: Executing command "${command}"`);
             catCommand(userName);
             break;
+          case FACTS_COMMAND:
+            console.log(`${arguments.callee.name}: Executing command "${command}"`);
+            factsCommand(userName);
+            break;
           case MEMBERS_COMMAND:
             console.log(`${arguments.callee.name}: Executing command "${command}"`);
             sendPartyMembersInfomation(userName);
@@ -89,6 +97,7 @@ function helpCommand() {
     message += `- ${COMMANDS_PREFIX + QUEST_PROGRESS_COMMAND} : Shows current Party Quest Status  \n`;
     message += `- ${COMMANDS_PREFIX + MEMBERS_COMMAND} : Shows infomation about current party members  \n`;
     message += `- ${COMMANDS_PREFIX + CAT_COMMAND} : Shows an image of a random cat from The Cat API  \n`;
+    message += `- ${COMMANDS_PREFIX + FACTS_COMMAND} : Shows a random fan fact  \n`;
 
     message += `\n`;
     message += `**Emoji explanation:**  \n`;
@@ -109,11 +118,11 @@ function helpCommand() {
 function catCommand(triggeredBy = '') {
   if (!catCommand.runOnce) {
     const response = UrlFetchApp.fetch(`https://api.thecatapi.com/v1/images/search?size=med&mime_types=jpg,png`, {
-      'method': 'GET',
-      'headers': {
-        'x-api-user': ScriptProperties.getProperty('CAT_API_KEY')
+      method: 'GET',
+      headers: {
+        'x-api-user': CatApiKey
       },
-      'muteHttpExceptions': true
+      muteHttpExceptions: true
     });
     if (response.getResponseCode() == 200) {
       const cats = JSON.parse(response.getContentText());
@@ -127,6 +136,33 @@ function catCommand(triggeredBy = '') {
 
           Habitica.sendMessageToParty(message);
           catCommand.runOnce = true;
+        }
+      }
+    }
+  }
+}
+
+function factsCommand(triggeredBy = '') {
+  if (!factsCommand.runOnce) {
+    const response = UrlFetchApp.fetch(`https://api.api-ninjas.com/v1/facts?limit=1`, {
+      method: 'GET',
+      headers: {
+        'X-Api-Key': ApiNinjasKey
+      },
+      muteHttpExceptions: true
+    });
+    if (response.getResponseCode() == 200) {
+      const facts = JSON.parse(response.getContentText());
+      if (Array.isArray(facts) && facts.length > 0) {
+        const fact = facts[0];
+        if (fact) {
+          let message = `Fan fact:  \n >${fact.fact}  \n`;
+          if (typeof triggeredBy === 'string' && triggeredBy) {
+            message += '\n`The command was triggered by ' + triggeredBy +'`  \n';
+          }
+
+          Habitica.sendMessageToParty(message);
+          factsCommand.runOnce = true;
         }
       }
     }
@@ -147,7 +183,9 @@ function checkAndSendPartyQuestStatus(triggeredBy = '') {
       const bossQuest = quest.progress.hp > 0;
       const questStatus = getLastKnownQuestStatus();
   
-      let message = `### ${SCRIPT_NAME} - Party Quest Status  \n`;
+      let message = ``;
+      //message += `### ${SCRIPT_NAME} - Party Quest Status  \n`;
+      message += `**Party Quest Status**  \n`;
       // message += `**Party:** ${party.name}  \n`;
       message += `**Party Leader:** ${party.leader.profile.name}  \n`;
       // message += `**Members count:** ${party.memberCount}  \n`;
@@ -251,7 +289,8 @@ function sendPartyMembersInfomation(triggeredBy = '') {
     if (party) {
       let message = ''; 
       if (party.memberCount < 29) {
-        message += `### ${SCRIPT_NAME} - Party Members  \n`;
+        //message += `### ${SCRIPT_NAME} - Party Members  \n`;
+        message += `**Party Members Overview**  \n`;
       }
       if (party.memberCount < 28) {
         message += `**Party Leader:** ${party.leader.profile.name}  \n`;

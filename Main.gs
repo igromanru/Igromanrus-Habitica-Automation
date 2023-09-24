@@ -11,8 +11,8 @@ const START_SENDING_MY_QUEST_PROGRESS_X_HOURS_BEFORE_DAYSTART = 2;
 const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR x damage
 
 const AUTO_CRON = true;
-const AUTO_CRON_ON_TIME = false; // If true, cron at X hours after the day start, otherwise always to do damage
-const CRON_X_HOURS_AFTER_DAYSTART = 1;
+const AUTO_CRON_ON_TIME = true; // If true, cron at X hours after the day start, otherwise always to do damage
+const CRON_X_HOURS_AFTER_DAYSTART = 2;
 
 const AUTO_HEALTH_POSTION = true;
 const AUTO_HEALTH_POSTION_IF_HP_UNDER = 20;
@@ -328,11 +328,12 @@ function autoCron(user, quest) {
       const before = 24.5 - CRON_X_HOURS_AFTER_DAYSTART;
       const after = 23.5 - CRON_X_HOURS_AFTER_DAYSTART;
       if (hoursDifference <= before && hoursDifference >= after) {
-        Habitica.runCron();
+        return Habitica.runCron();
       }
-    } else if(quest && quest.key && quest.active) {
+    }
+    if(quest && quest.key && quest.active) {
       if (user.party.quest.progress.up >= 5 || user.party.quest.progress.collectedItems > 0) {
-        Habitica.runCron();
+        return Habitica.runCron();
       }
     }
   }
