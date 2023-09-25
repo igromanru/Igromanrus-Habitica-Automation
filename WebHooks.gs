@@ -69,18 +69,14 @@ function doGet(e) {
  * See: https://developers.google.com/apps-script/guides/web
  */
 function doPost(e) {
-  pushWebHookContentQueueProperty(e.postData.contents);
+  Habitica.pushWebHookContentQueueProperty(e.postData.contents);
   Habitica.executeAsTriggerAsap(evaluateWebHookContentQueue.name);
 }
 
 function evaluateWebHookContentQueue() {
-  ScriptApp.getProjectTriggers().forEach(trigger => {
-    if (trigger.getHandlerFunction() === evaluateWebHookContentQueue.name) {
-      ScriptApp.deleteTrigger(trigger);
-    }
-  });
+  Habitica.deleteTriggerByFunction(evaluateWebHookContentQueue.name);
 
-  const webHookContents = popAllWebHookContentQueueProperties();
+  const webHookContents = Habitica.popAllWebHookContentQueueProperties();
   if (webHookContents && Array.isArray(webHookContents)) {
     console.log(`${arguments.callee.name}: ${webHookContents.length} object(s) in the queue`);
     for (let i = 0; i < webHookContents.length; i++) {
@@ -106,6 +102,11 @@ function evaluateWebHookContentQueue() {
             if (PARTY_QUEST_STATUS_SEND_AFTER_QUEST_STARTED) {
               checkAndSendPartyQuestStatus('started quest');
             }
+          } else if (pojo.type === 'questFinished') {
+            const json = JSON.stringify(pojo);
+            console.log(json);
+            MailApp.sendEmail(Session.getEffectiveUser().getEmail(), `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()} - WebHook Type: ${pojo.webhookType}`,
+            `${json}`);
           }
         } else {
           const json = JSON.stringify(pojo);
@@ -118,27 +119,4 @@ function evaluateWebHookContentQueue() {
   } else {
     console.error(`${arguments.callee.name}: WebHook Content Queue doesn't exist`);
   }
-}
-
-function pushWebHookContentQueueProperty(content) {
-  if (typeof content == 'string' && content) {
-    ScriptProperties.setProperty(WEBHOOK_CONTENT_QUEUE + Utilities.getUuid(), content);
-  }
-}
-
-function popAllWebHookContentQueueProperties() {
-  let webHookContents = [];
-  if (ScriptLock.tryLock(DefaultLockTime)) {
-    const properties = ScriptProperties.getProperties();
-    for (const [key, value] of Object.entries(properties)) {
-      if (key.startsWith(WEBHOOK_CONTENT_QUEUE)) {
-        webHookContents.push(JSON.parse(value));
-        ScriptProperties.deleteProperty(key);
-      }
-    }
-    ScriptLock.releaseLock();
-  } else {
-    console.error(`${arguments.callee.name}: Failed to acquire the lock for ${DefaultLockTime}ms`);
-  }
-  return webHookContents;
 }
