@@ -17,32 +17,6 @@ const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 // Initiliaze the Habitica Librariy, with API credentials and script properties
 Habitica.initialize(UserId, ApiToken, ScriptProperties);
 
-/**
- * Hours left till the next day starts
- * 
- * Returns -1, if failed
- */
-function getHoursDifferenceToDayStart(user) {
-  if (!user) {
-    console.error('Failed to get get hours difference to day start.\nUser object is undefined');
-    return -1;
-  }
-  const dayStartOffset = user.preferences.dayStart;
-  const now = new Date();
-  var hours = now.getHours();
-
-  const nextDayStart = new Date();
-  if (hours >= dayStartOffset) {
-    nextDayStart.setHours(24 + dayStartOffset, 0, 0, 0);
-  } else {
-    nextDayStart.setHours(dayStartOffset, 0, 0, 0);
-  }
-  const timeDifference = nextDayStart - now;
-  const hoursDifferenceToDayStart = Math.round(timeDifference / (1000 * 60 * 60) * 10) / 10;
-
-  return hoursDifferenceToDayStart;
-}
-
 function getTimeDifferenceToNowAsString(dateTime, highlightAfterXDays = 10) {
   let result = ``;
   if (dateTime && dateTime instanceof Date) {
@@ -59,17 +33,6 @@ function getTimeDifferenceToNowAsString(dateTime, highlightAfterXDays = 10) {
     }
   }
   return result;
-}
-
-function getMemberFromArrayById(members, memberId) {
-  if (members && Array.isArray(members) && memberId && typeof memberId === 'string') {
-    for (const member of members) {
-      if (member && member._id == memberId) {
-        return member;
-      }
-    }
-  }
-  return undefined;
 }
 
 function getUserStatusAsEmojis(user) {

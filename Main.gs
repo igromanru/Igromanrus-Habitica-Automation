@@ -80,8 +80,12 @@ function triggerSchedule() {
   const user = Habitica.getUser();
   if (user) {
     console.info(`User: ${user.profile.name} (@${user.auth.local.username})\nHealth: ${Math.round(user.stats.hp)}`);
-    const hoursDifference = getHoursDifferenceToDayStart(user);
+    const hoursDifference = Habitica.getHoursDifferenceToDayStart(user);
     console.info('Hours difference to the next Day Start: ' + hoursDifference)
+    if (user.lastCron) {
+      console.info('Last cron: ' + new Date(user.lastCron).toString());
+      console.info('Is Cron Pending: ' + Habitica.isCronPending(user));
+    }
 
     let partyMembers = [];
     if (user.party._id) {
@@ -116,6 +120,7 @@ function triggerSchedule() {
       console.info('User is not in a party. Ignoring party request and party related functions.');
     }
     
+    testIsCronPending(user);
     autoCompleteTasks(user);
     autoUseSkills(user, partyMembers);
     autoBuyHealthPotions(user);
@@ -127,6 +132,10 @@ function triggerSchedule() {
   } else {
     throw new Error(`Couldn't get user data`); 
   }
+}
+
+function testIsCronPending(user) {
+  console.log(`testIsCronPending: ${Habitica.isCronPending(user)}`)
 }
 
 /**
@@ -223,7 +232,7 @@ function checkAndSendMyQuestProgress(user, quest) {
 
     const pendingDamage = Math.round(user.party.quest.progress.up * 10) / 10;
     const collectedItems = user.party.quest.progress.collectedItems;
-    const hoursDifference = getHoursDifferenceToDayStart(user);
+    const hoursDifference = Habitica.getHoursDifferenceToDayStart(user);
 
     var progressMessage = ''
 
@@ -264,7 +273,7 @@ function autoSleep(user, quest) {
       console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
       return;
     }
-    const hoursDifference = getHoursDifferenceToDayStart(user);
+    const hoursDifference = Habitica.getHoursDifferenceToDayStart(user);
     if ((hoursDifference < 1 || (hoursDifference >= 12 && Habitica.isCronPending(user)))
         && (!quest.key || !quest.active) && !user.preferences.sleep
         && user.party.quest.progress.up >= 10) {
@@ -285,7 +294,7 @@ function autoAccumulateDamage(user, quest) {
       return;
     }
 
-    const hoursDifference = getHoursDifferenceToDayStart(user);
+    const hoursDifference = Habitica.getHoursDifferenceToDayStart(user);
     const bossQuest = quest.progress.hp > 0;
     const myQuestProgress = user.party.quest.progress.up;
     // ToDo add logic for items collecting
@@ -324,10 +333,9 @@ function autoAccumulateDamage(user, quest) {
 function autoCron(user, quest) {
   if (AUTO_CRON && user && Habitica.isCronPending(user)) {
     if (AUTO_CRON_ON_TIME) {
-      const hoursDifference = getHoursDifferenceToDayStart(user);
-      const before = 24.5 - CRON_X_HOURS_AFTER_DAYSTART;
-      const after = 23.5 - CRON_X_HOURS_AFTER_DAYSTART;
-      if (hoursDifference <= before && hoursDifference >= after) {
+      const hoursDifference = Habitica.getHoursDifferenceToDayStart(user);
+      const after = 24.5 - CRON_X_HOURS_AFTER_DAYSTART;
+      if (hoursDifference < after) {
         return Habitica.runCron();
       }
     }
@@ -460,7 +468,7 @@ function autoUseSkills(user, members = []) {
 
 function autoCompleteTasks(user) {
   if (AUTO_COMPLETE_TASKS && user) {
-    const hoursDifference = getHoursDifferenceToDayStart(user);
+    const hoursDifference = Habitica.getHoursDifferenceToDayStart(user);
     const activeHoursPerDay = 24 - START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START;
     if (hoursDifference > activeHoursPerDay) {
       console.log(`${arguments.callee.name}: Skipping, hours till next day start: ${hoursDifference}, active hours per habitica day ${activeHoursPerDay}`);

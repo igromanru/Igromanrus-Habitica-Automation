@@ -179,7 +179,7 @@ function checkAndSendPartyQuestStatus(triggeredBy = '') {
     const partyMembers = Habitica.getPartyMembers(true);
     if (partyMembers && partyMembers.length > 0) {
       const quest = party.quest;
-      const questLeader = getMemberFromArrayById(partyMembers, party.quest.leader);
+      const questLeader = Habitica.getMemberFromArrayById(partyMembers, party.quest.leader);
       const bossQuest = quest.progress.hp > 0;
       const questStatus = getLastKnownQuestStatus();
   
