@@ -4,7 +4,6 @@
  */
 
 const COMMANDS_PREFIX = '!';
-const COMMANDS_REGEX = /^\!(.*?)(?:$|\s)(.*)/g;
 
 const HELP_COMMAND = 'help';
 const QUEST_PROGRESS_COMMAND = 'quest';
@@ -49,7 +48,7 @@ function checkMessageForCommands(chat) {
   // Filter for user messages
   if (ENABLE_COMMANDS && chat && (!chat.info || chat.type === undefined)) {
     if (typeof chat.text === 'string' && chat.text.trim().startsWith(COMMANDS_PREFIX)) {
-      var matches = COMMANDS_REGEX.exec(chat.text.toLowerCase());
+      var matches = /^\!(.*?)(?:$|\s)(.*)/g.exec(chat.text.toLowerCase());
       if (matches && matches.length > 1) {
         const userName = chat.user;
         const command = matches[1];

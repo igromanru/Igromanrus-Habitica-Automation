@@ -120,7 +120,6 @@ function triggerSchedule() {
       console.info('User is not in a party. Ignoring party request and party related functions.');
     }
     
-    testIsCronPending(user);
     autoCompleteTasks(user);
     autoUseSkills(user, partyMembers);
     autoBuyHealthPotions(user);
@@ -132,10 +131,6 @@ function triggerSchedule() {
   } else {
     throw new Error(`Couldn't get user data`); 
   }
-}
-
-function testIsCronPending(user) {
-  console.log(`testIsCronPending: ${Habitica.isCronPending(user)}`)
 }
 
 /**

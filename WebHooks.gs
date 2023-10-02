@@ -5,8 +5,6 @@
 // --------------------------------------------
 // -------- WebHooks related functions -------- 
 // --------------------------------------------
-const WEBHOOK_CONTENT_QUEUE = "WEBHOOK_CONTENT_QUEUE_";
-
 function createWebhooks() {
   deleteWebhooks();
   console.log("Creating WebHooks...");
@@ -103,10 +101,6 @@ function evaluateWebHookContentQueue() {
               checkAndSendPartyQuestStatus('started quest');
             }
           } else if (pojo.type === 'questFinished') {
-            const json = JSON.stringify(pojo);
-            console.log(json);
-            MailApp.sendEmail(Session.getEffectiveUser().getEmail(), `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()} - WebHook Type: ${pojo.webhookType}`,
-            `${json}`);
           }
         } else {
           const json = JSON.stringify(pojo);
