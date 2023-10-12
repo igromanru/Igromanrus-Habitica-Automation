@@ -17,18 +17,32 @@ const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 // Initiliaze the Habitica Librariy, with API credentials and script properties
 Habitica.initialize(UserId, ApiToken, ScriptProperties);
 
-function getTimeDifferenceToNowAsString(dateTime, highlightAfterXDays = 10) {
-  let result = ``;
+function getTimeDifferenceToNow(dateTime) {
   if (dateTime && dateTime instanceof Date) {
     const now = new Date();
     const timeDifference = Math.abs(now - dateTime);
+    return {
+      days: Math.floor(timeDifference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      minutes: Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60)),
+    };
+  }
+  return undefined;
+}
 
-    const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+function timeDifferenceToString(timeDifference) {
+  if (timeDifference && timeDifference.days !== undefined && timeDifference.hours !== undefined && timeDifference.minutes !== undefined) {
+    return `${Habitica.padLeft(timeDifference.days, 2)}d${Habitica.padLeft(timeDifference.hours, 2)}h${Habitica.padLeft(timeDifference.minutes, 2)}m`;
+  }
+  return '';
+}
 
-    result += `${Habitica.padLeft(days, 2)}d${Habitica.padLeft(hours, 2)}h${Habitica.padLeft(minutes, 2)}m`;
-    if (days >= highlightAfterXDays) {
+function getTimeDifferenceToNowAsString(dateTime, highlightAfterXDays = 10) {
+  let result = ``;
+  const timeDifference = getTimeDifferenceToNow(dateTime);
+  if (timeDifference) {
+    result += timeDifferenceToString(timeDifference);
+    if (timeDifference.days >= highlightAfterXDays) {
       result = `**${result}**`;
     }
   }
@@ -62,6 +76,14 @@ function getUserHealthAsEmoji(user) {
     console.error(`getUserHealthAsEmoji error: Invalid user parameter`);
   }
   return result; 
+}
+
+function getTriggeredByMessage(triggeredBy) {
+  console.log(`Triggered by: ${JSON.stringify(triggeredBy)}`);
+  if (typeof triggeredBy === 'string' && triggeredBy) {
+    return '`The command was triggered by ' + triggeredBy +'`  \n';
+  }
+  return '';
 }
 
 /**

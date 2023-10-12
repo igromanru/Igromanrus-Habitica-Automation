@@ -15,10 +15,10 @@ const AUTO_CRON_ON_TIME = true; // If true, cron at X hours after the day start,
 const CRON_X_HOURS_AFTER_DAYSTART = 2;
 
 const AUTO_HEALTH_POSTION = true;
-const AUTO_HEALTH_POSTION_IF_HP_UNDER = 20;
+const AUTO_HEALTH_POSTION_IF_HP_UNDER = 15;
 
 const AUTO_BUY_ENCHANTED_ARMOIRE = true;
-const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 1100;
+const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 600;
 const SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO = true;
 
 const AUTO_BUY_GEMS = true;
@@ -47,11 +47,16 @@ const AUTO_HEAL_YOURSELF = true; // Healing Light
 // Commands settings
 const ENABLE_COMMANDS = true;
 // unused const COMMAND_PARTY_QUEST_STATUS = true;
+// !quest command
 const PARTY_QUEST_STATUS_SEND_AFTER_QUEST_STARTED = true;
 const PARTY_QUEST_STATUS_SEND_ONLY_TOP_X_MEMBERS = 10; // Limits the list to X members with most progress
 const PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
+const PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITH_PENDING_CRON_OVER_X_DAYS = 1; // ignore if days > value
 const PARTY_QUEST_STATUS_IGNORE_NOT_PARTICIPATING_MEMBERS = true;
 const PARTY_QUEST_STATUS_PING_MEMBERS_AFTER_X_HOURS = 6;
+// !inactive command
+const PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_DAYS = 1;
+const PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_HOURS = 8; // over x days AND x hours
 
 // Cheats
 const AUTO_COMPLETE_TASKS = false;
