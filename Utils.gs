@@ -17,38 +17,6 @@ const WebAppUrl = ScriptProperties.getProperty('WEB_APP_URL');
 // Initiliaze the Habitica Librariy, with API credentials and script properties
 Habitica.initialize(UserId, ApiToken, ScriptProperties);
 
-function getTimeDifferenceToNow(dateTime) {
-  if (dateTime && dateTime instanceof Date) {
-    const now = new Date();
-    const timeDifference = Math.abs(now - dateTime);
-    return {
-      days: Math.floor(timeDifference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-      minutes: Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60)),
-    };
-  }
-  return undefined;
-}
-
-function timeDifferenceToString(timeDifference) {
-  if (timeDifference && timeDifference.days !== undefined && timeDifference.hours !== undefined && timeDifference.minutes !== undefined) {
-    return `${Habitica.padLeft(timeDifference.days, 2)}d${Habitica.padLeft(timeDifference.hours, 2)}h${Habitica.padLeft(timeDifference.minutes, 2)}m`;
-  }
-  return '';
-}
-
-function getTimeDifferenceToNowAsString(dateTime, highlightAfterXDays = 10) {
-  let result = ``;
-  const timeDifference = getTimeDifferenceToNow(dateTime);
-  if (timeDifference) {
-    result += timeDifferenceToString(timeDifference);
-    if (timeDifference.days >= highlightAfterXDays) {
-      result = `**${result}**`;
-    }
-  }
-  return result;
-}
-
 function getUserStatusAsEmojis(user) {
   let result = '';
   if (user && user.preferences && user.stats) {
@@ -147,7 +115,7 @@ function deleteSentToSleepByScript() {
 }
 
 function setLastKnownQuestStatus(status, timestamp = new Date()) {
-  if (status && timestamp) {
+  if (status && Habitica.isDate(timestamp)) {
     const questStatus = {
       questStarted: status === 'questStarted',
       questFinished: status === 'questFinished',

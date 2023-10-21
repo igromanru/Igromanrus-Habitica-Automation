@@ -26,11 +26,12 @@ const AUTO_BUY_GEMS = true;
 const AUTO_ALLOCATE_STAT_POINTS = true;
 const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, int = Intelligence, per = Perception
 
-const AUTO_SLEEP = true;
+const AUTO_WAKE_UP = true;
 
 const AUTO_ACCUMULATE_DAMAGE = true;
-const DAMAGE_TO_ACCUMULATE = 30;
+const DAMAGE_TO_ACCUMULATE = 80;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
+const ACCUMULATE_DAMAG_IGNORE_ITEM_QUESTS = false;
 
 // --- Auto Skill/Buff System ---
 const AUTO_USE_SKILLS = false;
@@ -62,6 +63,7 @@ const PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_HOURS = 8; // over x days AND x hours
 const AUTO_COMPLETE_TASKS = false;
 const START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START = 6;
 const AUTO_REGEN_MANA_FROM_HABIT = false;
+const AUTO_REGEN_MANA_HABIT_NAME = "";
 
 // --- Install settings ---
 const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
@@ -116,7 +118,7 @@ function triggerSchedule() {
         }
 
         autoAcceptQuest(quest);
-        autoSleep(user, quest);
+        autoWakeUp(user, quest);
         autoAccumulateDamage(user, quest);
         autoCron(user, quest);
         checkAndSendMyQuestProgress(user, quest);
@@ -131,8 +133,6 @@ function triggerSchedule() {
     autoBuyEnchantedArmoire(user);
     autoBuyGems(user);
     autoAllocateStatPoints(user);
-
-    setLastExecutionDateTime();
   } else {
     throw new Error(`Couldn't get user data`); 
   }
@@ -261,29 +261,12 @@ function checkAndSendMyQuestProgress(user, quest) {
   }
 }
 
-function autoSleep(user, quest) {
-  if (AUTO_SLEEP && user && quest) {
-    // Check if user were sent to sleep by the script and "wake" him up after cron is done
+function autoWakeUp(user, quest) {
+  if (AUTO_WAKE_UP && user && quest) {
     if (isSentToSleepByScript(user) && !Habitica.isCronPending(user)) {
       console.info(`${arguments.callee.name}: You were sent to sleep by the script before, waking up`);
       setSentToSleepByScript(Habitica.setSleep(user, false));
     }
-    /* Old logic, obsolete with autoAccumulateDamage
-    if (user.preferences.sleep) {
-      console.log(`${arguments.callee.name}: Skipping. You're already sleeping in the tavern`);
-      return;
-    }
-    const hoursDifference = Habitica.getHoursDifferenceToDayStart(user);
-    if ((hoursDifference < 1 || (hoursDifference >= 12 && Habitica.isCronPending(user)))
-        && (!quest.key || !quest.active) && !user.preferences.sleep
-        && user.party.quest.progress.up >= 10) {
-      console.log('No quest is running, toggling sleep...');
-      const sleepState = toggleSleep();
-      if (sleepState) {
-        console.log('Sleep state: ' + sleepState);
-        sendPMToSelf(`No quest is active, you were sent to sleep  \n*${arguments.callee.name} script*`);
-      }
-    }*/
   }
 }
 
@@ -300,7 +283,7 @@ function autoAccumulateDamage(user, quest) {
     // ToDo add logic for items collecting
     if ((hoursDifference <= 0.5 || (hoursDifference >= 12 && Habitica.isCronPending(user)))
       && (!quest.key || !quest.active || quest.progress === undefined
-          || (bossQuest && (myQuestProgress < DAMAGE_TO_ACCUMULATE || (ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < quest.progress.hp)))
+          || (bossQuest && (myQuestProgress < DAMAGE_TO_ACCUMULATE || (ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < quest.progress.hp)) || (!bossQuest && ACCUMULATE_DAMAG_IGNORE_ITEM_QUESTS))
         )) {
       console.log(`hoursDifference: ${hoursDifference}`);
       console.log(`isCronPending: ${Habitica.isCronPending(user)}`);
@@ -310,7 +293,8 @@ function autoAccumulateDamage(user, quest) {
       console.log(`My quest progress: ${myQuestProgress}`);
       console.log(`DAMAGE_TO_ACCUMULATE: ${DAMAGE_TO_ACCUMULATE}`);
       console.log(`Boss HP: ${quest.progress.hp}`);
-      console.log(`Progress check evaluation: ${(bossQuest && (myQuestProgress < DAMAGE_TO_ACCUMULATE || (ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < quest.progress.hp)))}`);
+      console.log(`Progress check evaluation: ${(bossQuest && (myQuestProgress < DAMAGE_TO_ACCUMULATE || (ACCUMULATE_UNTIL_ONE_HIT && myQuestProgress < quest.progress.hp)) || (!bossQuest && ACCUMULATE_DAMAG_IGNORE_ITEM_QUESTS))}`);
+      console.log(`ACCUMULATE_DAMAG_IGNORE_ITEM_QUESTS: ${ACCUMULATE_DAMAG_IGNORE_ITEM_QUESTS}`);
 
       console.log('Toggling sleep to accumulate damage...');
       if (Habitica.setSleep(user, true)) {
@@ -339,7 +323,7 @@ function autoCron(user, quest) {
         return Habitica.runCron();
       }
     }
-    if(quest && quest.key && quest.active) {
+    if(!user.preferences.sleep && quest && quest.key && quest.active) {
       if (user.party.quest.progress.up >= 5 || user.party.quest.progress.collectedItems > 0) {
         return Habitica.runCron();
       }
@@ -521,7 +505,9 @@ function autoCompleteTasks(user) {
 }
 
 function autoRegenManaFromHabit(user) {
-  if (AUTO_REGEN_MANA_FROM_HABIT && user) {
+  if (AUTO_REGEN_MANA_FROM_HABIT && user 
+      && typeof AUTO_REGEN_MANA_HABIT_NAME === 'string'
+      && AUTO_REGEN_MANA_HABIT_NAME !== '') {
     // ToDo
   }
 }

@@ -79,33 +79,34 @@ function evaluateWebHookContentQueue() {
     console.log(`${arguments.callee.name}: ${webHookContents.length} object(s) in the queue`);
     for (let i = 0; i < webHookContents.length; i++) {
       const pojo = webHookContents[i];
-      if (pojo && pojo.webhookType) {
-        console.log(`${arguments.callee.name}: #${i} webhookType: ${pojo.webhookType}`);
-        if (pojo.webhookType === 'groupChatReceived') {
-          if (pojo.chat) {
+      if (pojo && pojo.data && pojo.data.webhookType) {
+        const data = pojo.data;
+        console.log(`${arguments.callee.name}: #${i} webhookType: ${data.webhookType}`);
+        if (data.webhookType === 'groupChatReceived') {
+          if (data.chat) {
             let log = '';
-            if (pojo.chat.info && pojo.chat.info.type) {
-              log += `System: ${JSON.stringify(pojo.chat.info)}\n`;
+            if (data.chat.info && data.chat.info.type) {
+              log += `System: ${JSON.stringify(data.chat.info)}\n`;
             } else {
-              log += `User: ${pojo.chat.user}(@${pojo.chat.username})\n`;
+              log += `User: ${data.chat.user}(@${data.chat.username})\n`;
             }
-            log += `Message: ${pojo.chat.text}`;
+            log += `Message: ${data.chat.text}`;
             console.log(log);
-            checkMessageForCommands(pojo.chat);
-            checkMessageForBossDamage(pojo.chat);
+            checkMessageForCommands(data.chat);
+            checkMessageForBossDamage(data.chat);
           }
-        } else if (pojo.webhookType === 'questActivity') {
-          setLastKnownQuestStatus(pojo.type);
-          if (pojo.type === 'questStarted') {
+        } else if (data.webhookType === 'questActivity') {
+          setLastKnownQuestStatus(data.type, pojo.timestamp);
+          if (data.type === 'questStarted') {
             if (PARTY_QUEST_STATUS_SEND_AFTER_QUEST_STARTED) {
               checkAndSendPartyQuestStatus('started quest');
             }
-          } else if (pojo.type === 'questFinished') {
+          } else if (data.type === 'questFinished') {
           }
         } else {
-          const json = JSON.stringify(pojo);
+          const json = JSON.stringify(data);
           console.log(json);
-          MailApp.sendEmail(Session.getEffectiveUser().getEmail(), `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()} - WebHook Type: ${pojo.webhookType}`,
+          MailApp.sendEmail(Session.getEffectiveUser().getEmail(), `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()} - WebHook Type: ${data.webhookType}`,
            `${json}`);
         }
       }
