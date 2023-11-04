@@ -26,7 +26,7 @@ function checkAndSendPartyQuestStatus(triggeredBy = '') {
 
       if (quest.active) {
         if (questStatus && questStatus.questStarted === true) {
-          message += `**Quest started:** ${Habitica.getTimeDifferenceToNowAsString(questStatus.timestamp)} ago  \n`;
+          message += `**Quest started:** ${Habitica.getTimeDifferenceToNowAsString(questStatus.timestamp, 10)} ago  \n`;
         }
        
         const membersWithProgress = new Array();
@@ -52,7 +52,7 @@ function checkAndSendPartyQuestStatus(triggeredBy = '') {
           const lastCheckin = new Date(member.auth.timestamps.loggedin);
           const timeDifference = Habitica.getTimeDifferenceToNow(lastCheckin);
           if (timeDifference && timeDifference.days <= PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITH_PENDING_CRON_OVER_X_DAYS) {
-            const differenceText = Habitica.getTimeDifferenceToNowAsString(lastCheckin);
+            const differenceText = Habitica.getTimeDifferenceToNowAsString(lastCheckin, 10);
             const lastLogin = differenceText ? `🕑${differenceText}` : '';
             const mmemberName = `${member.profile.name} (\`${member.auth.local.username}\`)`;
             message += `- ${progress} | ${lastLogin} | ${mmemberName} ${getUserStatusAsEmojis(member)}  \n`;
@@ -95,7 +95,7 @@ function checkAndSendPartyQuestStatus(triggeredBy = '') {
         let questInvitedTime = undefined;
         if (questStatus && questStatus.questInvited === true) {
           questInvitedTime = questStatus.timestamp;
-          message += `**Invited to the Quest:** ${Habitica.getTimeDifferenceToNowAsString(questInvitedTime)} ago  \n`;
+          message += `**Invited to the Quest:** ${Habitica.getTimeDifferenceToNowAsString(questInvitedTime, 10)} ago  \n`;
         }
         message += `\n`;
         message += `Members who haven't accepted the quest yet:  \n`;
@@ -110,7 +110,7 @@ function checkAndSendPartyQuestStatus(triggeredBy = '') {
             } else {
               memberName += ` (\`${member.auth.local.username}\`)`;
             }
-            const differenceText = Habitica.getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
+            const differenceText = Habitica.getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin), 10);
             const lastLogin = differenceText ? `🕑${differenceText}` : '';
             message += `- ${lastLogin} | ${memberName} ${getUserStatusAsEmojis(member)}  \n`;
           }
@@ -179,7 +179,7 @@ function sendPartyMembersInfomation(triggeredBy = '') {
           const health = Habitica.padLeft(Math.round(Math.round(member.stats.hp * 10) / 10), 2);
           const pendingDamage = Habitica.padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
           const collectedItems = Habitica.padLeft(member.party.quest.progress.collectedItems, 3);
-          const differenceText = Habitica.getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin));
+          const differenceText = Habitica.getTimeDifferenceToNowAsString(new Date(member.auth.timestamps.loggedin), 10);
           const lastLogin = differenceText ? `🕑${differenceText}` : '';
           let status = '';
           if (member.preferences.sleep === true) {
@@ -224,7 +224,7 @@ function sendInactivePartyMembers(triggeredBy = '') {
 
       const addMemberInfoToMessage = (member, timeDifference) => {
         const pendingDamage = Habitica.padLeft(Math.round(Math.round(member.party.quest.progress.up * 10) / 10), 3);
-        const differenceText = Habitica.timeDifferenceToString(timeDifference);
+        const differenceText = Habitica.timeDifferenceToString(timeDifference, 10);
         const lastLogin = differenceText ? `🕑${differenceText}` : '';
         const status = getUserStatusAsEmojis(member);
         message += `- ${lastLogin} | 🎯${pendingDamage} | **${member.profile.name}** (\`${member.auth.local.username}\`) ${status}  \n`;

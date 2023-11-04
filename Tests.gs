@@ -56,6 +56,11 @@ function testPadLeft() {
   console.log(`Original value: ${value1}, padded: ${padLeft(value1, 4, "/\\")}`);
 }
 
+function testAutoRegenMana() {
+  const user = Habitica.getUser();
+  autoRegenManaFromHabit(user, 5);
+}
+
 function testFetchLimit() {
   const user = Habitica.getUser();
   const party = Habitica.getParty();

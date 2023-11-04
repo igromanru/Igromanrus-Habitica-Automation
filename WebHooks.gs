@@ -67,8 +67,10 @@ function doGet(e) {
  * See: https://developers.google.com/apps-script/guides/web
  */
 function doPost(e) {
-  Habitica.pushWebHookContentQueueProperty(e.postData.contents);
-  Habitica.executeAsTriggerAsap(evaluateWebHookContentQueue.name);
+  if (e && e.postData && e.postData.contents) {
+    Habitica.pushWebHookContentQueueProperty(e.postData.contents);
+    Habitica.executeAsTriggerAsap(evaluateWebHookContentQueue.name);
+  }
 }
 
 function evaluateWebHookContentQueue() {

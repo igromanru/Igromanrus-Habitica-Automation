@@ -2,8 +2,9 @@
  * Author: Igromanru
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
-
 // --------- Configurations -----------------------------------
+const SCRIPT_NAME = DriveApp.getFileById(ScriptApp.getScriptId()).getName();
+
 const AUTO_ACCEPT_QUESTS = true;
 
 const AUTO_SEND_MY_QUEST_PROGRESS_TO_PARTY = false;
@@ -18,7 +19,7 @@ const AUTO_HEALTH_POSTION = true;
 const AUTO_HEALTH_POSTION_IF_HP_UNDER = 15;
 
 const AUTO_BUY_ENCHANTED_ARMOIRE = true;
-const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 600;
+const BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD = 1000;
 const SEND_PM_WITH_ENCHANTED_ARMOIRE_ITEM_INFO = true;
 
 const AUTO_BUY_GEMS = true;
@@ -63,15 +64,15 @@ const PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_HOURS = 8; // over x days AND x hours
 const AUTO_COMPLETE_TASKS = false;
 const START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START = 6;
 const AUTO_REGEN_MANA_FROM_HABIT = false;
-const AUTO_REGEN_MANA_HABIT_NAME = "";
+const AUTO_REGEN_MANA_HABIT_NAME = "Regen Mana";
 
 // --- Install settings ---
 const TRIGGER_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
 
 const ENABLE_QUEST_ACTIVITY_WEBHOOK = true;
-const QUEST_ACTIVITY_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Quest-Activity`;
+const QUEST_ACTIVITY_WEBHOOK_NAME = `${SCRIPT_NAME}-Quest-Activity`;
 const ENABLE_PARTY_CHAT_WEBHOOK = true;
-const PARTY_CHAT_WEBHOOK_NAME = `${DriveApp.getFileById(ScriptApp.getScriptId()).getName()}-Party-Chat`;
+const PARTY_CHAT_WEBHOOK_NAME = `${SCRIPT_NAME}-Party-Chat`;
 const ENABLE_WEEKLY_WEBHOOK_REFRESH_TRIGGER = true;
 // Commands System
 const ENABLE_COMMANDS_SYSTEM_TRIGGER = false;
@@ -136,6 +137,16 @@ function triggerSchedule() {
   } else {
     throw new Error(`Couldn't get user data`); 
   }
+}
+
+function install() {
+  installTriggers();
+  createWebhooks();
+}
+
+function uninstall() {
+  uninstallTriggers();
+  deleteWebhooks();
 }
 
 /**
@@ -352,7 +363,7 @@ function autoBuyHealthPotions(user) {
 }
 
 function autoBuyEnchantedArmoire(user) {
-  if (AUTO_BUY_ENCHANTED_ARMOIRE && user) {
+  if (AUTO_BUY_ENCHANTED_ARMOIRE && user && user.flags && !user.flags.armoireEmpty) {
     const enchantedArmoireCost = 100; // 1 Enchanted Armoire costs 100 Gold
     const buyOverOrEqual = BUY_ENCHANTED_ARMOIRE_OVER_X_GOLD;
     const currentGold = user.stats.gp;
@@ -504,10 +515,36 @@ function autoCompleteTasks(user) {
   }
 }
 
-function autoRegenManaFromHabit(user) {
-  if (AUTO_REGEN_MANA_FROM_HABIT && user 
+function autoRegenManaFromHabit(user, amountToRegen = 10) {
+  if (AUTO_REGEN_MANA_FROM_HABIT && user && user.stats && amountToRegen > 0
       && typeof AUTO_REGEN_MANA_HABIT_NAME === 'string'
-      && AUTO_REGEN_MANA_HABIT_NAME !== '') {
-    // ToDo
+      && AUTO_REGEN_MANA_HABIT_NAME.trim() !== '') {
+    const regenManaHabitIdProperty = 'AUTO_REGEN_MANA_HABIT_ID';
+    let regenManaHabitId = ScriptProperties.getProperty(regenManaHabitIdProperty);
+    if (!regenManaHabitId || !(typeof regenManaHabitId === 'string' && regenManaHabitId.trim() !== '')) {
+      const tasks = Habitica.getUserTasks();
+      if (tasks && Array.isArray(tasks)) {
+        for (const task of tasks) {
+          if (task && task.id && typeof task.text === 'string' && task.text.trim() === AUTO_REGEN_MANA_HABIT_NAME.trim()) {
+            regenManaHabitId = task.id;
+            ScriptProperties.setProperty(regenManaHabitIdProperty, regenManaHabitId);
+            break;
+          }
+        }
+      }
+    }
+    if (typeof regenManaHabitId === 'string' && regenManaHabitId.trim() !== '') {
+      let currentMana = user.stats.mp;
+      const targetMana = currentMana + amountToRegen;
+      while (currentMana < targetMana) {
+        const data = Habitica.scoreTask(regenManaHabitId);
+        if (data && data.mp > 0) {
+          currentMana = data.mp;
+        } else {
+          console.error(`autoRegenManaFromHabit: scoreTask failed`);
+          break;
+        }
+      }
+    }
   }
 }

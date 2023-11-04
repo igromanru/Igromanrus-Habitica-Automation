@@ -3,7 +3,6 @@
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
 
-const SCRIPT_NAME = "Igromanru's Habitica Automation";
 const AUTHOR_ID = "06b046d4-160a-4a20-b527-b74385052f0e";
 
 const ScriptProperties = PropertiesService.getScriptProperties();
