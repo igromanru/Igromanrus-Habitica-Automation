@@ -132,7 +132,7 @@ class Healer extends ClassBase {
   }
 
   autoCastBlessing() {
-    if (this._user.stats.lvl >= this._blessing.levelRequirement && this._user.stats.mp > this._blessing.manaCost && Array.isArray(this._members) &&  this._members.length > 1) {
+    if (this._user.stats.lvl >= this._blessing.levelRequirement && /*this._user.stats.mp > this._blessing.manaCost &&*/ Array.isArray(this._members) &&  this._members.length > 1) {
       const memberWithLowestHp = this.getMemberWithLowestHp();
       if (memberWithLowestHp) {
         const health = Math.ceil(memberWithLowestHp.stats.hp);
@@ -143,10 +143,21 @@ class Healer extends ClassBase {
         if (healthToHeal >= HEAL_PARTY_WHEN_X_TO_HEAL) {
           const blessingPower = this.calcBlessingHealingPower();
           const castsNeeded = Math.ceil(healthToHeal / blessingPower);
-          const maxCastsPossible = Math.floor(this._user.stats.mp / this._blessing.manaCost)
-          const castsCount = Math.min(castsNeeded, maxCastsPossible);
+          const manaNeeded = castsNeeded * this._blessing.manaCost;
+          let currentMana = this._user.stats.mp;
+          console.log(`autoCastBlessing: Blessing power: ${blessingPower}\nCasts needed: ${castsNeeded}\nMana needed: ${manaNeeded}\nCurrent mana: ${currentMana}`);
 
-          console.log(`autoCastBlessing: Blessing power: ${blessingPower}\nCasts needed: ${castsNeeded}\nMana enough for: ${maxCastsPossible}\nWill be casted: ${castsCount} times`);
+          if (currentMana < manaNeeded && ALLOW_AUTO_REGEN_MANA_FROM_HABIT) {
+            const manaDiff = manaNeeded - currentMana;
+            console.log(`autoCastBlessing: Trying to to use ${autoRegenManaFromHabit.name} to regain ${manaDiff} mana`);
+            autoRegenManaFromHabit(this._user, manaDiff);
+            currentMana = this._user.stats.mp;
+            console.log(`autoCastBlessing: New mana value: ${currentMana}`);
+          }
+
+          const maxCastsPossible = Math.floor(currentMana / this._blessing.manaCost)
+          const castsCount = Math.min(castsNeeded, maxCastsPossible);
+          console.log(`autoCastBlessing: Enough mana for: ${maxCastsPossible}\nWill be casted: ${castsCount} times`);
           for (let i = 0; i < castsCount; i++) {
             const data = this._blessing.cast();
             if (data && data.user) {

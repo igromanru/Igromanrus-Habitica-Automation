@@ -30,7 +30,7 @@ const ALLOCATE_STAT_POINTS_TO = "int"; // str = Strength, con = Constitution, in
 const AUTO_WAKE_UP = true;
 
 const AUTO_ACCUMULATE_DAMAGE = true;
-const DAMAGE_TO_ACCUMULATE = 80;
+const DAMAGE_TO_ACCUMULATE = 20;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
 const ACCUMULATE_DAMAG_IGNORE_ITEM_QUESTS = false;
 
@@ -63,7 +63,7 @@ const PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_HOURS = 8; // over x days AND x hours
 // Cheats
 const AUTO_COMPLETE_TASKS = false;
 const START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START = 6;
-const AUTO_REGEN_MANA_FROM_HABIT = false;
+const ALLOW_AUTO_REGEN_MANA_FROM_HABIT = false;
 const AUTO_REGEN_MANA_HABIT_NAME = "Regen Mana";
 
 // --- Install settings ---
@@ -136,6 +136,10 @@ function triggerSchedule() {
     autoAllocateStatPoints(user);
   } else {
     throw new Error(`Couldn't get user data`); 
+  }
+
+  if (ENABLE_PARTY_CHAT_WEBHOOK || ENABLE_QUEST_ACTIVITY_WEBHOOK) {
+    evaluateWebHookContentQueue();
   }
 }
 
@@ -516,7 +520,7 @@ function autoCompleteTasks(user) {
 }
 
 function autoRegenManaFromHabit(user, amountToRegen = 10) {
-  if (AUTO_REGEN_MANA_FROM_HABIT && user && user.stats && amountToRegen > 0
+  if (ALLOW_AUTO_REGEN_MANA_FROM_HABIT && user && user.stats && amountToRegen > 0
       && typeof AUTO_REGEN_MANA_HABIT_NAME === 'string'
       && AUTO_REGEN_MANA_HABIT_NAME.trim() !== '') {
     const regenManaHabitIdProperty = 'AUTO_REGEN_MANA_HABIT_ID';
@@ -539,7 +543,7 @@ function autoRegenManaFromHabit(user, amountToRegen = 10) {
       while (currentMana < targetMana) {
         const data = Habitica.scoreTask(regenManaHabitId);
         if (data && data.mp > 0) {
-          currentMana = data.mp;
+          Habitica.updateUserStats(user, data.mp);
         } else {
           console.error(`autoRegenManaFromHabit: scoreTask failed`);
           break;

@@ -100,7 +100,7 @@ function helpCommand() {
     message += `- ${COMMANDS_PREFIX + HELP_COMMAND} : Shows this message  \n`;
     message += `- ${COMMANDS_PREFIX + QUEST_PROGRESS_COMMAND} : Shows current Party Quest Status  \n`;
     message += `- ${COMMANDS_PREFIX + MEMBERS_COMMAND} : Shows infomation about current party members  \n`;
-    message += `- ${COMMANDS_PREFIX + MEMBERS_COMMAND} : Shows inactive members  \n`;
+    message += `- ${COMMANDS_PREFIX + INACTIVE_COMMAND} : Shows inactive members  \n`;
     message += `- ${COMMANDS_PREFIX + CAT_COMMAND} : Shows an image of a random cat from The Cat API  \n`;
     message += `- ${COMMANDS_PREFIX + FACTS_COMMAND} : Shows a random fan fact  \n`;
 
