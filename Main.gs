@@ -42,7 +42,7 @@ const TRIGGER_AUTO_USE_SKILL_ON_BOSS_DAMAGE = true;
 const AUTO_USE_PROTECTIVE_AURA = true;
 const USE_PROTECTIVE_AURA_WHEN_MAX_MANA = true;
 const AUTO_HEAL_PARTY = true;  // Blessing
-const HEAL_PARTY_WHEN_X_TO_HEAL = 2; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
+const HEAL_PARTY_WHEN_X_TO_HEAL = 5; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
 const AUTO_HEAL_YOURSELF = true; // Healing Light
 // ------------------------------
 
@@ -543,7 +543,8 @@ function autoRegenManaFromHabit(user, amountToRegen = 10) {
       while (currentMana < targetMana) {
         const data = Habitica.scoreTask(regenManaHabitId);
         if (data && data.mp > 0) {
-          Habitica.updateUserStats(user, data.mp);
+          console.log(`autoRegenManaFromHabit: Scored successfully the task: ${regenManaHabitId}\nNew mana value: ${data.mp}`);
+          Habitica.updateUserStats(user, data);
         } else {
           console.error(`autoRegenManaFromHabit: scoreTask failed`);
           break;

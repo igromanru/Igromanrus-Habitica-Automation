@@ -148,7 +148,7 @@ class Healer extends ClassBase {
           console.log(`autoCastBlessing: Blessing power: ${blessingPower}\nCasts needed: ${castsNeeded}\nMana needed: ${manaNeeded}\nCurrent mana: ${currentMana}`);
 
           if (currentMana < manaNeeded && ALLOW_AUTO_REGEN_MANA_FROM_HABIT) {
-            const manaDiff = manaNeeded - currentMana;
+            const manaDiff = Math.ceil(manaNeeded - currentMana);
             console.log(`autoCastBlessing: Trying to to use ${autoRegenManaFromHabit.name} to regain ${manaDiff} mana`);
             autoRegenManaFromHabit(this._user, manaDiff);
             currentMana = this._user.stats.mp;
