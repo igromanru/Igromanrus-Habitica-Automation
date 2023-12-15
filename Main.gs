@@ -13,7 +13,7 @@ const START_SENDING_MY_QUEST_PROGRESS_AFTER_X_DMG_COLLECTED = 100; // x hours OR
 
 const AUTO_CRON = true;
 const AUTO_CRON_ON_TIME = true; // If true, cron at X hours after the day start, otherwise always to do damage
-const CRON_X_HOURS_AFTER_DAYSTART = 2;
+const CRON_X_HOURS_AFTER_DAYSTART = 1;
 
 const AUTO_HEALTH_POSTION = true;
 const AUTO_HEALTH_POSTION_IF_HP_UNDER = 15;
@@ -73,7 +73,8 @@ const ENABLE_QUEST_ACTIVITY_WEBHOOK = true;
 const QUEST_ACTIVITY_WEBHOOK_NAME = `${SCRIPT_NAME}-Quest-Activity`;
 const ENABLE_PARTY_CHAT_WEBHOOK = true;
 const PARTY_CHAT_WEBHOOK_NAME = `${SCRIPT_NAME}-Party-Chat`;
-const ENABLE_WEEKLY_WEBHOOK_REFRESH_TRIGGER = true;
+const ENABLE_WEBHOOK_REFRESH_TRIGGER = true;
+const WEBHOOK_REFRESH_TRIGGER_EACH_X_HOURS = 12; // Must be 1, 2, 4, 6, 8 or 12
 // Commands System
 const ENABLE_COMMANDS_SYSTEM_TRIGGER = false;
 const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5; // Must be 1, 5, 10, 15 or 30
@@ -184,10 +185,10 @@ function installTriggers() {
     );
   }
 
-  if (ENABLE_WEEKLY_WEBHOOK_REFRESH_TRIGGER) {
+  if (ENABLE_WEBHOOK_REFRESH_TRIGGER) {
     triggers.push(ScriptApp.newTrigger(createWebhooks.name)
       .timeBased()
-      .everyDays(6)
+      .everyHours(WEBHOOK_REFRESH_TRIGGER_EACH_X_HOURS)
       .create()
     );
   }

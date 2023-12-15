@@ -1,3 +1,10 @@
+/**
+ * Author: Igromanru
+ * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
+ */
+// --------------------------------------------
+// -------- Party related functions -------- 
+// --------------------------------------------
 function checkAndSendPartyQuestStatus(triggeredBy = '') {
   if (checkAndSendPartyQuestStatus.once === true) {
     return;
