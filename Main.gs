@@ -106,8 +106,8 @@ function triggerSchedule() {
         console.info('Party Id: ' + party.id);
 
         if (AUTO_USE_SKILLS) { // For now only get party members for autoUseSkills
-          console.info(`Auto Use Skill is enabled, getting members info`);
           partyMembers = Habitica.getPartyMembers(true);
+          console.info(`Auto Use Skill is enabled, getting members info (Count: ${partyMembers.length})`);
         }
 
         if (quest.key) {
@@ -423,17 +423,22 @@ function autoAllocateStatPoints(user) {
 }
 
 function checkMessageForBossDamage(chat) {
-  if (chat.info && chat.info.type) {
-    if (AUTO_USE_SKILLS && TRIGGER_AUTO_USE_SKILL_ON_BOSS_DAMAGE && chat.info.bossDamage) {
+  if (AUTO_USE_SKILLS && TRIGGER_AUTO_USE_SKILL_ON_BOSS_DAMAGE) {
+    if (chat && chat.info && chat.info.type === 'boss_damage' && chat.info.bossDamage) {
+      console.log(`checkMessageForBossDamage chat pojo: ${JSON.stringify(chat)}`)
       const bossDamage = parseFloat(chat.info.bossDamage);
-      if (bossDamage >= 1) {
+      if (bossDamage >= 2) {
         const user = Habitica.getUser();
         if (user) {
           const members = Habitica.getPartyMembers(true);
           autoUseSkills(user, members);
+        } else {
+          console.error(`checkMessageForBossDamage: Couldn't get the current user`);
         }
       }
-    }
+    }/* else {
+      console.error(`checkMessageForBossDamage: Called with wrong parameter: chat: ${chat}, info: ${chat.info}, info.type: ${chat.info.type}, info.bossDamage: ${chat.info.bossDamage}`);
+    }*/
   }
 }
 
@@ -442,7 +447,9 @@ function autoUseSkills(user, members = []) {
     if (user && user.flags) {
       if (user.flags.classSelected === true && !user.preferences.disableClasses) {
         let userClass = undefined;
-        switch (user.stats["class"]) {
+        const classType = user.stats.class;
+        console.info(`autoUseSkills: Class: ${classType}`);
+        switch (classType) {
           case "warrior":
             userClass = new Warrior(user, members);
             break;
@@ -461,7 +468,7 @@ function autoUseSkills(user, members = []) {
         }
       }
     } else {
-      console.error(`${arguments.callee.name} error: Invalid user paramter`);
+      console.error(`autoUseSkills error: Invalid user paramter`);
     }
   }
 }

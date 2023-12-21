@@ -11,6 +11,7 @@ const CAT_COMMAND = 'cat';
 const MEMBERS_COMMAND = 'members';
 const INACTIVE_COMMAND = 'inactive';
 const FACTS_COMMAND = 'facts';
+const PROMPT_COMMAND = 'prompt';
 
 const CatApiKey = ScriptProperties.getProperty('CAT_API_KEY');
 const ApiNinjasKey = ScriptProperties.getProperty('API_NINJAS_KEY');
@@ -82,6 +83,10 @@ function checkMessageForCommands(chat) {
           case INACTIVE_COMMAND:
             console.log(`${arguments.callee.name}: Executing command "${command}"`);
             sendInactivePartyMembers(userName);
+            break;
+          case PROMPT_COMMAND:
+            console.log(`${arguments.callee.name}: Executing command "${command}"`);
+            promptCommand(params, userName);
             break;
         }
       }
@@ -171,5 +176,16 @@ function factsCommand(triggeredBy = '') {
         }
       }
     }
+  }
+}
+
+function promptCommand(prompt, triggeredBy = '') {
+  if (typeof prompt === 'string' && prompt.trim() != '') {
+    let message = '**Gemini Pro Response**  \n';
+    message += generateContent(prompt);
+    if (typeof triggeredBy === 'string' && triggeredBy) {
+      message += '\n`The command was triggered by ' + triggeredBy +'`  \n';
+    }
+    Habitica.sendMessageToParty(message);
   }
 }

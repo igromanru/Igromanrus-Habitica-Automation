@@ -115,6 +115,8 @@ class Healer extends ClassBase {
           memberWithLowestHp = member;
         }
       }
+    } else {
+      console.error(`getMemberWithLowestHp: Invalid user object (${this._user}) or the members list is empty (${this._members})`);
     }
 
     return memberWithLowestHp;

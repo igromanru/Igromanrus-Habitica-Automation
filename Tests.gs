@@ -101,3 +101,27 @@ function testGetUserStats() {
   console.timeEnd(timeHandler);
   console.log(JSON.stringify(userStats));
 }
+
+
+function testCheckMessageForBossDamage() {
+  const chat = {
+    "flagCount": 0,
+    "flags": {},
+    "_id": "512c3686-6062-45cf-acf2-a2852459d19b",
+    "id": "512c3686-6062-45cf-acf2-a2852459d19b",
+    "text": "`Sinkard attacca The Dread Yarnghetti e fa 3.8 danni. The Dread Yarnghetti attacca la squadra e fa 9.2 danni.`",
+    "unformattedText": "Sinkard attacca The Dread Yarnghetti e fa 3.8 danni. The Dread Yarnghetti attacca la squadra e fa 9.2 danni.",
+    "info": {
+        "type": "boss_damage",
+        "user": "Sinkard",
+        "quest": "yarn",
+        "userDamage": "3.8",
+        "bossDamage": "9.2"
+    },
+    "timestamp": "2023-12-21T07:42:57.313Z",
+    "likes": {},
+    "uuid": "system",
+    "groupId": "70d4d209-b406-4c68-94e8-04e6756d668b"
+  };
+  checkMessageForBossDamage(chat);
+}
