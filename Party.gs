@@ -135,6 +135,43 @@ function checkAndSendPartyQuestStatus(triggeredBy = '') {
   }
 }
 
+function checkAndSendPartyProgress() {
+  const party = Habitica.getParty();
+  if (party && party.quest && party.quest.key && party.quest.active) {
+    const partyMembers = Habitica.getPartyMembers(true);
+    if (partyMembers && partyMembers.length > 0) {
+      const quest = party.quest;
+      const bossQuest = quest.progress.hp > 0;
+
+      let message = '`Quest Progress`  \n';
+      let collectiveProgress = 0;
+      for (const member of partyMembers) {
+        if (member && member.party._id && member.party.quest.key) {
+          collectiveProgress += bossQuest ? member.party.quest.progress.up : member.party.quest.progress.collectedItems;
+        }
+      }
+      if (collectiveProgress > 0) {
+        collectiveProgress = Math.round(Math.round(collectiveProgress * 10) / 10);
+        if (bossQuest) {
+          message += '`Pending damage: ' + collectiveProgress + '`  \n';
+          const leftDamage = Math.round(Math.round((quest.progress.hp - collectiveProgress) * 10) / 10);
+          if (leftDamage > 0) {
+            message += '`Left to accumulate: ' + leftDamage + '`';
+          }
+        } else {
+          message += '`Pending items: ' + collectiveProgress + '`';
+        }
+
+        Habitica.sendMessageToParty(message);
+      } else {
+        console.log(`checkAndSendPartyProgress: No collective progress`);
+      }
+    } else {
+      console.error(`checkAndSendPartyProgress: Couldn't get party members array`);
+    }
+  }
+}
+
 function sendPartyMembersInfomation(triggeredBy = '') {
   if (!sendPartyMembersInfomation.once) {
     const party = Habitica.getParty();

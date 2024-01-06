@@ -51,9 +51,9 @@ const ENABLE_COMMANDS = true;
 // unused const COMMAND_PARTY_QUEST_STATUS = true;
 // !quest command
 const PARTY_QUEST_STATUS_SEND_AFTER_QUEST_STARTED = true;
-const PARTY_QUEST_STATUS_SEND_ONLY_TOP_X_MEMBERS = 10; // Limits the list to X members with most progress
+const PARTY_QUEST_STATUS_SEND_ONLY_TOP_X_MEMBERS = 0; // Limits the list to X members with most progress
 const PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITHOUT_PROGRESS = true;
-const PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITH_PENDING_CRON_OVER_X_DAYS = 1; // ignore if days > value
+const PARTY_QUEST_STATUS_IGNORE_MEMBERS_WITH_PENDING_CRON_OVER_X_DAYS = 0; // ignore if days > value
 const PARTY_QUEST_STATUS_IGNORE_NOT_PARTICIPATING_MEMBERS = true;
 const PARTY_QUEST_STATUS_PING_MEMBERS_AFTER_X_HOURS = 6;
 // !inactive command
@@ -79,8 +79,11 @@ const WEBHOOK_REFRESH_TRIGGER_EACH_X_HOURS = 12; // Must be 1, 2, 4, 6, 8 or 12
 const ENABLE_COMMANDS_SYSTEM_TRIGGER = false;
 const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5; // Must be 1, 5, 10, 15 or 30
 // Party Quest Status
-const ENABLE_PARTY_QUEST_STATUS_TRIGGER = true;
+const ENABLE_PARTY_QUEST_STATUS_TRIGGER = false;
 const TRIGGER_PARTY_QUEST_STATUS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or 12
+// Party Quest Progress (short variant)
+const ENABLE_PARTY_PROGRESS_TRIGGER = true;
+const TRIGGER_PARTY_PROGRESS_EACH_X_HOURS = 2; // Must be 1, 2, 4, 6, 8 or 12
 // ------------------------------------------------------------
 /**
  * Main entry, that should be executed by a tigger
@@ -181,6 +184,14 @@ function installTriggers() {
     triggers.push(ScriptApp.newTrigger(checkAndSendPartyQuestStatus.name)
       .timeBased()
       .everyHours(TRIGGER_PARTY_QUEST_STATUS_EACH_X_HOURS)
+      .create()
+    );
+  }
+
+  if (ENABLE_PARTY_PROGRESS_TRIGGER) {
+    triggers.push(ScriptApp.newTrigger(checkAndSendPartyProgress.name)
+      .timeBased()
+      .everyHours(TRIGGER_PARTY_PROGRESS_EACH_X_HOURS)
       .create()
     );
   }
