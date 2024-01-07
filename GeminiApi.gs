@@ -40,6 +40,8 @@ function generateContent(prompt) {
         return text;
       }
     }
+  } else {
+    return response.getContentText();
   }
   return undefined;
 }

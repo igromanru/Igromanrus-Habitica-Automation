@@ -125,3 +125,7 @@ function testCheckMessageForBossDamage() {
   };
   checkMessageForBossDamage(chat);
 }
+
+function testWritePartyStatusSpreadsheet() {
+  writePartyStatusSpreadsheet(Habitica.getParty(), Habitica.getPartyMembers(true));
+}
