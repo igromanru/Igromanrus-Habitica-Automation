@@ -2,13 +2,6 @@
  * Author: Igromanru
  * Source: https://github.com/igromanru/Igromanrus-Habitica-Automation
  */
-
-const PartyStatusSpreadsheet = SpreadsheetApp.openById(PARTY_STATUS_SPREADSHEET_ID);
-const PartyStatusMembersOverviewSheet = PartyStatusSpreadsheet.getSheetByName('Members Overview');
-const PartyStatusQuestStatusSheet = PartyStatusSpreadsheet.getSheetByName('Quest Status');
-const PartyStatusQuestLogSheet = PartyStatusSpreadsheet.getSheetByName('Quest Log');
-const PartyStatusMembersLogSheet = PartyStatusSpreadsheet.getSheetByName('Members Log');
-
 // --------------------------------------------
 // -------- Party related functions -------- 
 // --------------------------------------------
@@ -148,7 +141,8 @@ function checkAndSendPartyProgress() {
     const partyMembers = Habitica.getPartyMembers(true);
     if (partyMembers && partyMembers.length > 0) {
       const quest = party.quest;
-      const bossQuest = quest.progress.hp > 0;
+      const bossHp = quest.progress.hp;
+      const bossQuest = bossHp > 0;
 
       let message = '`Quest Progress`  \n';
       let collectiveProgress = 0;
@@ -161,7 +155,7 @@ function checkAndSendPartyProgress() {
         collectiveProgress = Math.round(Math.round(collectiveProgress * 10) / 10);
         if (bossQuest) {
           message += '`Pending damage: ' + collectiveProgress + '`  \n';
-          const leftDamage = Math.round(Math.round((quest.progress.hp - collectiveProgress) * 10) / 10);
+          const leftDamage = Math.round(Math.round((bossHp - collectiveProgress) * 10) / 10);
           if (leftDamage > 0) {
             message += '`Left to accumulate: ' + leftDamage + '`';
           }
@@ -294,70 +288,5 @@ function sendInactivePartyMembers(triggeredBy = '') {
       Habitica.sendMessageToParty(message);
     }
     sendInactivePartyMembers.once = true;
-  }
-}
-
-function writePartyStatusMembersOverviewSheet(party, partyMembers) {
-  if (party && Array.isArray(partyMembers)) {
-    let headerRange = PartyStatusMembersOverviewSheet.getRange("A1:B2");
-    const headerValues = [
-        ['Party Leader:', party.leader.profile.name],
-        ['Members count:', party.memberCount],
-    ];
-    headerRange.setValues(headerValues);
-    headerRange = PartyStatusMembersOverviewSheet.getRange("A1:A2");
-    headerRange.setFontWeight("bold");
-
-    partyMembers.sort((a, b) => a.stats.class.localeCompare(b.stats.class));
-    let members = [];
-    for (const member of partyMembers) {
-      if (member && member.party && member.party._id) {
-        const pendingDamage = Math.round(Math.round(member.party.quest.progress.up * 10) / 10);
-        const collectedItems = member.party.quest.progress.collectedItems;
-        const health = Math.round(Math.round(member.stats.hp * 10) / 10);
-        const mana = Math.round(Math.round(member.stats.mp * 10) / 10);
-        const checkIn = new Date(member.auth.timestamps.loggedin);
-
-        members.push([member.stats.class, member.profile.name, '@' + member.auth.local.username,
-            Habitica.getTimeDifferenceToNowAsString(checkIn, 999999, " ") + ' ago',
-            health, mana, pendingDamage, collectedItems]);
-      }
-    }
-    for (let i = members.length; i < 30; i++) {
-      members.push(["", "", "", "", "", "", "", ""]);
-    }
-    const membersRange = PartyStatusMembersOverviewSheet.getRange("A4:H33");
-    membersRange.setValues(members);
-  }
-}
-
-function writePartyStatusQuestStatusSheet(party, partyMembers) {
-  if (party && Array.isArray(partyMembers)) {
-
-  }
-}
-
-function writePartyStatusQuestLogSheet(party, partyMembers) {
-  if (party && Array.isArray(partyMembers)) {
-
-  }
-}
-
-function writePartyStatusMembersLogSheet(party, partyMembers) {
-  if (party && Array.isArray(partyMembers)) {
-
-  }
-}
-
-function writePartyStatusSpreadsheet() {
-  const party = Habitica.getParty();
-  if (party) {
-    const partyMembers = Habitica.getPartyMembers(true);
-    if (party && Array.isArray(partyMembers)) {
-      writePartyStatusMembersOverviewSheet(party, partyMembers);
-      writePartyStatusQuestStatusSheet(party, partyMembers);
-      writePartyStatusQuestLogSheet(party, partyMembers);
-      writePartyStatusMembersLogSheet(party, partyMembers);
-    }
   }
 }
