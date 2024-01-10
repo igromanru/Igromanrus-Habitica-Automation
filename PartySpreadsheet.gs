@@ -6,6 +6,7 @@
 const PartyStatusSpreadsheet = SpreadsheetApp.openById(PARTY_STATUS_SPREADSHEET_ID);
 const PartyStatusMembersOverviewSheet = PartyStatusSpreadsheet.getSheetByName('Members Overview');
 const PartyStatusQuestProgressSheet = PartyStatusSpreadsheet.getSheetByName('Quest Progress');
+const PartyStatusQuestParticipantsSheet = PartyStatusSpreadsheet.getSheetByName('Quest Participants');
 const PartyStatusQuestLogSheet = PartyStatusSpreadsheet.getSheetByName('Quest Log');
 const PartyStatusMembersLogSheet = PartyStatusSpreadsheet.getSheetByName('Members Log');
 
@@ -109,9 +110,50 @@ function writePartyStatusQuestProgressSheet(party, partyMembers) {
   }
 }
 
-function writePartyStatusQuestLogSheet(party, partyMembers) {
+function writePartyStatusQuestParticipantsSheet(party, partyMembers) {
   if (party && Array.isArray(partyMembers)) {
+    const quest = party.quest;
+    let members = [];
+    if (quest && quest.key && !quest.active) {
+      const questLeader = Habitica.getMemberFromArrayById(partyMembers, party.quest.leader);
+      const questStatus = getLastKnownQuestStatus();
+      
+      let headerRange = PartyStatusQuestParticipantsSheet.getRange("A1:B2");
+      const headerValues = [
+          ['Quest Leader:', questLeader.profile.name],
+          ['Invited to the Quest:', Habitica.getTimeDifferenceToNowAsString(questStatus.timestamp, 999999, " ") + ' ago']
+      ];
+      console.log(`writePartyStatusQuestParticipationsSheet: ${JSON.stringify(headerValues)}`);
+      headerRange.setValues(headerValues);
 
+      partyMembers.sort((a, b) => new Date(a.auth.timestamps.loggedin) - new Date(b.auth.timestamps.loggedin));
+      for (const member of partyMembers) {
+        if (member && member.party && member.party._id && member.party.quest) {
+          const checkIn = new Date(member.auth.timestamps.loggedin);
+          let questStatus = '';
+          if (!member.party.quest.key) {
+            questStatus = 'Declined';
+          } else if (member.party.quest.RSVPNeeded === true) {
+            questStatus = 'Pending';
+          } else {
+            questStatus = 'Accepted';
+          }
+          const memberData = [ member.profile.name, '@' + member.auth.local.username,
+              Habitica.getTimeDifferenceToNowAsString(checkIn, 999999, " ") + ' ago',
+              questStatus];
+          console.log(JSON.stringify(memberData));
+          members.push(memberData);
+        }
+      }
+      PartyStatusQuestParticipantsSheet.showSheet();
+    } else {
+      PartyStatusQuestParticipantsSheet.hideSheet();
+    }
+    for (let i = members.length; i < 30; i++) {
+      members.push(["", "", "", ""]);
+    }
+    const membersRange = PartyStatusQuestParticipantsSheet.getRange("A4:D33");
+    membersRange.setValues(members);
   }
 }
 
@@ -128,8 +170,7 @@ function writePartyStatusSpreadsheet() {
     if (party && Array.isArray(partyMembers)) {
       writePartyStatusMembersOverviewSheet(party, partyMembers);
       writePartyStatusQuestProgressSheet(party, partyMembers);
-      writePartyStatusQuestLogSheet(party, partyMembers);
-      writePartyStatusMembersLogSheet(party, partyMembers);
+      writePartyStatusQuestParticipantsSheet(party, partyMembers);
       resetSpreadsheetFilters(PartyStatusSpreadsheet);
     }
   }
