@@ -113,23 +113,24 @@ function deleteSentToSleepByScript() {
   ScriptProperties.deleteProperty("SENT_TO_SLEEP_BY_SCRIPT");
 }
 
-function setLastKnownQuestStatus(status, timestamp = new Date()) {
-  if (status && Habitica.isDate(timestamp)) {
+function setLastKnownQuestStatus(status, quest, timestamp = new Date()) {
+  if (status && quest && Habitica.isDate(timestamp)) {
     const questStatus = {
       questStarted: status === 'questStarted',
       questFinished: status === 'questFinished',
       questInvited: status === 'questInvited',
+      questKey: quest.key,
       timestamp: timestamp.toISOString()
     };
     if (!questStatus.questStarted && !questStatus.questFinished && !questStatus.questInvited) {
-      console.error(`setLastKnownQuestStatus: Error no valid status were set.\nstaus: "${status}", timestamp: "${timestamp}"`);
+      console.error(`setLastKnownQuestStatus: Error no valid status were set.\nstatus: "${status}", timestamp: "${timestamp}"`);
     } else {
       const json = JSON.stringify(questStatus);
       ScriptProperties.setProperty("LAST_KNOWN_QUEST_STATUS", json);
       console.log(`setLastKnownQuestStatus set: ${json}`);
     }
   } else {
-    console.error(`setLastKnownQuestStatus: Error staus: "${status}", timestamp: "${timestamp}"`);
+    console.error(`setLastKnownQuestStatus: Error staus: "${status}", quest: "${JSON.stringify(quest)}" timestamp: "${timestamp}"`);
   }
 }
 

@@ -34,6 +34,7 @@ const DAMAGE_TO_ACCUMULATE = 20;
 const ACCUMULATE_UNTIL_ONE_HIT = false;
 const ACCUMULATE_DAMAG_IGNORE_ITEM_QUESTS = false;
 
+// Party
 const WRITE_PARTY_STATUS_SPREADSHEET = true;
 const PARTY_STATUS_SPREADSHEET_ID = '18eXR54GqhQIOk9dhPU1Rr4JLg8jSRay3FmY1lE9SlRM';
 
@@ -84,12 +85,15 @@ const TRIGGER_COMMANDS_CHECK_EACH_X_MINUTES = 5; // Must be 1, 5, 10, 15 or 30
 // Party Quest Status
 const ENABLE_PARTY_QUEST_STATUS_TRIGGER = false;
 const TRIGGER_PARTY_QUEST_STATUS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or 12
+const ENABLE_PARTY_QUEST_ACCEPTED_CHECK_TRIGGER = true;
+const TRIGGER_PARTY_QUEST_ACCEPTED_CHECK_EACH_X_HOURS = 2; // Must be 1, 2, 4, 6, 8 or 12
 // Party Quest Progress (short variant)
 const ENABLE_PARTY_PROGRESS_TRIGGER = true;
-const TRIGGER_PARTY_PROGRESS_EACH_X_HOURS = 2; // Must be 1, 2, 4, 6, 8 or 12
+const TRIGGER_PARTY_PROGRESS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or 12
 // Party Status Spreadsheet
 const ENABLE_PARTY_STATUS_SPREADSHEET_TRIGGER = true;
 const TRIGGER_PARTY_STATUS_SPREADSHEET_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
+const ENABLE_PARTY_STATUS__SPREADSHEET_QUESTS_CONTENT_UPDATE_TRIGGER = true;
 
 // ------------------------------------------------------------
 /**
@@ -211,6 +215,14 @@ function installTriggers() {
     );
   }
 
+  if (ENABLE_PARTY_STATUS__SPREADSHEET_QUESTS_CONTENT_UPDATE_TRIGGER) {
+    triggers.push(ScriptApp.newTrigger(updatePartyStatusQuestsContentSheet.name)
+      .timeBased()
+      .onMonthDay(1)
+      .create()
+    );
+  }
+
   if (ENABLE_WEBHOOK_REFRESH_TRIGGER) {
     triggers.push(ScriptApp.newTrigger(createWebhooks.name)
       .timeBased()
@@ -242,6 +254,7 @@ function uninstallTriggers() {
         case checkAndSendPartyQuestStatus.name:
         case checkAndSendPartyProgress.name:
         case writePartyStatusSpreadsheet.name:
+        case updatePartyStatusQuestsContentSheet.name:
         case createWebhooks.name:
           ScriptApp.deleteTrigger(trigger);
           console.info("Trigger deleted: " + functionName);
