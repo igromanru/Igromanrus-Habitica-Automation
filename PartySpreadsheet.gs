@@ -11,28 +11,12 @@ const PartyStatusQuestLogSheet = PartyStatusSpreadsheet.getSheetByName('Quest Lo
 const PartyStatusMembersLogSheet = PartyStatusSpreadsheet.getSheetByName('Members Log');
 const PartyStatusQuestsContentSheet = PartyStatusSpreadsheet.getSheetByName('Quests Content');
 
-function resetSpreadsheetFilters(spreadsheet) {
-  for (const sheet of spreadsheet.getSheets()) {
-    const filter = sheet.getFilter();
-    if (filter) {
-      const range = filter.getRange();
-      for (let i = range.getColumn(), maxCol = range.getLastColumn(); i <= maxCol; i++) {
-        const filterCriteria = filter.getColumnFilterCriteria(i);
-        if (filterCriteria) {
-          filter.setColumnFilterCriteria(i, filterCriteria);
-        }
-      }
-    }
-  }
-}
-
 function writePartyStatusMembersOverviewSheet(party, partyMembers) {
   if (PartyStatusMembersOverviewSheet && party && Array.isArray(partyMembers)) {
     let headerRange = PartyStatusMembersOverviewSheet.getRange("A1:B2");
-    const headerValues = [
-        ['Party Leader:', party.leader.profile.name],
-        ['Members count:', party.memberCount],
-    ];
+    const headerValues = headerRange.getValues();
+    headerValues[0][1] = party.leader.profile.name;
+    headerValues[1][1] = party.memberCount;
     console.log(`writePartyStatusMembersOverviewSheet: ${JSON.stringify(headerValues)}`);
     headerRange.setValues(headerValues);
     /*headerRange = PartyStatusMembersOverviewSheet.getRange("A1:A2");
@@ -56,7 +40,7 @@ function writePartyStatusMembersOverviewSheet(party, partyMembers) {
         }
         const memberData = [member.stats.class, member.profile.name, '@' + member.auth.local.username,
             health, mana, pendingDamage, collectedItems, status,
-            /*Habitica.getTimeDifferenceToNowAsString(checkIn, 999999, " ") + ' ago'*/Habitica.dateToSpreadsheetDate(checkIn)
+            /*Habitica.getTimeDifferenceToNowAsString(checkIn, 999999, " ") + ' ago'*/Habitica.dateToSpreadsheetDateAsUtc(checkIn)
             ];
         console.log(JSON.stringify(memberData));
         members.push(memberData);
@@ -80,10 +64,10 @@ function writePartyStatusQuestProgressSheet(party, partyMembers) {
       const questStatus = getLastKnownQuestStatus();
       
       let headerRange = PartyStatusQuestProgressSheet.getRange("A1:C2");
-      const headerValues = [
-          ['Quest Leader:', questLeader.profile.name, ""],
-          ['Quest Started:', '=TEXT(ROUNDDOWN(NOW()-C2),0)&" days "&TEXT(NOW()-C2,"HH:mm")&" ago"', Habitica.dateToSpreadsheetDate(questStatus.timestamp)]
-      ];
+      const headerValues = headerRange.getValues();
+      headerValues[0][1] = questLeader.profile.name;
+      headerValues[1][1] = "=toDurationUntilNow(C2)";
+      headerValues[1][2] = Habitica.dateToSpreadsheetDateAsUtc(questStatus.timestamp);
       console.log(`writePartyStatusQuestStatusSheet: ${JSON.stringify(headerValues)}`);
       headerRange.setValues(headerValues);
 
@@ -95,13 +79,14 @@ function writePartyStatusQuestProgressSheet(party, partyMembers) {
           const checkIn = new Date(member.auth.timestamps.loggedin);
           const memberData = [member.profile.name, '@' + member.auth.local.username,
                     bossQuest ? pendingDamage : collectedItems,
-                    Habitica.dateToSpreadsheetDate(checkIn),
+                    Habitica.dateToSpreadsheetDateAsUtc(checkIn),
                   ]   ;
           console.log(JSON.stringify(memberData));
           members.push(memberData);
         }
       }
       PartyStatusQuestProgressSheet.showSheet();
+      PartyStatusQuestProgressSheet.activate();
     } else {
       PartyStatusQuestProgressSheet.hideSheet();
     }
@@ -122,10 +107,10 @@ function writePartyStatusQuestParticipantsSheet(party, partyMembers) {
       const questStatus = getLastKnownQuestStatus();
       
       let headerRange = PartyStatusQuestParticipantsSheet.getRange("A1:C2");
-      const headerValues = [
-          ['Quest Leader:', questLeader.profile.name, ""],
-          ['Invited to the Quest:', '=TEXT(ROUNDDOWN(NOW()-C2),0)&" days "&TEXT(NOW()-C2,"HH:mm")&" ago"', Habitica.dateToSpreadsheetDate(questStatus.timestamp)]
-      ];
+      const headerValues = headerRange.getValues();
+      headerValues[0][1] = questLeader.profile.name;
+      headerValues[1][1] = "=toDurationUntilNow(C2)";
+      headerValues[1][2] = Habitica.dateToSpreadsheetDateAsUtc(questStatus.timestamp);
       console.log(`writePartyStatusQuestParticipationsSheet: ${JSON.stringify(headerValues)}`);
       headerRange.setValues(headerValues);
 
@@ -142,12 +127,13 @@ function writePartyStatusQuestParticipantsSheet(party, partyMembers) {
             questStatus = 'Accepted';
           }
           const memberData = [ member.profile.name, '@' + member.auth.local.username,
-              questStatus, Habitica.dateToSpreadsheetDate(checkIn)];
+              questStatus, Habitica.dateToSpreadsheetDateAsUtc(checkIn)];
           console.log(JSON.stringify(memberData));
           members.push(memberData);
         }
       }
       PartyStatusQuestParticipantsSheet.showSheet();
+      PartyStatusQuestProgressSheet.activate();
     } else {
       PartyStatusQuestParticipantsSheet.hideSheet();
     }
@@ -159,12 +145,6 @@ function writePartyStatusQuestParticipantsSheet(party, partyMembers) {
   }
 }
 
-function writePartyStatusMembersLogSheet(party, partyMembers) {
-  if (party && Array.isArray(partyMembers)) {
-
-  }
-}
-
 function writePartyStatusSpreadsheet() {
   const party = Habitica.getParty();
   if (party) {
@@ -173,7 +153,8 @@ function writePartyStatusSpreadsheet() {
       writePartyStatusMembersOverviewSheet(party, partyMembers);
       writePartyStatusQuestProgressSheet(party, partyMembers);
       writePartyStatusQuestParticipantsSheet(party, partyMembers);
-      resetSpreadsheetFilters(PartyStatusSpreadsheet);
+      Habitica.resetAllSpreadsheetFilters(PartyStatusSpreadsheet);
+      PartyStatusSpreadsheet.moveActiveSheet(1);
     }
   }
 }
@@ -187,17 +168,19 @@ function updatePartyStatusQuestLogSheet() {
       const STARTED_INDEX = 2;
       const FINISHED_INDEX = 3;
 
-      const timestamp = Habitica.dateToSpreadsheetDate(questStatus.timestamp);
+      const timestamp = Habitica.dateToSpreadsheetDateAsUtc(questStatus.timestamp);
       const lastRow = PartyStatusQuestLogSheet.getLastRow();
       const lastColumn = PartyStatusQuestLogSheet.getLastColumn();
       let range = PartyStatusQuestLogSheet.getRange(2, 1, lastRow, lastColumn);
       let values = range.getValues();
-      let workRow = [];
+      let workRow = ["", "", "", ""];
       let foundIndex = values.findLastIndex((row) => row[0] == questStatus.questKey);
 
       if (foundIndex >= 0) {
         workRow = values[foundIndex];
-        if (workRow[INVITED_INDEX] && workRow[STARTED_INDEX] && workRow[FINISHED_INDEX]) {
+        if (workRow[INVITED_INDEX] && workRow[INVITED_INDEX] != timestamp
+            && workRow[STARTED_INDEX] && workRow[STARTED_INDEX] != timestamp
+            && workRow[FINISHED_INDEX] && workRow[FINISHED_INDEX] != timestamp) {
           foundIndex = -1;
         } else {
           if (questStatus.questInvited && !workRow[INVITED_INDEX]) {
@@ -233,6 +216,7 @@ function updatePartyStatusQuestLogSheet() {
 
       values[foundIndex] = workRow;
       range.setValues(values);
+      Habitica.resetSheetFilter(PartyStatusQuestLogSheet);
     } else {
       console.error(`updatePartyStatusQuestLogSheet: questStatus: ${JSON.stringify(questStatus)}\nquestKey: ${questStatus.questKey}`);
     }
@@ -291,10 +275,79 @@ function updatePartyStatusQuestsContentSheet() {
         }
       }
       range.setValues(values);
+      Habitica.resetSheetFilter(PartyStatusQuestsContentSheet);
     } else {
       console.error(`updatePartyStatusQuestsContentSheet: ContentEntries are invalid: ${contentEntries} (type: ${typeof contentEntries})`);
     }
   } else {
     console.error(`updatePartyStatusQuestsContentSheet: Couldn't find the sheet`);
+  }
+}
+
+function checkAndAddToPartyStatusMembersLogSheet(partyMembers) {
+  if (PartyStatusMembersLogSheet && Array.isArray(partyMembers) && partyMembers.length > 0) {
+    const membersCache = getPartyMembersCache();
+    if (membersCache && membersCache.members.length > 0) {
+      const changedMembers = []; // [[member object, new member = true, missing member = false]]
+      for (const partyMember of partyMembers) {
+        if (membersCache.members.findIndex((member) => member.id === partyMember._id) < 0) {
+          changedMembers.push([{
+            id: partyMember._id,
+            username: partyMember.auth.local.username,
+            displayName: partyMember.profile.name
+          }, true]);
+        }
+      }
+      for (const cachedMember of membersCache.members) {
+        if (partyMembers.findIndex((member) => member._id === cachedMember.id) < 0) {
+          changedMembers.push([cachedMember, false]);
+        }
+      }
+      /*changedMembers.push([{
+            id: "123",
+            username: "test",
+            displayName: "Tester"
+          }, true]);*/
+      if (changedMembers.length > 0) {
+        const lastRow = PartyStatusMembersLogSheet.getLastRow();
+        const lastColumn = PartyStatusMembersLogSheet.getLastColumn();
+        let rangeLength = Math.max(lastRow, changedMembers.length);
+        let range = PartyStatusMembersLogSheet.getRange(2, 1, rangeLength, lastColumn);
+        const values = range.getValues();
+        const nowAsSheetDate = Habitica.dateToSpreadsheetDateAsUtc(new Date());
+
+        const USERNAME_INDEX = 0;
+        const DISPLAY_NAME_INDEX = 1;
+        const JOIN_DATE_INDEX = 2;
+        const LEFT_DATE_INDEX = 3;
+        const USER_ID_INDEX = 4;
+
+        for (const [member, isNew] of changedMembers) {
+          let foundAt = values.length > 1 ? values.findIndex((row) => row[USER_ID_INDEX] == member.id) : -1;
+          if (foundAt < 0) {
+            foundAt = values.length - 1;
+            values.push(Array(lastColumn));
+            rangeLength++;
+          }
+          const row = values[foundAt];
+          row[USER_ID_INDEX] = member.id;
+          row[USERNAME_INDEX] = member.username;
+          row[DISPLAY_NAME_INDEX] = member.displayName;
+          if (isNew) {
+            if (!row[JOIN_DATE_INDEX]) {
+              row[JOIN_DATE_INDEX] = nowAsSheetDate;
+            }
+          } else if (!row[LEFT_DATE_INDEX]) {
+            if (!row[JOIN_DATE_INDEX]) {
+              row[JOIN_DATE_INDEX] = "unknown";
+            }
+            row[LEFT_DATE_INDEX] = nowAsSheetDate;
+          }
+        }
+        range = PartyStatusMembersLogSheet.getRange(2, 1, rangeLength, lastColumn);
+        range.setValues(values);
+        Habitica.resetSheetFilter(PartyStatusMembersLogSheet);
+      }
+    }
   }
 }

@@ -167,6 +167,38 @@ function getPartyIdProperty() {
   return undefined;
 }
 
+function setPartyMembersCache(partyMembers) {
+  if (Array.isArray(partyMembers) && partyMembers.length > 0) {
+    const partyMembersCache = {
+      timestamp: new Date().toISOString(),
+      members: []
+    };
+    for (const member of partyMembers) {
+      partyMembersCache.members.push({
+        id: member._id,
+        username: member.auth.local.username,
+        displayName: member.profile.name
+      });
+    }
+    ScriptProperties.setProperty("PARTY_MEMBERS_CACHE", JSON.stringify(partyMembersCache));
+  } else {
+    console.error(`setPartyMembersCache: Invalid partyMembers array. Type: ${typeof partyMembers}`);
+  }
+}
+
+function getPartyMembersCache() {
+  const json = ScriptProperties.getProperty("PARTY_MEMBERS_CACHE");
+  console.log(`getPartyMembersCache value: ${json}`);
+  if (json) {
+    const pojo = JSON.parse(json);
+    if (pojo && pojo.timestamp) {
+      pojo.timestamp = new Date(pojo.timestamp);
+      return pojo;
+    }
+  }
+  return undefined;
+}
+
 function setObjectAsScriptProperty(propertyKey, pojo) {
   if (typeof propertyKey == 'string' && propertyKey && typeof pojo == 'object' && pojo) {
     ScriptProperties.setProperty(propertyKey, JSON.stringify(pojo));

@@ -119,10 +119,14 @@ function triggerSchedule() {
         let quest = party.quest;
         console.info('Party Id: ' + party.id);
 
-        if (AUTO_USE_SKILLS) { // For now only get party members for autoUseSkills
+        partyMembers = Habitica.getPartyMembers(true);
+        console.info(`Getting members info (Count: ${partyMembers.length})`);
+        checkAndAddToPartyStatusMembersLogSheet(partyMembers);
+        setPartyMembersCache(partyMembers);
+        /*if (AUTO_USE_SKILLS) { // For now only get party members for autoUseSkills
           partyMembers = Habitica.getPartyMembers(true);
-          console.info(`Auto Use Skill is enabled, getting members info (Count: ${partyMembers.length})`);
-        }
+          console.info(`Getting members info (Count: ${partyMembers.length})`);
+        }*/
 
         if (quest.key) {
           console.info('Quest key: ' + quest.key);
