@@ -98,7 +98,7 @@ function evaluateWebHookContentQueue() {
             checkMessageForBossDamage(data.chat);
           }
         } else if (data.webhookType === 'questActivity') {
-          setLastKnownQuestStatus(data.type, data.quest, pojo.timestamp);
+          setLastKnownQuestStatus(data, pojo.timestamp);
           updatePartyStatusQuestLogSheet();
           if (data.type === 'questStarted') {
             if (PARTY_QUEST_STATUS_SEND_AFTER_QUEST_STARTED) {

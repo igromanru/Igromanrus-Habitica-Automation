@@ -167,20 +167,23 @@ function updatePartyStatusQuestLogSheet() {
       const INVITED_INDEX = 1;
       const STARTED_INDEX = 2;
       const FINISHED_INDEX = 3;
+      const OWNER_INDEX = 4;
 
       const timestamp = Habitica.dateToSpreadsheetDateAsUtc(questStatus.timestamp);
       const lastRow = PartyStatusQuestLogSheet.getLastRow();
-      const lastColumn = PartyStatusQuestLogSheet.getLastColumn();
-      let range = PartyStatusQuestLogSheet.getRange(2, 1, lastRow, lastColumn);
-      let values = range.getValues();
-      let workRow = ["", "", "", ""];
+      const lastColumn = 5;
+      const range = PartyStatusQuestLogSheet.getRange(2, 1, lastRow, lastColumn);
+      const values = range.getValues();
+      let workRow = ["", "", "", "", ""];
       let foundIndex = values.findLastIndex((row) => row[0] == questStatus.questKey);
 
       if (foundIndex >= 0) {
         workRow = values[foundIndex];
-        if (workRow[INVITED_INDEX] && workRow[INVITED_INDEX] != timestamp
+        if ((questStatus.questOwner && workRow[OWNER_INDEX] != questStatus.questOwner)
+            || (workRow[INVITED_INDEX] && workRow[INVITED_INDEX] != timestamp
             && workRow[STARTED_INDEX] && workRow[STARTED_INDEX] != timestamp
-            && workRow[FINISHED_INDEX] && workRow[FINISHED_INDEX] != timestamp) {
+            && workRow[FINISHED_INDEX] && workRow[FINISHED_INDEX] != timestamp)
+            ) {
           foundIndex = -1;
         } else {
           if (questStatus.questInvited && !workRow[INVITED_INDEX]) {
@@ -213,9 +216,13 @@ function updatePartyStatusQuestLogSheet() {
       if (workRow[STARTED_INDEX] && !workRow[INVITED_INDEX]) {
         workRow[INVITED_INDEX] = "unknown";
       }
+      if (questStatus.questOwner && !workRow[OWNER_INDEX]) {
+        workRow[OWNER_INDEX] = questStatus.questOwner;
+      }
 
       values[foundIndex] = workRow;
       range.setValues(values);
+      console.log(`updatePartyStatusQuestLogSheet: Row index: ${foundIndex}\nValues: ${JSON.stringify(workRow)}`);
       Habitica.resetSheetFilter(PartyStatusQuestLogSheet);
     } else {
       console.error(`updatePartyStatusQuestLogSheet: questStatus: ${JSON.stringify(questStatus)}\nquestKey: ${questStatus.questKey}`);
