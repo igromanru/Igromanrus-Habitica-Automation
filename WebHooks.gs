@@ -83,7 +83,8 @@ function evaluateWebHookContentQueue() {
       const pojo = webHookContents[i];
       if (pojo && pojo.data && pojo.data.webhookType) {
         const data = pojo.data;
-        console.log(`${arguments.callee.name}: #${i} webhookType: ${data.webhookType}`);
+        // console.log(`${arguments.callee.name}: #${i} webhookType: ${data.webhookType}`);
+        console.log(`evaluateWebHookContentQueue: #${i} Payload: ${JSON.stringify(data)}`);
         if (data.webhookType === 'groupChatReceived') {
           if (data.chat) {
             let log = '';

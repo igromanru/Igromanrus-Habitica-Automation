@@ -120,7 +120,7 @@ function setLastKnownQuestStatus(data, timestamp = new Date()) {
       questFinished: data.type === 'questFinished',
       questInvited: data.type === 'questInvited',
       questKey: data.quest.key,
-      questOwner: data.user ? data.user._id : "",
+      questOwner: data.quest.questOwner,
       timestamp: timestamp.toISOString()
     };
     if (!questStatus.questStarted && !questStatus.questFinished && !questStatus.questInvited) {

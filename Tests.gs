@@ -7,18 +7,19 @@ function test() {
   console.log(arguments.callee.name);
 
   const date1 = new Date();
+  console.log(`Unix timestamp: ${date1.valueOf()}`);
   date1.setHours(date1.getHours() - 26);
   date1.setMinutes(date1.getMinutes() - 12);
-  console.log(getTimeDifferenceToNowAsString(date1));
+  console.log(Habitica.getTimeDifferenceToNowAsString(date1));
 
   const date2 = new Date();
   date2.setHours(date1.getHours() - 12);
   date2.setMinutes(date2.getMinutes() - 12);
-  console.log(getTimeDifferenceToNowAsString(date2));
+  console.log(Habitica.getTimeDifferenceToNowAsString(date2));
 
   const date3 = new Date();
   date3.setMinutes(date3.getMinutes() - 12);
-  console.log(getTimeDifferenceToNowAsString(date3));
+  console.log(Habitica.getTimeDifferenceToNowAsString(date3));
 
   const dayStartOffset = 1;
   const now = new Date();
