@@ -10,6 +10,7 @@ const PartyStatusQuestParticipantsSheet = PartyStatusSpreadsheet.getSheetByName(
 const PartyStatusQuestLogSheet = PartyStatusSpreadsheet.getSheetByName('Quest Log');
 const PartyStatusMembersLogSheet = PartyStatusSpreadsheet.getSheetByName('Members Log');
 const PartyStatusQuestsContentSheet = PartyStatusSpreadsheet.getSheetByName('Quests Content');
+const PartyStatusSystemMessagesLogSheet = PartyStatusSpreadsheet.getSheetByName('System Messages Log');
 
 function writePartyStatusMembersOverviewSheet(party, partyMembers) {
   if (PartyStatusMembersOverviewSheet && party && Array.isArray(partyMembers)) {
@@ -168,8 +169,7 @@ function updatePartyStatusQuestLogSheet() {
       const STARTED_INDEX = 2;
       const FINISHED_INDEX = 3;
       const OWNER_INDEX = 4;
-      /*const QUEST_NAME_FORMULA_INDEX = 5;
-      const PARTICIPANTS_INDEX = 6;*/
+      const PARTICIPANTS_INDEX = 7;
 
       const timestamp = Habitica.dateToSpreadsheetDateAsUtc(questStatus.timestamp);
       const lastRow = PartyStatusQuestLogSheet.getLastRow();
@@ -222,24 +222,8 @@ function updatePartyStatusQuestLogSheet() {
         workRow[OWNER_INDEX] = questStatus.questOwner;
       }
 
-      /*if(questStatus.questStarted && !workRow[PARTICIPANTS_INDEX]) {
-        const party = Habitica.getParty();
-        const participants = [];
-        if (party && party.quest && party.quest.members) {
-          for (const [userId, accepted] of Object.entries(party.quest.members)) {
-            if (accepted) {
-              participants.push(userId);
-            }
-          }
-        }
-        if (participants.length > 0) {
-          const participantsColumn = "=" + JSON.stringify(participants);
-          workRow[PARTICIPANTS_INDEX] = participantsColumn.replace("[", "{").replace("]", "}");
-        }
-      }*/
-
       if(questStatus.questStarted) {
-        const participantsRange = PartyStatusQuestLogSheet.getRange(foundIndex + 2, 1, 1, 1);
+        const participantsRange = PartyStatusQuestLogSheet.getRange(foundIndex + 2, PARTICIPANTS_INDEX + 1, 1, 1);
         if (!participantsRange.getValue()) {
           const party = Habitica.getParty();
           const participants = [];

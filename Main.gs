@@ -39,14 +39,14 @@ const WRITE_PARTY_STATUS_SPREADSHEET = true;
 const PARTY_STATUS_SPREADSHEET_ID = '18eXR54GqhQIOk9dhPU1Rr4JLg8jSRay3FmY1lE9SlRM';
 
 // --- Auto Skill/Buff System ---
-const AUTO_USE_SKILLS = false;
+const AUTO_USE_SKILLS = true;
 const TRIGGER_AUTO_USE_SKILL_ON_BOSS_DAMAGE = true;
 // const USE_SKILLS_WHEN_MANA_OVER_X_PERCENT = 0.3; // 0.1 = 10%, 1.0 = 100%
 // Healer features
 const AUTO_USE_PROTECTIVE_AURA = true;
 const USE_PROTECTIVE_AURA_WHEN_MAX_MANA = true;
 const AUTO_HEAL_PARTY = true;  // Blessing
-const HEAL_PARTY_WHEN_X_TO_HEAL = 5; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
+const HEAL_PARTY_WHEN_X_TO_HEAL = 20; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
 const AUTO_HEAL_YOURSELF = true; // Healing Light
 // ------------------------------
 
