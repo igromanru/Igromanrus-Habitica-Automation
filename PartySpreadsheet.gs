@@ -379,3 +379,66 @@ function checkAndAddToPartyStatusMembersLogSheet(partyMembers) {
     }
   }
 }
+
+function logSystemMessageToPartyStatusSystemMessagesLogSheet(data) {
+  if (data && data.chat && data.chat.uuid == "system" && data.chat.info && PartyStatusSystemMessagesLogSheet) {
+    const chat = data.chat;
+    const lastRow = PartyStatusSystemMessagesLogSheet.getLastRow();
+    const newRowIndex = lastRow + 1;
+
+    let columnCount = 0;
+    const MSG_ID_INDEX = columnCount++;
+    const TIMESTAMP_INDEX = columnCount++;
+    const USER_INDEX = columnCount++;
+    const TEXT_INDEX = columnCount++;
+    const USER_ID_INDEX = columnCount++;
+    const TYPE_INDEX = columnCount++;
+    const QUEST_INDEX = columnCount++;
+    const USER_DAMAGE_INDEX = columnCount++;
+    const BOSS_DAMAGE_INDEX = columnCount++;
+    const CLASS_INDEX = columnCount++;
+    const SPELL_INDEX = columnCount++;
+    const TARGET_INDEX = columnCount++;
+    const CAST_TIMES_INDEX = columnCount++;
+
+    const newRowRange = PartyStatusSystemMessagesLogSheet.getRange(newRowIndex, 1, 1, columnCount);
+    const newRow = new Array(columnCount).fill("");
+    if (data.user) {
+      newRow[USER_ID_INDEX] = data.user._id;
+    }
+    if (chat) {
+      newRow[MSG_ID_INDEX] = chat._id;
+      newRow[TIMESTAMP_INDEX] = Habitica.dateToSpreadsheetDateAsUtc(new Date(chat.timestamp));
+      newRow[TEXT_INDEX] = chat.unformattedText;
+      if (chat.info) {
+        newRow[TYPE_INDEX] = chat.info.type;
+        newRow[USER_INDEX] = chat.info.user;
+        if (chat.info.quest) {
+          newRow[QUEST_INDEX] = chat.info.quest;
+        }
+        if (chat.info.userDamage) {
+          newRow[USER_DAMAGE_INDEX] = parseFloat(chat.info.userDamage);
+        }
+        if (chat.info.bossDamage) {
+          newRow[BOSS_DAMAGE_INDEX] = parseFloat(chat.info.bossDamage);
+        }
+        if (chat.info.class) {
+          newRow[CLASS_INDEX] = chat.info.class;
+        }
+        if (chat.info.spell) {
+          newRow[SPELL_INDEX] = chat.info.spell;
+        }
+        if (chat.info.target) {
+          newRow[TARGET_INDEX] = chat.info.target;
+        }
+        if (chat.info.times) {
+          newRow[CAST_TIMES_INDEX] = chat.info.times;
+        }
+      }
+    }
+    newRowRange.setValues([newRow]);
+    console.log(`logSystemMessageToPartyStatusSystemMessagesLogSheet: New row index: ${newRowIndex}\ndata: ${JSON.stringify(newRow)}`);
+  } else {
+    console.error(`logSystemMessageToPartyStatusSystemMessagesLogSheet: Wrong "data" parameter: ${JSON.stringify(data)}`);
+  }
+}

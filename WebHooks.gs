@@ -97,6 +97,7 @@ function evaluateWebHookContentQueue() {
             console.log(log);
             checkMessageForCommands(data.chat);
             checkMessageForBossDamage(data.chat);
+            logSystemMessageToPartyStatusSystemMessagesLogSheet(data);
           }
         } else if (data.webhookType === 'questActivity') {
           setLastKnownQuestStatus(data, pojo.timestamp);
