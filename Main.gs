@@ -92,8 +92,8 @@ const ENABLE_PARTY_PROGRESS_TRIGGER = true;
 const TRIGGER_PARTY_PROGRESS_EACH_X_HOURS = 4; // Must be 1, 2, 4, 6, 8 or 12
 // Party Status Spreadsheet
 const ENABLE_PARTY_STATUS_SPREADSHEET_TRIGGER = true;
-const TRIGGER_PARTY_STATUS_SPREADSHEET_EACH_X_MINUTES = 30; // Must be 1, 5, 10, 15 or 30
-const ENABLE_PARTY_STATUS__SPREADSHEET_QUESTS_CONTENT_UPDATE_TRIGGER = true;
+const TRIGGER_PARTY_STATUS_SPREADSHEET_UPDATE_EACH_X_MINUTES = 15; // Must be 1, 5, 10, 15 or 30
+const ENABLE_PARTY_STATUS_SPREADSHEET_QUESTS_CONTENT_UPDATE_TRIGGER = true;
 
 // ------------------------------------------------------------
 /**
@@ -214,12 +214,12 @@ function installTriggers() {
   if (ENABLE_PARTY_STATUS_SPREADSHEET_TRIGGER) {
     triggers.push(ScriptApp.newTrigger(writePartyStatusSpreadsheet.name)
       .timeBased()
-      .everyMinutes(TRIGGER_PARTY_STATUS_SPREADSHEET_EACH_X_MINUTES)
+      .everyMinutes(TRIGGER_PARTY_STATUS_SPREADSHEET_UPDATE_EACH_X_MINUTES)
       .create()
     );
   }
 
-  if (ENABLE_PARTY_STATUS__SPREADSHEET_QUESTS_CONTENT_UPDATE_TRIGGER) {
+  if (ENABLE_PARTY_STATUS_SPREADSHEET_QUESTS_CONTENT_UPDATE_TRIGGER) {
     triggers.push(ScriptApp.newTrigger(updatePartyStatusQuestsContentSheet.name)
       .timeBased()
       .onMonthDay(1)

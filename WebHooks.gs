@@ -79,6 +79,7 @@ function evaluateWebHookContentQueue() {
   const webHookContents = Habitica.popAllWebHookContentQueueProperties();
   if (webHookContents && Array.isArray(webHookContents)) {
     console.log(`${arguments.callee.name}: ${webHookContents.length} object(s) in the queue`);
+    webHookContents.sort((a, b) => a.timestamp - b.timestamp);
     for (let i = 0; i < webHookContents.length; i++) {
       const pojo = webHookContents[i];
       if (pojo && pojo.data && pojo.data.webhookType) {

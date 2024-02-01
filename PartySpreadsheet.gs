@@ -39,18 +39,29 @@ function writePartyStatusMembersOverviewSheet(party, partyMembers) {
         if (member.preferences.sleep === true) {
           status += '😴';
         }
+        const quests = [];
+        for (const [questKey, questCount] of Object.entries(member.items.quests)) {
+          if (questCount > 0) {
+            quests.push(questKey);
+          }
+        }
+
+        let questsValue = "";
+        if (quests.length > 0) {
+          questsValue = "=" + JSON.stringify(quests).replace("[", "{").replace("]", "}")
+        }
         const memberData = [member.stats.class, member.profile.name, '@' + member.auth.local.username,
             health, mana, pendingDamage, collectedItems, status,
             Habitica.dateToSpreadsheetDateAsUtc(checkIn), ""/* empty space for the formula */,
-            member._id ];
+            member._id, questsValue];
         console.log(JSON.stringify(memberData));
         members.push(memberData);
       }
     }
     for (let i = members.length; i < 30; i++) {
-      members.push(["","","","","","","","","","",""]);
+      members.push(["","","","","","","","","","","", ""]);
     }
-    const membersRange = PartyStatusMembersOverviewSheet.getRange("A4:K33");
+    const membersRange = PartyStatusMembersOverviewSheet.getRange("A4:L33");
     membersRange.setValues(members);
   }
 }
@@ -170,6 +181,7 @@ function updatePartyStatusQuestLogSheet() {
       const FINISHED_INDEX = 3;
       const OWNER_INDEX = 4;
       const PARTICIPANTS_INDEX = 7;
+      const NON_PARTICIPANTS_INDEX = 8;
 
       const timestamp = Habitica.dateToSpreadsheetDateAsUtc(questStatus.timestamp);
       const lastRow = PartyStatusQuestLogSheet.getLastRow();
@@ -225,18 +237,32 @@ function updatePartyStatusQuestLogSheet() {
       if(questStatus.questStarted) {
         const participantsRange = PartyStatusQuestLogSheet.getRange(foundIndex + 2, PARTICIPANTS_INDEX + 1, 1, 1);
         if (!participantsRange.getValue()) {
-          const party = Habitica.getParty();
-          const participants = [];
-          if (party && party.quest && party.quest.members) {
-            for (const [userId, accepted] of Object.entries(party.quest.members)) {
-              if (accepted) {
-                participants.push(userId);
+          const partyMembers = Habitica.getPartyMembers(true);
+          if (Array.isArray(partyMembers)) {
+            let participants = "";
+            let nonParticipants = "";
+            for (const member of partyMembers) {
+              if (member.party) {
+                if (member.party.quest && member.party.quest.key) {
+                  if (participants.length > 0) {
+                    participants += ",";
+                  }
+                  participants += member._id;
+                } else {
+                  if (nonParticipants.length > 0) {
+                    nonParticipants += ",";
+                  }
+                  nonParticipants += member._id;
+                }
               }
             }
-          }
-          if (participants.length > 0) {
-            const participantsColumn = "=" + JSON.stringify(participants);
-            participantsRange.setValue(participantsColumn.replace("[", "{").replace("]", "}"));
+            if (participants.length > 0) {
+              participantsRange.setValue(participants);
+            }
+            if (nonParticipants.length > 0) {
+              const nonParticipantsRange = PartyStatusQuestLogSheet.getRange(foundIndex + 2, NON_PARTICIPANTS_INDEX + 1, 1, 1);
+              nonParticipantsRange.setValue(nonParticipants);
+            }
           }
         }
       }
@@ -351,8 +377,8 @@ function checkAndAddToPartyStatusMembersLogSheet(partyMembers) {
         const USER_ID_INDEX = 4;
 
         for (const [member, isNew] of changedMembers) {
-          let foundAt = values.length > 1 ? values.findIndex((row) => row[USER_ID_INDEX] == member.id) : -1;
-          if (foundAt < 0) {
+          let foundAt = values.length > 1 ? values.findLastIndex((row) => row[USER_ID_INDEX] == member.id) : -1;
+          if (foundAt < 0 || (values[foundAt][JOIN_DATE_INDEX] && values[foundAt][LEFT_DATE_INDEX])) {
             foundAt = values.length - 1;
             values.push(Array(lastColumn));
             rangeLength++;
@@ -391,7 +417,6 @@ function logSystemMessageToPartyStatusSystemMessagesLogSheet(data) {
     const TIMESTAMP_INDEX = columnCount++;
     const USER_INDEX = columnCount++;
     const TEXT_INDEX = columnCount++;
-    const USER_ID_INDEX = columnCount++;
     const TYPE_INDEX = columnCount++;
     const QUEST_INDEX = columnCount++;
     const USER_DAMAGE_INDEX = columnCount++;
@@ -403,9 +428,6 @@ function logSystemMessageToPartyStatusSystemMessagesLogSheet(data) {
 
     const newRowRange = PartyStatusSystemMessagesLogSheet.getRange(newRowIndex, 1, 1, columnCount);
     const newRow = new Array(columnCount).fill("");
-    if (data.user) {
-      newRow[USER_ID_INDEX] = data.user._id;
-    }
     if (chat) {
       newRow[MSG_ID_INDEX] = chat._id;
       newRow[TIMESTAMP_INDEX] = Habitica.dateToSpreadsheetDateAsUtc(new Date(chat.timestamp));
@@ -438,7 +460,5 @@ function logSystemMessageToPartyStatusSystemMessagesLogSheet(data) {
     }
     newRowRange.setValues([newRow]);
     console.log(`logSystemMessageToPartyStatusSystemMessagesLogSheet: New row index: ${newRowIndex}\ndata: ${JSON.stringify(newRow)}`);
-  } else {
-    console.error(`logSystemMessageToPartyStatusSystemMessagesLogSheet: Wrong "data" parameter: ${JSON.stringify(data)}`);
   }
 }
