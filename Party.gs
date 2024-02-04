@@ -290,3 +290,9 @@ function sendInactivePartyMembers(triggeredBy = '') {
     sendInactivePartyMembers.once = true;
   }
 }
+
+function checkAndMentionQuestNonParticipants(party, partyMembers) {
+  if (CHECK_AND_MENTION_QUEST_NON_PARTICIPANTS && party && Array.isArray(partyMembers)) {
+    // ToDo Implement
+  }
+}

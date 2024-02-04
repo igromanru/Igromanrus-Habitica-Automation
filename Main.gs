@@ -37,6 +37,8 @@ const ACCUMULATE_DAMAG_IGNORE_ITEM_QUESTS = false;
 // Party
 const WRITE_PARTY_STATUS_SPREADSHEET = true;
 const PARTY_STATUS_SPREADSHEET_ID = '18eXR54GqhQIOk9dhPU1Rr4JLg8jSRay3FmY1lE9SlRM';
+const CHECK_AND_MENTION_QUEST_NON_PARTICIPANTS = true;
+const MENTION_QUEST_NON_PARTICIPANTS_AFTER_X_HOURS = 8;
 
 // --- Auto Skill/Buff System ---
 const AUTO_USE_SKILLS = true;
@@ -142,6 +144,7 @@ function triggerSchedule() {
         autoAccumulateDamage(user, quest);
         autoCron(user, quest);
         checkAndSendMyQuestProgress(user, quest);
+        checkAndMentionQuestNonParticipants(party, partyMembers);
       }
     } else {
       console.info('User is not in a party. Ignoring party request and party related functions.');
