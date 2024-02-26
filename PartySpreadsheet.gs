@@ -76,13 +76,9 @@ function writePartyStatusQuestProgressSheet(party, partyMembers) {
       const bossQuest = quest.progress.hp > 0;
       const questStatus = getLastKnownQuestStatus();
       
-      let headerRange = PartyStatusQuestProgressSheet.getRange("A1:C2");
-      const headerValues = headerRange.getValues();
-      headerValues[0][1] = questLeader.profile.name;
-      headerValues[1][1] = "=DURATION_UNTIL_NOW(C2)";
-      headerValues[1][2] = Habitica.dateToSpreadsheetDateAsUtc(questStatus.timestamp);
-      console.log(`writePartyStatusQuestStatusSheet:  Header values: ${JSON.stringify(headerValues)}`);
-      headerRange.setValues(headerValues);
+      PartyStatusQuestProgressSheet.getRange("B1").setValue(questLeader.profile.name);
+      PartyStatusQuestProgressSheet.getRange("C2").setValue(Habitica.dateToSpreadsheetDateAsUtc(questStatus.timestamp));
+      let accumulatedProgress = 0;
 
       partyMembers.sort((a, b) => new Date(a.auth.timestamps.loggedin) - new Date(b.auth.timestamps.loggedin));
       for (const member of partyMembers) {
@@ -90,14 +86,19 @@ function writePartyStatusQuestProgressSheet(party, partyMembers) {
           const pendingDamage = Math.round(Math.round(member.party.quest.progress.up * 10) / 10);
           const collectedItems = member.party.quest.progress.collectedItems;
           const checkIn = new Date(member.auth.timestamps.loggedin);
+          const progress = bossQuest ? pendingDamage : collectedItems;
+          
           const memberData = [member.profile.name, '@' + member.auth.local.username,
-                    bossQuest ? pendingDamage : collectedItems,
+                    progress,
                     Habitica.dateToSpreadsheetDateAsUtc(checkIn),
                   ]   ;
+          accumulatedProgress += progress;
           console.log(JSON.stringify(memberData));
           members.push(memberData);
         }
       }
+      PartyStatusQuestProgressSheet.getRange("B3").setValue(accumulatedProgress);
+
       PartyStatusQuestProgressSheet.showSheet();
       PartyStatusQuestProgressSheet.activate();
     } else {
@@ -214,6 +215,18 @@ function updatePartyStatusQuestLogSheet() {
       }
 
       if (foundIndex < 0) {
+        // Check for past quests and mark them as "canceled"
+        for (const row of values) {
+          if (row[KEY_INDEX]) {
+            if(!row[STARTED_INDEX]) {
+              row[STARTED_INDEX] = 'canceled';
+            }
+            if(!row[FINISHED_INDEX]) {
+              row[FINISHED_INDEX] = 'canceled';
+            }
+          }
+        }
+
         foundIndex = values.length - 1;
         workRow = values[foundIndex];
         workRow[KEY_INDEX] = questStatus.questKey;

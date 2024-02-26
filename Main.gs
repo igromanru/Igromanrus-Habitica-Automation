@@ -69,7 +69,7 @@ const PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_HOURS = 8; // over x days AND x hours
 // Cheats
 const AUTO_COMPLETE_TASKS = false;
 const START_TO_COMPLETE_TASKS_X_HOURS_AFTER_DAY_START = 6;
-const ALLOW_AUTO_REGEN_MANA_FROM_HABIT = false;
+const ALLOW_AUTO_REGEN_MANA_FROM_HABIT = true;
 const AUTO_REGEN_MANA_HABIT_NAME = "Regen Mana";
 
 // --- Install settings ---
