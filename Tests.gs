@@ -130,3 +130,66 @@ function testCheckMessageForBossDamage() {
 function testWritePartyStatusSpreadsheet() {
   writePartyStatusSpreadsheet(Habitica.getParty(), Habitica.getPartyMembers(true));
 }
+
+function testLogSystemMessageToPartyStatusSystemMessagesLogSheet() {
+  const data = {
+      "group": {
+          "id": "70d4d209-b406-4c68-94e8-04e6756d668b",
+          "name": "Habitual Legends"
+      },
+      "chat": {
+          "flagCount": 0,
+          "flags": {},
+          "_id": "1ee14b99-9b51-431e-b216-d7a9e939d59f",
+          "id": "1ee14b99-9b51-431e-b216-d7a9e939d59f",
+          "text": "`Ruby Rose attacks Monstrous Moon for 10.3 damage. Monstrous Moon attacks party for 0.0 damage.`",
+          "unformattedText": "Ruby Rose attacks Monstrous Moon for 10.3 damage. Monstrous Moon attacks party for 0.0 damage.",
+          "info": {
+              "type": "boss_damage",
+              "user": "Ruby Rose",
+              "quest": "moon3",
+              "userDamage": "10.3",
+              "bossDamage": "0.0"
+          },
+          "timestamp": "2024-01-30T15:17:06.852Z",
+          "likes": {},
+          "uuid": "system",
+          "groupId": "70d4d209-b406-4c68-94e8-04e6756d668b"
+      },
+      "webhookType": "groupChatReceived",
+      "user": {
+          "_id": "06b046d4-160a-4a20-b527-b74385052f0e"
+      }
+  };
+  const itemsData = {
+      "group": {
+          "id": "70d4d209-b406-4c68-94e8-04e6756d668b",
+          "name": "Habitual Legends"
+      },
+      "chat": {
+          "flagCount": 0,
+          "flags": {},
+          "_id": "3c78ba9d-28f5-4825-bc77-b7ae44a24e05",
+          "id": "3c78ba9d-28f5-4825-bc77-b7ae44a24e05",
+          "text": "`sunbruised found 12 Bars of Soap.`",
+          "unformattedText": "sunbruised found 12 Bars of Soap.",
+          "info": {
+              "type": "user_found_items",
+              "user": "sunbruised",
+              "quest": "atom1",
+              "items": {
+                  "soapBars": 12
+              }
+          },
+          "timestamp": "2024-02-02T18:48:33.745Z",
+          "likes": {},
+          "uuid": "system",
+          "groupId": "70d4d209-b406-4c68-94e8-04e6756d668b"
+      },
+      "webhookType": "groupChatReceived",
+      "user": {
+          "_id": "06b046d4-160a-4a20-b527-b74385052f0e"
+      }
+  };
+  logSystemMessageToPartyStatusSystemMessagesLogSheet(itemsData);
+}

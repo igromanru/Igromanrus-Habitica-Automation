@@ -50,6 +50,8 @@ const USE_PROTECTIVE_AURA_WHEN_MAX_MANA = true;
 const AUTO_HEAL_PARTY = true;  // Blessing
 const HEAL_PARTY_WHEN_X_TO_HEAL = 20; // Should cast Blessing, if one of members has Health = (MaxHealth - X)
 const AUTO_HEAL_YOURSELF = true; // Healing Light
+// Rogue
+const AUTO_USE_STEALTH = true;
 // ------------------------------
 
 // Commands settings

@@ -84,10 +84,10 @@ function checkMessageForCommands(chat) {
             console.log(`${arguments.callee.name}: Executing command "${command}"`);
             sendInactivePartyMembers(userName);
             break;
-          case PROMPT_COMMAND:
+          /*case PROMPT_COMMAND: Check if it's still free
             console.log(`${arguments.callee.name}: Executing command "${command}"`);
             promptCommand(params, userName);
-            break;
+            break;*/
         }
       }
     }
@@ -148,13 +148,15 @@ function catCommand(triggeredBy = '') {
           catCommand.runOnce = true;
         }
       }
+    } else {
+      console.error(response.getContentText());
     }
   }
 }
 
 function factsCommand(triggeredBy = '') {
   if (!factsCommand.runOnce) {
-    const response = UrlFetchApp.fetch(`https://api.api-ninjas.com/v1/facts?limit=1`, {
+    const response = UrlFetchApp.fetch(`https://api.api-ninjas.com/v1/facts`, {
       method: 'GET',
       headers: {
         'X-Api-Key': ApiNinjasKey
@@ -175,6 +177,8 @@ function factsCommand(triggeredBy = '') {
           factsCommand.runOnce = true;
         }
       }
+    } else {
+      console.error(response.getContentText());
     }
   }
 }

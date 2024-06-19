@@ -219,9 +219,16 @@ class Rogue extends ClassBase {
     this._stealth = new Skill("stealth", "Stealth", 45, 14);
   }
 
+  autoCastStealth() {
+    if (this._user.stats.lvl >= this._stealth.levelRequirement && this._user.stats.mp > this._stealth.manaCost) {
+    }
+  }
+
   autoCastSkills() {
     if (super.autoCastSkills()) {
-      
+      if (AUTO_USE_STEALTH) {
+        this.autoCastStealth();
+      }
     }
   }
 }
