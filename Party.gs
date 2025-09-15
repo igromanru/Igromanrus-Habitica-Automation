@@ -278,7 +278,7 @@ function sendInactivePartyMembers(triggeredBy = '') {
           if (member && member.party._id) {
 
             const timeDifference = Habitica.getTimeDifferenceToNow(new Date(member.auth.timestamps.loggedin));
-            if (timeDifference && timeDifference.days >= PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_DAYS && timeDifference.hours >= PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_HOURS) {
+            if (timeDifference && (timeDifference.days > PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_DAYS || (timeDifference.days >= PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_DAYS && timeDifference.hours >= PARTY_MEMBERS_WITH_LAST_CRON_OVER_X_HOURS))) {
               addMemberInfoToMessage(member, timeDifference);
             }
           }
